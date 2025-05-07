@@ -12,8 +12,8 @@ using WanderGlobe.Data;
 namespace WanderGlobe.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250429151833_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20250507105241_AddNotesToVisitedCountryFixed")]
+    partial class AddNotesToVisitedCountryFixed
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -629,6 +629,9 @@ namespace WanderGlobe.Migrations
 
                     b.Property<bool>("IsFavorite")
                         .HasColumnType("bit");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");

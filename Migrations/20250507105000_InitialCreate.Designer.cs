@@ -12,8 +12,8 @@ using WanderGlobe.Data;
 namespace WanderGlobe.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250507083342_AddNotesToVisitedCountryFixed")]
-    partial class AddNotesToVisitedCountryFixed
+    [Migration("20250507105000_InitialCreate")]
+    partial class InitialCreate
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
