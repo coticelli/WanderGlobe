@@ -3873,22 +3873,35 @@ function validateDestinationsData() {
 function initializeApp() {
     console.log('Initializing WanderGlobe app...');
 
-        // Get the city dropdown element
-    const cityDropdown = document.querySelector('select[name="City"]');
-    const countryField = document.querySelector('input[name="Country"]');
-    const countryCodeField = document.querySelector('input[name="CountryCode"]');
+    // Get the city dropdown element - Fixed selectors to match the actual IDs
+    const cityDropdown = document.getElementById('WishlistForm_City');
+    const countryField = document.getElementById('WishlistForm_Country');
+    const countryHiddenField = document.getElementById('Country');
+    const countryCodeHiddenField = document.getElementById('CountryCode');
     
     if (cityDropdown && countryField) {
-        // Make the country field read-only
-        countryField.readOnly = true;
-        
-        // Initial population (if a city is already selected)
-        updateCountryFromCity(cityDropdown.value);
-        
-        // Update when city changes
+        // Add event listener to city dropdown
         cityDropdown.addEventListener('change', function() {
-            updateCountryFromCity(this.value);
+            // Get the selected option
+            const selectedOption = this.options[this.selectedIndex];
+            
+            // Get country and country code from data attributes
+            const country = selectedOption.getAttribute('data-country');
+            const countryCode = selectedOption.getAttribute('data-country-code');
+            
+            // Update the visible country field
+            countryField.value = country || '';
+            
+            // Update the hidden fields
+            if (countryHiddenField) countryHiddenField.value = country || '';
+            if (countryCodeHiddenField) countryCodeHiddenField.value = countryCode || '';
+            
+            console.log(`City changed to: ${this.value}, Country: ${country}, Code: ${countryCode}`);
         });
+        
+        console.log('City-Country autofill functionality initialized');
+    } else {
+        console.warn('City or country fields not found in the form');
     }
     
     function updateCountryFromCity(cityName) {
