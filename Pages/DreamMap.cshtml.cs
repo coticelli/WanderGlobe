@@ -141,49 +141,46 @@ namespace WanderGlobe.Pages
             }
         }
 
-        // Nuovo metodo per gestire l'aggiunta alla wishlist
         [HttpPost]
         [IgnoreAntiforgeryToken]
         public async Task<IActionResult> OnPostSaveToWishlistAsync(WishlistItemViewModel model)
         {
             try
             {
-                // Log per debug
+                // Log for debug
                 System.Diagnostics.Debug.WriteLine($"OnPostSaveToWishlistAsync chiamato - Città: {model?.City}, Paese: {model?.Country}");
-
+        
                 if (model == null)
                 {
-                    ModelState.AddModelError("", "I dati del modulo non sono validi.");
-                    return Page();
+                    return new JsonResult(new { success = false, message = "I dati del modulo non sono validi." });
                 }
-
+        
                 if (!ModelState.IsValid)
                 {
-                    // Log degli errori di validazione
-                    foreach (var state in ModelState)
-                    {
-                        if (state.Value.Errors.Count > 0)
-                        {
-                            System.Diagnostics.Debug.WriteLine($"Errore validazione: {state.Key} - {string.Join(", ", state.Value.Errors.Select(e => e.ErrorMessage))}");
-                        }
-                    }
-
-                    // Ricarica le città disponibili e ritorna la vista con gli errori
-                    model.AvailableCities = GetAvailableCapitals();
-                    return Page();
+                    // Extract validation errors for the JSON response
+                    var errors = ModelState.Values
+                        .SelectMany(v => v.Errors)
+                        .Select(e => e.ErrorMessage);
+                        
+                    return new JsonResult(new { 
+                        success = false, 
+                        message = string.Join("; ", errors) 
+                    });
                 }
-
+        
                 var user = await _userManager.GetUserAsync(User);
                 if (user == null)
                 {
-                    return Unauthorized();
+                    return new JsonResult(new { success = false, message = "Utente non autenticato" });
                 }
-
-                // Trova le coordinate della città selezionata
+        
+                // Rest of your existing code to find city, process image, etc.
+                
+                // Find the coordinates of the selected city
                 var cityInfo = GetAvailableCapitals().FirstOrDefault(c => c.Name == model.City);
                 double latitude = 0, longitude = 0;
-
-                // Se troviamo una corrispondenza con la città, usiamo le coordinate dal database dei paesi
+        
+                // If we find a match with the city, use coordinates from the country database
                 if (cityInfo != null)
                 {
                     var country = Countries.FirstOrDefault(c => c.Code == cityInfo.CountryCode);
@@ -193,20 +190,20 @@ namespace WanderGlobe.Pages
                         longitude = country.Longitude;
                     }
                 }
-
-                // Converti la priorità da stringa a enum
+        
+                // Convert priority from string to enum
                 DreamPriority priority;
                 Enum.TryParse(model.Priority, out priority);
-                if (priority == 0) priority = DreamPriority.Medium; // Default se la conversione fallisce
-
-                // Salva il file immagine se presente
+                if (priority == 0) priority = DreamPriority.Medium; // Default if conversion fails
+        
+                // Save image file if present
                 string imageUrl = null;
                 if (model.ImageFile != null && model.ImageFile.Length > 0)
                 {
                     imageUrl = await SaveWishlistImageAsync(model.ImageFile);
                 }
-
-                // Crea una lista di tag dalla stringa di input
+        
+                // Create a list of tags from the input string
                 List<string> tagList = new List<string>();
                 if (!string.IsNullOrEmpty(model.Tags))
                 {
@@ -215,8 +212,8 @@ namespace WanderGlobe.Pages
                         .Where(t => !string.IsNullOrEmpty(t))
                         .ToList();
                 }
-
-                // Crea un nuovo oggetto DreamDestination
+        
+                // Create a new DreamDestination object
                 var newDream = new DreamDestination
                 {
                     UserId = user.Id,
@@ -231,30 +228,34 @@ namespace WanderGlobe.Pages
                     ImageUrl = imageUrl ?? $"/images/cities/{(cityInfo?.CountryCode ?? "default").ToLower()}-city.jpg",
                     CreatedAt = DateTime.UtcNow
                 };
-
-                // Salva nel database tramite il servizio
+        
+                // Save to database through the service
                 var savedDream = await _dreamService.AddToWishlistAsync(newDream);
-
+        
                 if (savedDream != null)
                 {
-                    // Redirect con messaggio di successo
-                    TempData["SuccessMessage"] = $"{model.City} aggiunta alla tua wishlist!";
-                    return RedirectToPage();
+                    return new JsonResult(new { 
+                        success = true, 
+                        message = $"{model.City} aggiunta alla tua wishlist!",
+                        newItem = savedDream  // Include the newly created item for client-side updates
+                    });
                 }
                 else
                 {
-                    ModelState.AddModelError("", "Si è verificato un errore durante il salvataggio. Riprova.");
-                    model.AvailableCities = GetAvailableCapitals();
-                    return Page();
+                    return new JsonResult(new { 
+                        success = false, 
+                        message = "Si è verificato un errore durante il salvataggio. Riprova." 
+                    });
                 }
             }
             catch (Exception ex)
             {
-                // Log dell'errore
-                System.Diagnostics.Debug.WriteLine($"Eccezione in OnPostSaveToWishlistAsync: {ex.Message}");
-                ModelState.AddModelError("", $"Errore: {ex.Message}");
-                model.AvailableCities = GetAvailableCapitals();
-                return Page();
+                // Log the error
+                System.Diagnostics.Debug.WriteLine($"Exception in OnPostSaveToWishlistAsync: {ex.Message}");
+                return new JsonResult(new { 
+                    success = false, 
+                    message = $"Errore: {ex.Message}" 
+                });
             }
         }
 
