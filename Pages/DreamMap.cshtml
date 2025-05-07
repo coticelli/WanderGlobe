@@ -305,7 +305,8 @@
                             <div class="mb-3">
                                 <label for="WishlistForm_Country" class="form-label">Paese</label>
                                 <input type="text" class="form-control" id="WishlistForm_Country" name="WishlistForm.Country" readonly>
-                                <input type="hidden" id="WishlistForm_CountryCode" name="WishlistForm.CountryCode">
+                                <input type="hidden" name="Country" id="Country" />
+                                <input type="hidden" name="CountryCode" id="CountryCode" />
                             </div>
 
                             <div class="mb-3">
@@ -2902,6 +2903,37 @@ function sincronizzaStatoApp() {
     }
 }
 
+// Example AJAX form submission (update to match your implementation)
+function submitWishlistForm(form) {
+    const formData = new FormData(form);
+    
+    // Log form data being sent
+    console.log("Submitting form data:");
+    for (let [key, value] of formData.entries()) {
+        console.log(key + ': ' + value);
+    }
+    
+    fetch('/DreamMap?handler=SaveToWishlist', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'RequestVerificationToken': getAntiForgeryToken()
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Handle success
+        } else {
+            // Show error message
+            alert("Error: " + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error submitting form:', error);
+    });
+}
+
 // Helper per configurare i pulsanti nei modal
 function configuraPulsantiModal() {
     // Configura i pulsanti nel footer del modal dei piani
@@ -3840,6 +3872,43 @@ function validateDestinationsData() {
 
 function initializeApp() {
     console.log('Initializing WanderGlobe app...');
+
+        // Get the city dropdown element
+    const cityDropdown = document.querySelector('select[name="City"]');
+    const countryField = document.querySelector('input[name="Country"]');
+    const countryCodeField = document.querySelector('input[name="CountryCode"]');
+    
+    if (cityDropdown && countryField) {
+        // Make the country field read-only
+        countryField.readOnly = true;
+        
+        // Initial population (if a city is already selected)
+        updateCountryFromCity(cityDropdown.value);
+        
+        // Update when city changes
+        cityDropdown.addEventListener('change', function() {
+            updateCountryFromCity(this.value);
+        });
+    }
+    
+    function updateCountryFromCity(cityName) {
+        if (!cityName) return;
+        
+        // Find city info from the available cities
+        fetch('/DreamMap?handler=Cityinfo&city=' + encodeURIComponent(cityName), {
+            headers: {
+                'RequestVerificationToken': getAntiForgeryToken()
+            }
+        })
+        .then(response => response.json())
+        .then(cityInfo => {
+            if (cityInfo && cityInfo.country) {
+                countryField.value = cityInfo.country;
+                if (countryCodeField) countryCodeField.value = cityInfo.countryCode || '';
+            }
+        })
+        .catch(error => console.error('Error fetching city info:', error));
+    }
     
     // Validate destinations data structure
     validateDestinationsData();

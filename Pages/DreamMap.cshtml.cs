@@ -15,6 +15,7 @@ using System.Net.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.AspNetCore.Http;
 using System.IO;
+using System.ComponentModel.DataAnnotations;
 
 namespace WanderGlobe.Pages
 {
@@ -141,7 +142,7 @@ namespace WanderGlobe.Pages
             }
         }
 
-        [HttpPost]
+                [HttpPost]
         [IgnoreAntiforgeryToken]
         public async Task<IActionResult> OnPostSaveToWishlistAsync(WishlistItemViewModel model)
         {
@@ -153,6 +154,15 @@ namespace WanderGlobe.Pages
                 if (model == null)
                 {
                     return new JsonResult(new { success = false, message = "I dati del modulo non sono validi." });
+                }
+        
+                // Clear ModelState errors for all fields except City
+                foreach (var key in ModelState.Keys.ToList())
+                {
+                    if (key != nameof(WishlistItemViewModel.City))
+                    {
+                        ModelState.Remove(key);
+                    }
                 }
         
                 if (!ModelState.IsValid)
@@ -173,16 +183,18 @@ namespace WanderGlobe.Pages
                 {
                     return new JsonResult(new { success = false, message = "Utente non autenticato" });
                 }
-        
-                // Rest of your existing code to find city, process image, etc.
                 
-                // Find the coordinates of the selected city
+                // Find the coordinates and country info of the selected city
                 var cityInfo = GetAvailableCapitals().FirstOrDefault(c => c.Name == model.City);
                 double latitude = 0, longitude = 0;
-        
-                // If we find a match with the city, use coordinates from the country database
+                
+                // Auto-populate missing country information when city is found
                 if (cityInfo != null)
                 {
+                    // Auto-populate Country and CountryCode from cityInfo
+                    model.Country = cityInfo.Country;
+                    model.CountryCode = cityInfo.CountryCode;
+                    
                     var country = Countries.FirstOrDefault(c => c.Code == cityInfo.CountryCode);
                     if (country != null)
                     {
@@ -191,18 +203,23 @@ namespace WanderGlobe.Pages
                     }
                 }
         
+                // Handle other potentially missing fields with defaults
+                model.Tags = model.Tags ?? "";
+                model.Notes = model.Notes ?? "";
+                model.Priority = model.Priority ?? "Media";
+                
                 // Convert priority from string to enum
                 DreamPriority priority;
                 Enum.TryParse(model.Priority, out priority);
                 if (priority == 0) priority = DreamPriority.Medium; // Default if conversion fails
-        
+                
                 // Save image file if present
                 string imageUrl = null;
                 if (model.ImageFile != null && model.ImageFile.Length > 0)
                 {
                     imageUrl = await SaveWishlistImageAsync(model.ImageFile);
                 }
-        
+                
                 // Create a list of tags from the input string
                 List<string> tagList = new List<string>();
                 if (!string.IsNullOrEmpty(model.Tags))
@@ -212,26 +229,26 @@ namespace WanderGlobe.Pages
                         .Where(t => !string.IsNullOrEmpty(t))
                         .ToList();
                 }
-        
+                
                 // Create a new DreamDestination object
                 var newDream = new DreamDestination
                 {
                     UserId = user.Id,
                     CityName = model.City,
-                    CountryName = model.Country,
-                    CountryCode = cityInfo?.CountryCode,
-                    Note = model.Notes,
+                    CountryName = model.Country ?? "Paese non specificato",
+                    CountryCode = model.CountryCode ?? "XX",
+                    Note = model.Notes ?? "",
                     Tags = tagList,
                     Priority = priority,
                     Latitude = latitude,
                     Longitude = longitude,
-                    ImageUrl = imageUrl ?? $"/images/cities/{(cityInfo?.CountryCode ?? "default").ToLower()}-city.jpg",
+                    ImageUrl = imageUrl ?? $"/images/cities/{(model.CountryCode ?? "default").ToLower()}-city.jpg",
                     CreatedAt = DateTime.UtcNow
                 };
-        
+                
                 // Save to database through the service
                 var savedDream = await _dreamService.AddToWishlistAsync(newDream);
-        
+                
                 if (savedDream != null)
                 {
                     return new JsonResult(new { 
@@ -257,6 +274,25 @@ namespace WanderGlobe.Pages
                     message = $"Errore: {ex.Message}" 
                 });
             }
+        }
+
+        [HttpGet]
+        [IgnoreAntiforgeryToken]
+        public IActionResult OnGetCityinfoAsync(string city)
+        {
+            var cityInfo = GetAvailableCapitals().FirstOrDefault(c => c.Name == city);
+            
+            if (cityInfo == null)
+            {
+                return new JsonResult(new { success = false });
+            }
+            
+            return new JsonResult(new { 
+                success = true, 
+                city = cityInfo.Name,
+                country = cityInfo.Country, 
+                countryCode = cityInfo.CountryCode 
+            });
         }
 
         // Metodo ausiliario per salvare l'immagine della wishlist
@@ -778,13 +814,22 @@ namespace WanderGlobe.Pages
 
         public class WishlistItemViewModel
         {
+            [Required(ErrorMessage = "Seleziona una città")]
             public string City { get; set; }
+        
+            // Remove Required attributes from these fields
             public string Country { get; set; }
+            
             public string CountryCode { get; set; }
+            
             public string Notes { get; set; }
+            
             public string Tags { get; set; }
+            
             public string Priority { get; set; } = "Media";
+            
             public IFormFile ImageFile { get; set; }
+            
             public List<CityInfo> AvailableCities { get; set; } = new List<CityInfo>();
         }
 
