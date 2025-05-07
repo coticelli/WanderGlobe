@@ -1,0 +1,1365 @@
+﻿@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Home";
+}
+
+<!-- Hero Section con Globo 3D Interattivo -->
+<section class="hero" id="hero">
+    <div class="globe-animation" id="heroGlobe"></div>
+    <div class="overlay"></div>
+    <div class="hero-content">
+        <div class="title-animation">
+            <h1>WORLD<span>TRAVEL</span>TRACKER</h1>
+            <p class="tagline">Esplora. Scopri. Ricorda.</p>
+        </div>
+        <div class="stats-container">
+            <div class="world-completion">
+                <div class="completion-circle">
+                    <svg viewBox="0 0 36 36" class="circular-chart">
+                        <path class="circle-bg" d="M18 2.0845
+                            a 15.9155 15.9155 0 0 1 0 31.831
+                            a 15.9155 15.9155 0 0 1 0 -31.831" />
+                        <path class="circle" stroke-dasharray="@Model.WorldPercentage, 100" d="M18 2.0845
+                            a 15.9155 15.9155 0 0 1 0 31.831
+                            a 15.9155 15.9155 0 0 1 0 -31.831" />
+                        <text x="18" y="20.35" class="percentage">@Model.WorldPercentage%</text>
+                    </svg>
+                </div>
+                <span>del mondo esplorato</span>
+            </div>
+            <div class="travel-stats">
+                <div class="stat-item" data-aos="fade-up" data-aos-delay="100">
+                    <div class="stat-value">@Model.CountriesVisited</div>
+                    <div class="stat-label">Paesi</div>
+                </div>
+                <div class="stat-item" data-aos="fade-up" data-aos-delay="200">
+                    <div class="stat-value">@Model.ContinentsVisited</div>
+                    <div class="stat-label">Continenti</div>
+                </div>
+                <div class="stat-item" data-aos="fade-up" data-aos-delay="300">
+                    <div class="stat-value">@Model.BadgesEarned</div>
+                    <div class="stat-label">Badge</div>
+                </div>
+                <div class="stat-item" data-aos="fade-up" data-aos-delay="400">
+                    <div class="stat-value">@Model.TotalMiles</div>
+                    <div class="stat-label">Km</div>
+                </div>
+            </div>
+        </div>
+        <div class="hero-actions">
+            <a href="/Globe" class="btn-primary pulse-animation">
+                <i class="fas fa-globe-americas"></i> Esplora il Globo 3D
+            </a>
+            <a href="/DreamMap" class="btn-secondary">
+                <i class="fas fa-map-marked-alt"></i> Pianifica un viaggio
+            </a>
+        </div>
+    </div>
+    <div class="scroll-indicator">
+        <div class="mouse">
+            <div class="wheel"></div>
+        </div>
+        <div>
+            <span class="scroll-text">Scorri per scoprire</span>
+        </div>
+    </div>
+</section>
+
+<!-- Sezione delle mappe ispirazione -->
+<section class="map-inspiration">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="inspiration-map" id="popularDestinations"></div>
+            </div>
+            <div class="col-md-6 map-content">
+                <h2 data-aos="fade-up">Le tue avventure <span class="highlight">ti aspettano</span></h2>
+                <p data-aos="fade-up" data-aos-delay="100">Il mondo è vasto e pieno di meraviglie. Traccia il tuo percorso, segna i tuoi ricordi e pianifica le tue prossime avventure con un'esperienza coinvolgente e visuale.</p>
+                
+                <div class="action-cards">
+                    <div class="action-card" data-aos="fade-up" data-aos-delay="200">
+                        <div class="action-icon">
+                            <i class="fas fa-map-pin"></i>
+                        </div>
+                        <div class="action-content">
+                            <h3>Segna i tuoi viaggi</h3>
+                            <p>Aggiungi facilmente i paesi che hai visitato e visualizzali sul globo 3D</p>
+                        </div>
+                    </div>
+                    
+                    <div class="action-card" data-aos="fade-up" data-aos-delay="300">
+                        <div class="action-icon">
+                            <i class="fas fa-camera"></i>
+                        </div>
+                        <div class="action-content">
+                            <h3>Cattura i ricordi</h3>
+                            <p>Salva foto, note e momenti speciali per ogni destinazione visitata</p>
+                        </div>
+                    </div>
+                    
+                    <div class="action-card" data-aos="fade-up" data-aos-delay="400">
+                        <div class="action-icon">
+                            <i class="fas fa-route"></i>
+                        </div>
+                        <div class="action-content">
+                            <h3>Pianifica il futuro</h3>
+                            <p>Crea la tua wishlist di destinazioni e organizza i tuoi prossimi viaggi</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Funzionalità principali con animazioni -->
+<section class="features-section">
+    <div class="container">
+        <h2 class="section-title" data-aos="fade-up">Funzionalità <span class="highlight">principali</span></h2>
+        
+        <div class="features-grid">
+            <div class="feature-card" data-aos="fade-up">
+                <div class="feature-icon-container globe-icon">
+                    <i class="fas fa-globe-europe"></i>
+                </div>
+                <h3>Globo 3D Interattivo</h3>
+                <p>Visualizza ed esplora il mondo in 3D. Vedi i tuoi paesi visitati evidenziati sul globo e naviga con zoom e rotazioni fluide.</p>
+                <div class="feature-preview">
+                    <img src="/images/features/globe-preview.jpg" alt="Anteprima Globo 3D" class="img-fluid rounded">
+                    <div class="feature-overlay">
+                        <a href="/Globe" class="btn btn-sm btn-light">Esplora</a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="feature-card" data-aos="fade-up" data-aos-delay="100">
+                <div class="feature-icon-container timeline-icon">
+                    <i class="fas fa-stream"></i>
+                </div>
+                <h3>Timeline dei Viaggi</h3>
+                <p>Rivivi i tuoi viaggi in ordine cronologico. Visualizza foto, note e ricordi organizzati in una timeline elegante e interattiva.</p>
+                <div class="feature-preview">
+                    <img src="/images/features/timeline-preview.jpg" alt="Anteprima Timeline" class="img-fluid rounded">
+                    <div class="feature-overlay">
+                        <a href="/Timeline" class="btn btn-sm btn-light">Esplora</a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="feature-card" data-aos="fade-up" data-aos-delay="200">
+                <div class="feature-icon-container map-icon">
+                    <i class="fas fa-map-marked-alt"></i>
+                </div>
+                <h3>Dream Map</h3>
+                <p>Crea la tua mappa dei sogni. Segna le destinazioni che desideri visitare, pianifica i dettagli e fissa le date per i tuoi prossimi viaggi.</p>
+                <div class="feature-preview">
+                    <img src="/images/features/dreammap-preview.jpg" alt="Anteprima Dream Map" class="img-fluid rounded">
+                    <div class="feature-overlay">
+                        <a href="/DreamMap" class="btn btn-sm btn-light">Esplora</a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="feature-card" data-aos="fade-up" data-aos-delay="300">
+                <div class="feature-icon-container badge-icon">
+                    <i class="fas fa-medal"></i>
+                </div>
+                <h3>Badge e Traguardi</h3>
+                <p>Sblocca badge speciali quando raggiungi traguardi importanti come visitare tutti i paesi di un continente o esplorare destinazioni remote.</p>
+                <div class="feature-preview">
+                    <img src="/images/features/badges-preview.jpg" alt="Anteprima Badge" class="img-fluid rounded">
+                    <div class="feature-overlay">
+                        <a href="/Badge" class="btn btn-sm btn-light">Esplora</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Sezione Ultimi Paesi Visitati -->
+<section class="recent-countries">
+    <div class="container">
+        <h2 class="section-title" data-aos="fade-up">I tuoi <span class="highlight">ultimi viaggi</span></h2>
+        
+        @if (Model.RecentVisits.Any())
+        {
+            <div class="recent-visits-carousel">
+                @foreach (var visit in Model.RecentVisits)
+                {
+                    <div class="country-card" data-aos="fade-up">
+                        <div class="country-image">
+                            <img src="@visit.ImageUrl" alt="@visit.CountryName">
+                            <div class="country-flag">
+                                <img src="/images/flags/@(visit.CountryCode.ToLower()).png" alt="Bandiera @visit.CountryName">
+                            </div>
+                        </div>
+                        <div class="country-info">
+                            <h3>@visit.CityName</h3>
+                            <p class="country-name">@visit.CountryName</p>
+                            <p class="visit-date"><i class="far fa-calendar-alt"></i> @visit.VisitDate.ToString("dd MMM yyyy")</p>
+                            @if (!string.IsNullOrEmpty(visit.Note))
+                            {
+                                <p class="visit-note">"@visit.Note"</p>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="empty-state" data-aos="fade-up">
+                <img src="/images/illustrations/world-map.svg" alt="World Map" class="empty-illustration">
+                <h3>Non hai ancora viaggi registrati</h3>
+                <p>Inizia ad aggiungere i tuoi viaggi per vedere qui i tuoi ricordi</p>
+                <a href="/Paesi" class="btn btn-primary mt-3">
+                    <i class="fas fa-plus-circle"></i> Aggiungi il tuo primo viaggio
+                </a>
+            </div>
+        }
+    </div>
+</section>
+
+<!-- Sezione Ispirazione -->
+<section class="inspiration-section parallax-section">
+    <div class="overlay"></div>
+    <div class="container">
+        <h2 class="section-title light" data-aos="fade-up">Lasciati <span class="highlight">ispirare</span></h2>
+        
+        <div class="inspiration-quote" data-aos="fade-up">
+            <i class="fas fa-quote-left"></i>
+            <blockquote>
+                "Il mondo è un libro, e quelli che non viaggiano ne leggono solo una pagina."
+            </blockquote>
+            <p class="quote-author">- Sant'Agostino</p>
+        </div>
+        
+        <div class="inspiration-carousel" data-aos="fade-up">
+            <div class="destination-card">
+                <img src="/images/destinations/paris.jpg" alt="Parigi">
+                <div class="destination-overlay">
+                    <h3>Parigi</h3>
+                    <p>Francia</p>
+                </div>
+            </div>
+            <div class="destination-card">
+                <img src="/images/destinations/tokyo.jpg" alt="Tokyo">
+                <div class="destination-overlay">
+                    <h3>Tokyo</h3>
+                    <p>Giappone</p>
+                </div>
+            </div>
+            <div class="destination-card">
+                <img src="/images/destinations/newyork.jpg" alt="New York">
+                <div class="destination-overlay">
+                    <h3>New York</h3>
+                    <p>Stati Uniti</p>
+                </div>
+            </div>
+            <div class="destination-card">
+                <img src="/images/destinations/rio.jpg" alt="Rio de Janeiro">
+                <div class="destination-overlay">
+                    <h3>Rio de Janeiro</h3>
+                    <p>Brasile</p>
+                </div>
+            </div>
+            <div class="destination-card">
+                <img src="/images/destinations/bali.jpg" alt="Bali">
+                <div class="destination-overlay">
+                    <h3>Bali</h3>
+                    <p>Indonesia</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Call to Action -->
+<section class="cta-section">
+    <div class="container">
+        <div class="cta-content">
+            <div class="row align-items-center">
+                <div class="col-md-7" data-aos="fade-right">
+                    <h2>Pronto a iniziare la tua prossima avventura?</h2>
+                    <p>Il mondo è vasto e pieno di meraviglie. Quale sarà la tua prossima destinazione?</p>
+                </div>
+                <div class="col-md-5 text-md-end" data-aos="fade-left">
+                    <a href="/DreamMap" class="btn-primary btn-lg">
+                        <i class="fas fa-plane-departure"></i> Pianifica ora
+                    </a>
+                    <a href="/Globe" class="btn-outline ms-2">
+                        <i class="fas fa-globe"></i> Esplora il globo
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@section Styles {
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/slick-carousel/1.8.1/slick.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/slick-carousel/1.8.1/slick-theme.min.css">
+    
+    <style>
+        /* Stili Generali */
+        body {
+            font-family: 'Montserrat', sans-serif;
+            color: #2c3e50;
+            overflow-x: hidden;
+            background-color: #f8f9fa;
+        }
+        
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Poppins', sans-serif;
+            font-weight: 700;
+        }
+        
+        .container {
+            max-width: 1320px;
+            padding: 0 24px;
+        }
+        
+        .section-title {
+            font-size: 2.8rem;
+            margin-bottom: 3rem;
+            text-align: center;
+            position: relative;
+        }
+        
+        .section-title .highlight {
+            color: #1a73e8;
+            position: relative;
+        }
+        
+        .section-title .highlight::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 8px;
+            border-radius: 4px;
+            background-color: rgba(26, 115, 232, 0.2);
+            z-index: -1;
+        }
+        
+        section {
+            padding: 6rem 0;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        /* Hero Section */
+        .hero {
+            height: 100vh;
+            min-height: 700px;
+            position: relative;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            overflow: hidden;
+            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+        }
+        
+        .globe-animation {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+        
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            z-index: 2;
+        }
+        
+        .hero-content {
+            max-width: 1000px;
+            width: 90%;
+            padding: 2rem;
+            position: relative;
+            z-index: 3;
+        }
+        
+        .title-animation {
+            margin-bottom: 3rem;
+        }
+        
+        .hero h1 {
+            font-size: 5rem;
+            font-weight: 900;
+            letter-spacing: 2px;
+            margin: 0;
+            text-transform: uppercase;
+            background: linear-gradient(to right, #ffffff, #1a73e8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: shimmer 2s infinite linear;
+            background-size: 200% 100%;
+        }
+        
+        .hero h1 span {
+            display: inline-block;
+            color: #1a73e8;
+            position: relative;
+            margin: 0 1rem;
+            -webkit-text-fill-color: #1a73e8;
+        }
+        
+        .hero .tagline {
+            font-size: 1.5rem;
+            margin-top: 1rem;
+            font-weight: 300;
+            opacity: 0.9;
+        }
+        
+        @@keyframes shimmer {
+            0% { background-position: -100% 0; }
+            100% { background-position: 100% 0; }
+        }
+        
+        /* Stats Container */
+        .stats-container {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 3rem;
+        }
+        
+        .world-completion {
+            width: 180px;
+            height: 180px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin: 0 2rem;
+            position: relative;
+        }
+        
+        .completion-circle {
+            width: 150px;
+            height: 150px;
+        }
+        
+        .circular-chart {
+            display: block;
+            margin: 0 auto;
+            max-width: 100%;
+            max-height: 150px;
+        }
+        
+        .circle-bg {
+            fill: none;
+            stroke: rgba(255, 255, 255, 0.2);
+            stroke-width: 3;
+        }
+        
+        .circle {
+            fill: none;
+            stroke: #1a73e8;
+            stroke-width: 3;
+            stroke-linecap: round;
+            animation: progress 1.5s ease-out forwards;
+        }
+        
+        .percentage {
+            fill: white;
+            font-size: 0.5em;
+            text-anchor: middle;
+            font-weight: bold;
+        }
+        
+        @@keyframes progress {
+            0% { stroke-dasharray: 0 100; }
+        }
+        
+        .world-completion span {
+            margin-top: 1rem;
+            font-size: 1rem;
+            opacity: 0.8;
+        }
+        
+        .travel-stats {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        
+        .stat-item {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 1.5rem;
+            text-align: center;
+            min-width: 120px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .stat-item:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.2);
+        }
+        
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            color: #ffffff;
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            opacity: 0.7;
+        }
+        
+        /* Hero Actions */
+        .hero-actions {
+            margin-top: 2rem;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #1a73e8, #4285f4);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 50px;
+            box-shadow: 0 10px 20px rgba(26, 115, 232, 0.4);
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(26, 115, 232, 0.6);
+            color: white;
+        }
+        
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 1rem 2rem;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 50px;
+            transition: all 0.3s ease;
+            margin-left: 1rem;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-5px);
+            color: white;
+        }
+        
+        .pulse-animation {
+            animation: pulse 2s infinite;
+        }
+        
+        @@keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(26, 115, 232, 0.7); }
+            70% { box-shadow: 0 0 0 20px rgba(26, 115, 232, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(26, 115, 232, 0); }
+        }
+        
+        /* Scroll Indicator */
+        .scroll-indicator {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 3;
+            text-align: center;
+            animation: fadeInUp 1s 1s both;
+        }
+        
+        .mouse {
+            width: 26px;
+            height: 40px;
+            border: 2px solid white;
+            border-radius: 20px;
+            position: relative;
+            margin: 0 auto 10px;
+        }
+        
+        .wheel {
+            width: 4px;
+            height: 8px;
+            background: white;
+            position: absolute;
+            top: 7px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-radius: 4px;
+            animation: wheel 1.5s infinite;
+        }
+        
+        @@keyframes wheel {
+            0% { top: 7px; opacity: 1; }
+            100% { top: 20px; opacity: 0; }
+        }
+        
+        .scroll-text {
+            font-size: 0.8rem;
+            letter-spacing: 1px;
+            opacity: 0.8;
+        }
+        
+        /* Map Inspiration Section */
+        .map-inspiration {
+            background-color: white;
+            overflow: hidden;
+        }
+        
+        .inspiration-map {
+            height: 600px;
+            background-color: #f5f5f5;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .map-content {
+            padding: 4rem 2rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        
+        .map-content h2 {
+            font-size: 3rem;
+            margin-bottom: 1.5rem;
+            line-height: 1.2;
+        }
+        
+        .map-content p {
+            font-size: 1.1rem;
+            line-height: 1.8;
+            color: #5c6b7a;
+            margin-bottom: 2rem;
+        }
+        
+        .action-cards {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .action-card {
+            display: flex;
+            align-items: flex-start;
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 15px;
+            transition: all 0.3s ease;
+        }
+        
+        .action-card:hover {
+            background: white;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            transform: translateY(-5px);
+        }
+        
+        .action-icon {
+            width: 50px;
+            height: 50px;
+            background: #1a73e8;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 20px;
+            font-size: 1.5rem;
+            color: white;
+            flex-shrink: 0;
+        }
+        
+        .action-content h3 {
+            margin: 0 0 5px 0;
+            font-size: 1.2rem;
+        }
+        
+        .action-content p {
+            margin: 0;
+            font-size: 0.95rem;
+            color: #636b75;
+        }
+        
+        /* Features Section */
+        .features-section {
+            background-color: #f9f9f9;
+        }
+        
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+            margin-top: 3rem;
+        }
+        
+        .feature-card {
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+            padding: 2rem;
+            text-align: center;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        
+        .feature-icon-container {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+            font-size: 2.5rem;
+            position: relative;
+        }
+        
+        .feature-icon-container::before {
+            content: '';
+            position: absolute;
+            top: -8px;
+            left: -8px;
+            right: -8px;
+            bottom: -8px;
+            border-radius: 50%;
+            background: inherit;
+            opacity: 0.3;
+            z-index: -1;
+            animation: pulse 2s infinite;
+        }
+        
+        .globe-icon {
+            background: linear-gradient(135deg, #1a73e8, #4285f4);
+            color: white;
+        }
+        
+        .timeline-icon {
+            background: linear-gradient(135deg, #2ecc71, #27ae60);
+            color: white;
+        }
+        
+        .map-icon {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+        }
+        
+        .badge-icon {
+            background: linear-gradient(135deg, #f39c12, #e67e22);
+            color: white;
+        }
+        
+        .feature-card h3 {
+            font-size: 1.3rem;
+            margin-bottom: 15px;
+        }
+        
+        .feature-card p {
+            font-size: 0.95rem;
+            color: #636b75;
+            margin-bottom: 25px;
+        }
+        
+        .feature-preview {
+            position: relative;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .feature-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+        
+        .feature-preview:hover .feature-overlay {
+            opacity: 1;
+        }
+        
+        /* Recent Countries Section */
+        .recent-countries {
+            background-color: white;
+        }
+        
+        .recent-visits-carousel {
+            display: flex;
+            overflow-x: auto;
+            gap: 20px;
+            padding: 10px 0 30px;
+            scroll-snap-type: x mandatory;
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        
+        .recent-visits-carousel::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .country-card {
+            flex: 0 0 320px;
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            scroll-snap-align: start;
+        }
+        
+        .country-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+        }
+        
+        .country-image {
+            height: 200px;
+            position: relative;
+        }
+        
+        .country-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .country-flag {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            width: 40px;
+            height: 30px;
+            border-radius: 5px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+        
+        .country-flag img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .country-info {
+            padding: 20px;
+        }
+        
+        .country-info h3 {
+            margin: 0 0 5px 0;
+            font-size: 1.2rem;
+        }
+        
+        .country-name {
+            color: #636b75;
+            margin-bottom: 10px;
+        }
+        
+        .visit-date {
+            color: #1a73e8;
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+        }
+        
+        .visit-note {
+            font-style: italic;
+            color: #636b75;
+            font-size: 0.9rem;
+            margin: 0;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 3rem 0;
+        }
+        
+        .empty-illustration {
+            max-width: 300px;
+            margin-bottom: 2rem;
+            opacity: 0.6;
+        }
+        
+        /* Parallax Section */
+        .parallax-section {
+            background-image: url('/images/parallax-bg.jpg');
+            background-attachment: fixed;
+            background-size: cover;
+            background-position: center;
+            color: white;
+            position: relative;
+        }
+        
+        .parallax-section .overlay {
+            background: rgba(0, 0, 0, 0.6);
+        }
+        
+        .parallax-section .container {
+            position: relative;
+            z-index: 2;
+        }
+        
+        .section-title.light {
+            color: white;
+        }
+        
+        .inspiration-quote {
+            max-width: 800px;
+            margin: 0 auto 4rem;
+            text-align: center;
+            position: relative;
+        }
+        
+        .inspiration-quote i {
+            font-size: 2rem;
+            color: rgba(255, 255, 255, 0.3);
+            margin-bottom: 1rem;
+        }
+        
+        .inspiration-quote blockquote {
+            font-size: 1.8rem;
+            line-height: 1.5;
+            font-style: italic;
+            margin: 0 0 1rem 0;
+        }
+        
+        .quote-author {
+            font-size: 1rem;
+            opacity: 0.8;
+        }
+        
+        .inspiration-carousel {
+            display: flex;
+            gap: 20px;
+            overflow-x: auto;
+            padding: 10px 0 30px;
+            scroll-snap-type: x mandatory;
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        
+        .inspiration-carousel::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .destination-card {
+            flex: 0 0 280px;
+            height: 400px;
+            border-radius: 15px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.3);
+            transition: all 0.3s ease;
+            scroll-snap-align: start;
+        }
+        
+        .destination-card:hover {
+            transform: translateY(-10px);
+        }
+        
+        .destination-card img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: all 0.5s ease;
+        }
+        
+        .destination-card:hover img {
+            transform: scale(1.1);
+        }
+        
+        .destination-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            padding: 30px 20px;
+            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+            color: white;
+        }
+        
+        .destination-overlay h3 {
+            margin: 0 0 5px 0;
+            font-size: 1.4rem;
+        }
+        
+        .destination-overlay p {
+            opacity: 0.8;
+            margin: 0;
+        }
+        
+        /* CTA Section */
+        .cta-section {
+            background-color: #f9f9f9;
+        }
+        
+        .cta-content {
+            background: linear-gradient(135deg, #1a73e8, #4285f4);
+            border-radius: 20px;
+            padding: 3rem;
+            color: white;
+            box-shadow: 0 15px 40px rgba(26, 115, 232, 0.4);
+        }
+        
+        .cta-content h2 {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+        
+        .cta-content p {
+            font-size: 1.1rem;
+            margin-bottom: 0;
+            opacity: 0.9;
+        }
+        
+        .btn-outline {
+            background: transparent;
+            color: white;
+            border: 2px solid white;
+            padding: 1rem 2rem;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 50px;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .btn-outline:hover {
+            background: white;
+            color: #1a73e8;
+        }
+        
+        .btn-lg {
+            padding: 1.2rem 2.5rem;
+            font-size: 1.1rem;
+        }
+        
+        /* Responsive Styles */
+        @@media (max-width: 991px) {
+            .hero h1 {
+                font-size: 3.5rem;
+            }
+            
+            .stat-item {
+                min-width: 100px;
+            }
+            
+            .map-content {
+                padding: 2rem 1rem;
+            }
+            
+            .features-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .cta-content {
+                padding: 2rem;
+                text-align: center;
+            }
+            
+            .cta-content .text-md-end {
+                text-align: center !important;
+                margin-top: 2rem;
+            }
+        }
+        
+        @@media (max-width: 767px) {
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+            
+            .hero .tagline {
+                font-size: 1.2rem;
+            }
+            
+            .world-completion, .travel-stats {
+                margin-bottom: 2rem;
+            }
+            
+            .stat-item {
+                padding: 1rem;
+                flex: 0 0 calc(50% - 10px);
+            }
+            
+            .btn-secondary {
+                margin-left: 0;
+                margin-top: 1rem;
+            }
+            
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .section-title {
+                font-size: 2rem;
+            }
+            
+            .hero-actions {
+                display: flex;
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .map-content h2 {
+                font-size: 2rem;
+            }
+            
+            .inspiration-quote blockquote {
+                font-size: 1.3rem;
+            }
+        }
+    </style>
+}
+
+@section Scripts {
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/slick-carousel/1.8.1/slick.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.7.1/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script>
+        // Inizializzazione AOS (Animate On Scroll)
+        document.addEventListener('DOMContentLoaded', function() {
+            AOS.init({
+                duration: 800,
+                once: true,
+                offset: 100,
+                easing: 'ease-in-out'
+            });
+            
+            // Inizializzazione del globo 3D nella hero section
+            initHeroGlobe();
+            
+            // Inizializzazione della mappa nella sezione ispirazione
+            initInspirationMap();
+        });
+        
+        // Globo 3D animato nella hero section
+        function initHeroGlobe() {
+            const container = document.getElementById('heroGlobe');
+            
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.z = 200;
+            
+            const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            container.appendChild(renderer.domElement);
+            
+            // Texture del globo
+            const textureLoader = new THREE.TextureLoader();
+            const texture = textureLoader.load('/images/textures/earth-texture.jpg');
+            const bumpMap = textureLoader.load('/images/textures/earth-bump.jpg');
+            const cloudsTexture = textureLoader.load('/images/textures/earth-clouds.png');
+            
+            // Materiale e geometria del globo
+            const geometry = new THREE.SphereGeometry(50, 64, 64);
+            const material = new THREE.MeshPhongMaterial({
+                map: texture,
+                bumpMap: bumpMap,
+                bumpScale: 0.5
+            });
+            const globe = new THREE.Mesh(geometry, material);
+            scene.add(globe);
+            
+            // Nuvole
+            const cloudsGeometry = new THREE.SphereGeometry(51, 64, 64);
+            const cloudsMaterial = new THREE.MeshPhongMaterial({
+                map: cloudsTexture,
+                transparent: true,
+                opacity: 0.4
+            });
+            const clouds = new THREE.Mesh(cloudsGeometry, cloudsMaterial);
+            scene.add(clouds);
+            
+            // Illuminazione
+            const ambientLight = new THREE.AmbientLight(0x404040, 1);
+            scene.add(ambientLight);
+            
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+            directionalLight.position.set(1, 0.75, 1);
+            scene.add(directionalLight);
+            
+            // Animazione
+            function animate() {
+                requestAnimationFrame(animate);
+                
+                globe.rotation.y += 0.0005;
+                clouds.rotation.y += 0.0007;
+                
+                renderer.render(scene, camera);
+            }
+            
+            animate();
+            
+            // Responsive
+            window.addEventListener('resize', function() {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+            
+            // Pin per marker dei paesi visitati
+            const pins = @Html.Raw(Json.Serialize(Model.VisitedPins));
+            
+            if (pins && pins.length) {
+                pins.forEach(pin => {
+                    addGlobePin(globe, pin.lat, pin.lng, 0xff4757);
+                });
+            }
+            
+            function addGlobePin(globe, lat, lng, color) {
+                const phi = (90 - lat) * Math.PI / 180;
+                const theta = (lng + 180) * Math.PI / 180;
+                
+                const radius = 51;
+                const x = -radius * Math.sin(phi) * Math.cos(theta);
+                const y = radius * Math.cos(phi);
+                const z = radius * Math.sin(phi) * Math.sin(theta);
+                
+                const pinGeometry = new THREE.SphereGeometry(0.8, 16, 16);
+                const pinMaterial = new THREE.MeshBasicMaterial({ color: color });
+                const pin = new THREE.Mesh(pinGeometry, pinMaterial);
+                
+                pin.position.set(x, y, z);
+                scene.add(pin);
+                
+                // Glow effect
+                const glowGeometry = new THREE.SphereGeometry(1.2, 16, 16);
+                const glowMaterial = new THREE.MeshBasicMaterial({
+                    color: color,
+                    transparent: true,
+                    opacity: 0.3
+                });
+                const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+                glow.position.set(x, y, z);
+                scene.add(glow);
+                
+                // Animazione pulsante
+                let scale = 1.0;
+                let growing = true;
+                
+                function animatePin() {
+                    if (growing) {
+                        scale += 0.01;
+                        if (scale >= 1.3) growing = false;
+                    } else {
+                        scale -= 0.01;
+                        if (scale <= 1.0) growing = true;
+                    }
+                    
+                    glow.scale.set(scale, scale, scale);
+                    requestAnimationFrame(animatePin);
+                }
+                
+                animatePin();
+            }
+        }
+        
+        // Mappa interattiva nella sezione ispirazione
+        function initInspirationMap() {
+            // Verifica che l'elemento esista
+            const mapContainer = document.getElementById('popularDestinations');
+            if (!mapContainer) return;
+
+            // Inizializza la mappa
+            const map = L.map(mapContainer, {
+                center: [20, 0],
+                zoom: 2,
+                zoomControl: true,
+                scrollWheelZoom: false
+            });
+
+            // Aggiungi il layer della mappa
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(map);
+
+            // Aggiungi marker per le destinazioni popolari
+            const popularDestinations = [
+                { name: "Parigi", lat: 48.8566, lon: 2.3522 },
+                { name: "New York", lat: 40.7128, lon: -74.0060 },
+                { name: "Tokyo", lat: 35.6762, lon: 139.6503 },
+                { name: "Roma", lat: 41.9028, lon: 12.4964 },
+                { name: "Sydney", lat: -33.8688, lon: 151.2093 }
+            ];
+
+            popularDestinations.forEach(destination => {
+                L.marker([destination.lat, destination.lon])
+                    .addTo(map)
+                    .bindPopup(`<b>${destination.name}</b>`);
+            });
+
+            // Aggiungi marker per i paesi visitati
+            if (window.visitedPins && window.visitedPins.length) {
+                window.visitedPins.forEach(pin => {
+                    L.marker([pin.lat, pin.lng], {
+                        icon: L.divIcon({
+                            html: `<i class="fas fa-check-circle" style="color:#4caf50; font-size:20px;"></i>`,
+                            className: 'visited-marker',
+                            iconSize: [20, 20],
+                            iconAnchor: [10, 10]
+                        })
+                    }).addTo(map).bindPopup(`<b>${pin.name}</b><br>Già visitato`);
+                });
+            }
+        }
+    </script>
+    <script>
+    window.visitedPins = @Html.Raw(Json.Serialize(Model.VisitedPins));
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        // Inizializza la mappa dopo che la pagina è caricata
+        setTimeout(initInspirationMap, 500);
+    });
+</script>
+}

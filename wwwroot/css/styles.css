@@ -1,0 +1,63 @@
+﻿/* Stili globali per l'applicazione WanderGlobe */
+:root {
+    --primary-color: #1a73e8;
+    --primary-light: rgba(26, 115, 232, 0.1);
+    --accent-color: #2ecc71;
+    --accent-light: rgba(46, 204, 113, 0.1);
+    --dark-color: #2c3e50;
+    --light-color: #f8f9fa;
+    --muted-color: #6c757d;
+    --border-radius: 12px;
+    --box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    --transition: all 0.3s ease;
+}
+
+/* Stile per i container principali */
+.full-page-container {
+    height: calc(100vh - 56px);
+    overflow-y: auto;
+}
+
+/* Stile per card e box */
+.card-custom {
+    background: white;
+    border-radius: var(--border-radius);
+    overflow: hidden;
+    box-shadow: var(--box-shadow);
+    transition: var(--transition);
+}
+
+    .card-custom:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+    }
+
+/* Stile per bottoni */
+.btn-custom {
+    border-radius: 20px;
+    padding: 8px 20px;
+    font-weight: 500;
+    transition: var(--transition);
+}
+
+    .btn-custom:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+
+/* Animazioni globali */
+.fade-in {
+    animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
