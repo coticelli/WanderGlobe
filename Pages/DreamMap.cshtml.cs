@@ -34,6 +34,8 @@ namespace WanderGlobe.Pages
         public List<RecommendedDestination> Recommendations { get; set; } = new List<RecommendedDestination>();
         public List<Country> Countries { get; set; } = new List<Country>();
         public MapDestinationsViewModel AllDestinations { get; set; } = new MapDestinationsViewModel();
+
+        [BindProperty]
         public WishlistItemViewModel WishlistForm { get; set; } = new WishlistItemViewModel();
 
         // Costruttore unificato che combina tutte le dipendenze
@@ -142,85 +144,138 @@ namespace WanderGlobe.Pages
             }
         }
 
-                [HttpPost]
+        [HttpPost]
         [IgnoreAntiforgeryToken]
-        public async Task<IActionResult> OnPostSaveToWishlistAsync(WishlistItemViewModel model)
+        public async Task<IActionResult> OnPostSaveToWishlistAsync()
         {
             try
             {
-                // Log for debug
-                System.Diagnostics.Debug.WriteLine($"OnPostSaveToWishlistAsync chiamato - Città: {model?.City}, Paese: {model?.Country}");
-        
-                if (model == null)
+                // Use this.WishlistForm as the model
+                var model = this.WishlistForm;
+
+                System.Diagnostics.Debug.WriteLine($"OnPostSaveToWishlistAsync called - City from bound model: {model?.City}, Country from bound model: {model?.Country}");
+
+                // Log all form data received by the server for detailed inspection
+                System.Diagnostics.Debug.WriteLine("--- Raw Form Data Received by Server ---");
+                if (Request.HasFormContentType)
                 {
-                    return new JsonResult(new { success = false, message = "I dati del modulo non sono validi." });
-                }
-        
-                // Clear ModelState errors for all fields except City
-                foreach (var key in ModelState.Keys.ToList())
-                {
-                    if (key != nameof(WishlistItemViewModel.City))
+                    foreach (var key_form in Request.Form.Keys)
                     {
-                        ModelState.Remove(key);
+                        System.Diagnostics.Debug.WriteLine($"Form Key: {key_form}, Value: {Request.Form[key_form]}");
                     }
                 }
-        
-                if (!ModelState.IsValid)
+                System.Diagnostics.Debug.WriteLine("--- End Raw Form Data ---");
+
+
+                if (model == null) // Should not happen if WishlistForm is initialized
                 {
-                    // Extract validation errors for the JSON response
-                    var errors = ModelState.Values
-                        .SelectMany(v => v.Errors)
-                        .Select(e => e.ErrorMessage);
-                        
-                    return new JsonResult(new { 
-                        success = false, 
-                        message = string.Join("; ", errors) 
+                    return new JsonResult(new { success = false, message = "Model binding failed (model is null)." });
+                }
+
+                // Correct key for the City property in ModelState when WishlistForm is a [BindProperty]
+                string cityFieldKeyInModelState = $"{nameof(this.WishlistForm)}.{nameof(WishlistItemViewModel.City)}"; // This resolves to "WishlistForm.City"
+
+                // Log ModelState before clearing
+                System.Diagnostics.Debug.WriteLine("--- ModelState Before Clearing ---");
+                foreach (var state_before in ModelState)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Key: {state_before.Key}, Errors: {state_before.Value.Errors.Count}");
+                    foreach (var error in state_before.Value.Errors) System.Diagnostics.Debug.WriteLine($"  Error: {error.ErrorMessage}");
+                }
+                System.Diagnostics.Debug.WriteLine("--- End ModelState Before Clearing ---");
+
+
+                // Clear ModelState errors for all fields EXCEPT WishlistForm.City
+                foreach (var key_loopvar in ModelState.Keys.ToList())
+                {
+                    if (key_loopvar != cityFieldKeyInModelState)
+                    {
+                        ModelState.Remove(key_loopvar);
+                    }
+                }
+
+                // Log ModelState after clearing (should only contain WishlistForm.City if it had errors)
+                System.Diagnostics.Debug.WriteLine("--- ModelState After Clearing ---");
+                foreach (var state_after in ModelState)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Key: {state_after.Key}, Errors: {state_after.Value.Errors.Count}");
+                    foreach (var error in state_after.Value.Errors) System.Diagnostics.Debug.WriteLine($"  Error: {error.ErrorMessage}");
+                }
+                System.Diagnostics.Debug.WriteLine("--- End ModelState After Clearing ---");
+
+
+                if (!ModelState.IsValid) // This will now correctly reflect if WishlistForm.City is invalid
+                {
+                    var errors = ModelState[cityFieldKeyInModelState]?.Errors.Select(e => e.ErrorMessage).ToList()
+                                 ?? new List<string>(); // Fallback if key not found, though unlikely
+
+                    if (!errors.Any()) // If ModelState is invalid but no specific error for City key, add general one
+                    {
+                        errors.Add(ModelState.Values.SelectMany(v => v.Errors).FirstOrDefault()?.ErrorMessage ?? "Errore di validazione sconosciuto.");
+                    }
+
+                    System.Diagnostics.Debug.WriteLine($"ModelState invalid. Error for {cityFieldKeyInModelState}: {string.Join("; ", errors)}");
+                    return new JsonResult(new
+                    {
+                        success = false,
+                        message = string.Join("; ", errors)
                     });
                 }
-        
+
                 var user = await _userManager.GetUserAsync(User);
                 if (user == null)
                 {
                     return new JsonResult(new { success = false, message = "Utente non autenticato" });
                 }
-                
-                // Find the coordinates and country info of the selected city
+
                 var cityInfo = GetAvailableCapitals().FirstOrDefault(c => c.Name == model.City);
                 double latitude = 0, longitude = 0;
-                
-                // Auto-populate missing country information when city is found
+
                 if (cityInfo != null)
                 {
-                    // Auto-populate Country and CountryCode from cityInfo
+                    // Crucially, ensure model's Country and CountryCode are set from cityInfo,
+                    // as the hidden form fields "Country" and "CountryCode" won't bind to "WishlistForm.Country"
                     model.Country = cityInfo.Country;
                     model.CountryCode = cityInfo.CountryCode;
-                    
-                    var country = Countries.FirstOrDefault(c => c.Code == cityInfo.CountryCode);
-                    if (country != null)
+
+                    // Assuming Countries list is populated elsewhere or fetch it
+                    var countriesList = Countries.Any() ? Countries : await _countryService.GetAllCountriesAsync();
+                    var countryData = countriesList.FirstOrDefault(c => c.Code == cityInfo.CountryCode);
+                    if (countryData != null)
                     {
-                        latitude = country.Latitude;
-                        longitude = country.Longitude;
+                        latitude = countryData.Latitude;
+                        longitude = countryData.Longitude;
+                    }
+                    else
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Country data not found in local/service list for code: {cityInfo.CountryCode}");
                     }
                 }
-        
-                // Handle other potentially missing fields with defaults
+                else
+                {
+                    // This case means model.City (which should be non-empty due to [Required])
+                    // was not found in GetAvailableCapitals(). This indicates a potential data issue
+                    // or an unexpected city value being submitted.
+                    System.Diagnostics.Debug.WriteLine($"CityInfo not found for selected city: {model.City}. Country/Code might use defaults or remain null if not set.");
+                    // If model.City is valid (e.g. "Budapest") but not in GetAvailableCapitals(), then cityInfo would be null.
+                    // The error "Seleziona una città" means model.City itself is empty/null.
+                }
+
                 model.Tags = model.Tags ?? "";
                 model.Notes = model.Notes ?? "";
                 model.Priority = model.Priority ?? "Media";
-                
-                // Convert priority from string to enum
+
                 DreamPriority priority;
-                Enum.TryParse(model.Priority, out priority);
-                if (priority == 0) priority = DreamPriority.Medium; // Default if conversion fails
-                
-                // Save image file if present
+                Enum.TryParse(model.Priority, true, out priority); // Added 'true' for case-insensitive parsing
+                if (!Enum.IsDefined(typeof(DreamPriority), priority)) priority = DreamPriority.Medium;
+
+
                 string imageUrl = null;
                 if (model.ImageFile != null && model.ImageFile.Length > 0)
                 {
                     imageUrl = await SaveWishlistImageAsync(model.ImageFile);
                 }
-                
-                // Create a list of tags from the input string
+
                 List<string> tagList = new List<string>();
                 if (!string.IsNullOrEmpty(model.Tags))
                 {
@@ -229,15 +284,14 @@ namespace WanderGlobe.Pages
                         .Where(t => !string.IsNullOrEmpty(t))
                         .ToList();
                 }
-                
-                // Create a new DreamDestination object
+
                 var newDream = new DreamDestination
                 {
                     UserId = user.Id,
-                    CityName = model.City,
+                    CityName = model.City, // Should be valid if ModelState.IsValid was true
                     CountryName = model.Country ?? "Paese non specificato",
                     CountryCode = model.CountryCode ?? "XX",
-                    Note = model.Notes ?? "",
+                    Note = model.Notes,
                     Tags = tagList,
                     Priority = priority,
                     Latitude = latitude,
@@ -245,33 +299,34 @@ namespace WanderGlobe.Pages
                     ImageUrl = imageUrl ?? $"/images/cities/{(model.CountryCode ?? "default").ToLower()}-city.jpg",
                     CreatedAt = DateTime.UtcNow
                 };
-                
-                // Save to database through the service
+
                 var savedDream = await _dreamService.AddToWishlistAsync(newDream);
-                
+
                 if (savedDream != null)
                 {
-                    return new JsonResult(new { 
-                        success = true, 
+                    return new JsonResult(new
+                    {
+                        success = true,
                         message = $"{model.City} aggiunta alla tua wishlist!",
-                        newItem = savedDream  // Include the newly created item for client-side updates
+                        newItem = savedDream
                     });
                 }
                 else
                 {
-                    return new JsonResult(new { 
-                        success = false, 
-                        message = "Si è verificato un errore durante il salvataggio. Riprova." 
+                    return new JsonResult(new
+                    {
+                        success = false,
+                        message = "Si è verificato un errore durante il salvataggio. Riprova."
                     });
                 }
             }
             catch (Exception ex)
             {
-                // Log the error
-                System.Diagnostics.Debug.WriteLine($"Exception in OnPostSaveToWishlistAsync: {ex.Message}");
-                return new JsonResult(new { 
-                    success = false, 
-                    message = $"Errore: {ex.Message}" 
+                System.Diagnostics.Debug.WriteLine($"Exception in OnPostSaveToWishlistAsync: {ex.Message}\nStackTrace: {ex.StackTrace}");
+                return new JsonResult(new
+                {
+                    success = false,
+                    message = $"Errore server: {ex.Message}"
                 });
             }
         }
@@ -281,17 +336,18 @@ namespace WanderGlobe.Pages
         public IActionResult OnGetCityinfoAsync(string city)
         {
             var cityInfo = GetAvailableCapitals().FirstOrDefault(c => c.Name == city);
-            
+
             if (cityInfo == null)
             {
                 return new JsonResult(new { success = false });
             }
-            
-            return new JsonResult(new { 
-                success = true, 
+
+            return new JsonResult(new
+            {
+                success = true,
                 city = cityInfo.Name,
-                country = cityInfo.Country, 
-                countryCode = cityInfo.CountryCode 
+                country = cityInfo.Country,
+                countryCode = cityInfo.CountryCode
             });
         }
 
@@ -816,20 +872,20 @@ namespace WanderGlobe.Pages
         {
             [Required(ErrorMessage = "Seleziona una città")]
             public string City { get; set; }
-        
+
             // Remove Required attributes from these fields
             public string Country { get; set; }
-            
+
             public string CountryCode { get; set; }
-            
+
             public string Notes { get; set; }
-            
+
             public string Tags { get; set; }
-            
+
             public string Priority { get; set; } = "Media";
-            
+
             public IFormFile ImageFile { get; set; }
-            
+
             public List<CityInfo> AvailableCities { get; set; } = new List<CityInfo>();
         }
 

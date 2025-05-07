@@ -289,11 +289,12 @@
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label for="WishlistForm_City" class="form-label">Città</label>
+                                <!-- Make sure this is correctly structured in your modal form -->
                                 <select class="form-select" id="WishlistForm_City" name="WishlistForm.City" required>
                                     <option value="">Seleziona una città</option>
                                     @foreach (var city in Model.WishlistForm.AvailableCities)
                                     {
-                                        <option value="@city.Name"
+                                        <option value="@city.Name" 
                                             data-country="@city.Country"
                                             data-country-code="@city.CountryCode">
                                             @city.Name
@@ -3720,12 +3721,6 @@ function moveToPlanningPhase(dreamId) {
     }
 }
                        
-
-
-
-
-
-
 function initializeSuggestionTabs() {
     console.log('Inizializzazione dei tab per le informazioni sulla destinazione');
     
@@ -3772,8 +3767,6 @@ function initializeSuggestionTabs() {
         firstTab.click();
     }
 }
-
-
 
 function removeDream(dreamId) {
     if (!confirm('Sei sicuro di voler rimuovere questa destinazione?')) return;
@@ -3931,6 +3924,8 @@ function initializeApp() {
     
     // Set up event listeners
     setupEventListeners();
+
+    setupCityValidation();
     
     // Initial load of map markers
     loadMapMarkers();
@@ -3942,6 +3937,34 @@ function initializeApp() {
     setupFormHandlers();
     
     console.log('App initialized successfully');
+}
+
+// Add this function to run when you initialize the city dropdown
+function setupCityValidation() {
+    const submitButton = document.querySelector('#dreamForm button[type="submit"]');
+    const cityField = document.getElementById('WishlistForm_City');
+    
+    if (submitButton && cityField) {
+        submitButton.addEventListener('click', function(e) {
+            if (!cityField.value) {
+                e.preventDefault();
+                showToast('Errore', 'Seleziona una città prima di salvare', 'danger');
+                return false;
+            }
+        });
+    }
+    
+    // Update form initialization
+    const form = document.getElementById('dreamForm');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            if (!cityField.value) {
+                e.preventDefault();
+                showToast('Errore', 'Seleziona una città prima di salvare', 'danger');
+                return false;
+            }
+        });
+    }
 }
 
 function setupFormHandlers() {
@@ -3957,28 +3980,27 @@ function setupFormHandlers() {
             // Create FormData object from the form
             const formData = new FormData(dreamForm);
             
+            // Add the anti-forgery token explicitly
+            const token = getAntiForgeryToken();
+            
+            // Log form data being sent (for debugging)
+            console.log("Submitting form data:");
+            for (let [key, value] of formData.entries()) {
+                console.log(key + ': ' + value);
+            }
+            
             // Submit the form using fetch API
             fetch('/DreamMap?handler=SaveToWishlist', {
                 method: 'POST',
                 body: formData,
                 headers: {
-                    'RequestVerificationToken': getAntiForgeryToken()
+                    'RequestVerificationToken': token
                 }
             })
             .then(response => {
-                // First check if response is OK
                 if (!response.ok) {
-                    // If not OK, throw an error with status
                     throw new Error(`Server returned ${response.status}: ${response.statusText}`);
                 }
-                
-                // Check the content type to make sure it's JSON
-                const contentType = response.headers.get('content-type');
-                if (!contentType || !contentType.includes('application/json')) {
-                    throw new Error('Server returned non-JSON response');
-                }
-                
-                // Now it's safe to parse as JSON
                 return response.json();
             })
             .then(data => {
