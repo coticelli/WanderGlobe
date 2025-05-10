@@ -482,6 +482,8 @@
     </div>
 </div>
 
+
+
 <!-- Modal per dettagli di un viaggio pianificato -->
 <div class="modal fade" id="planDetailsModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
@@ -504,9 +506,26 @@
                     </div>
                 </div>
 
+                <!-- plan-details-content INIZIA QUI -->
                 <div class="plan-details-content">
                     <div class="row">
                         <div class="col-md-7">
+                            <!-- SEZIONE DATE SPOSTATA QUI (POSIZIONE CORRETTA) -->
+                            <div class="plan-details-section">
+                                <h5><i class="fas fa-calendar-days"></i> Date del Viaggio</h5>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="planStartDateInput" class="form-label">Data Inizio</label>
+                                        <input type="date" class="form-control" id="planStartDateInput">
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="planEndDateInput" class="form-label">Data Fine</label>
+                                        <input type="date" class="form-control" id="planEndDateInput">
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- FINE SEZIONE DATE -->
+
                             <div class="plan-details-section">
                                 <h5><i class="fas fa-list-check"></i> Pianificazione del Viaggio</h5>
                                 <div class="plan-progress-bar">
@@ -525,7 +544,6 @@
                                             <i class="fas fa-plus"></i> Aggiungi elemento
                                         </button>
                                     </div>
-
                                     <ul class="plan-detailed-checklist" id="planChecklist">
                                         <!-- Elementi della checklist generati dinamicamente -->
                                     </ul>
@@ -550,7 +568,8 @@
                         </div>
 
                         <div class="col-md-5">
-                            <div class="plan-details-section">
+                            <!-- ... Colonna destra del modal (Informazioni Utili, Esplora) ... -->
+                             <div class="plan-details-section">
                                 <h5><i class="fas fa-info-circle"></i> Informazioni Utili</h5>
                                 <div class="info-cards">
                                     <div class="info-card" id="weatherCard">
@@ -605,7 +624,6 @@
                             <div class="plan-details-section">
                                 <h5><i class="fas fa-map-marked-alt"></i> Esplora</h5>
                                 <div class="explore-buttons">
-                                    <!-- MODIFICATO: Aggiunta classe per facilitare la selezione e l'inizializzazione -->
                                     <a href="#" class="btn btn-outline-primary external-link" id="googleMapsBtn" data-type="maps">
                                         <i class="fas fa-map"></i> Google Maps
                                     </a>
@@ -619,10 +637,9 @@
                             </div>
                         </div>
                     </div>
-                </div>
+                </div> <!-- plan-details-content FINE QUI -->
             </div>
             <div class="modal-footer">
-                <!-- MODIFICATO: Aggiunta degli attributi onclick per collegare le funzioni -->
                 <div>
                     <button type="button" class="btn btn-danger" id="removePlanBtn">
                         <i class="fas fa-trash-alt"></i> Elimina Piano
@@ -1683,7 +1700,7 @@
     </style>
 }
 
-@section Scripts {
+    @section Scripts {
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -1691,7 +1708,7 @@
         let map;
         let markers = [];
         let markerClusters;
-        
+
         // Dati delle destinazioni
         const destinations = @Html.Raw(Json.Serialize(Model.AllDestinations));
 
@@ -1713,7 +1730,7 @@
 
             // Aggiungi il layer di base della mappa con noWrap per evitare ripetizioni
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
                 maxZoom: 19,
                 noWrap: true // Importante: impedisce la ripetizione della mappa
             }).addTo(map);
@@ -1737,1051 +1754,490 @@
                 console.error('Errore mappa:', e.error);
             });
         }
-        
+
         function loadMapMarkers() {
-    console.log('Aggiornamento marker sulla mappa');
-    
-    // Pulisci i marker esistenti
-    if (markerClusters) {
-        markerClusters.clearLayers();
-    }
-    markers = [];
+            console.log('Aggiornamento marker sulla mappa');
 
-    // Verifica i dati delle destinazioni
-    if (!destinations) {
-        console.error('Dati delle destinazioni non disponibili');
-        destinations = { wishlist: [], plannedTrips: [], visitedCities: [] };
-    }
+            if (markerClusters) {
+                markerClusters.clearLayers();
+            }
+            markers = [];
 
-    // Inizializza gli array se non esistono
-    if (!Array.isArray(destinations.wishlist)) destinations.wishlist = [];
-    if (!Array.isArray(destinations.plannedTrips)) destinations.plannedTrips = [];
-    if (!Array.isArray(destinations.visitedCities)) destinations.visitedCities = [];
+            if (!destinations) {
+                console.error('Dati delle destinazioni non disponibili');
+                destinations = { wishlist: [], plannedTrips: [], visitedCities: [] };
+            }
 
-    console.log('Dati wishlist:', destinations.wishlist);
-    console.log('Dati piani:', destinations.plannedTrips);
-    console.log('Dati visite:', destinations.visitedCities);
+            if (!Array.isArray(destinations.wishlist)) destinations.wishlist = [];
+            if (!Array.isArray(destinations.plannedTrips)) destinations.plannedTrips = [];
+            if (!Array.isArray(destinations.visitedCities)) destinations.visitedCities = [];
 
-    // Aggiungi i marker per i sogni
-    destinations.wishlist.forEach(function (dream) {
-        if (!isValidLatitude(dream.latitude) || !isValidLongitude(dream.longitude)) {
-            console.error(`Coordinate non valide per ${dream.cityName}: lat=${dream.latitude}, lng=${dream.longitude}`);
-            return;
+            console.log('Dati wishlist:', destinations.wishlist.length);
+            console.log('Dati piani:', destinations.plannedTrips.length);
+            console.log('Dati visite:', destinations.visitedCities.length);
+
+            destinations.wishlist.forEach(function (dream) {
+                if (!isValidLatitude(dream.latitude) || !isValidLongitude(dream.longitude)) {
+                    console.error(`Coordinate non valide per ${dream.cityName}: lat=${dream.latitude}, lng=${dream.longitude}`);
+                    return;
+                }
+                const marker = createMarker(dream.latitude, dream.longitude, dream.cityName, dream.countryName, 'dream', dream.priority, dream.id);
+                markers.push(marker);
+                markerClusters.addLayer(marker);
+            });
+
+            destinations.plannedTrips.forEach(function (plan) {
+                if (!isValidLatitude(plan.latitude) || !isValidLongitude(plan.longitude)) {
+                    console.error(`Coordinate non valide per ${plan.cityName}: lat=${plan.latitude}, lng=${plan.longitude}`);
+                    return;
+                }
+                const marker = createMarker(plan.latitude, plan.longitude, plan.cityName, plan.countryName, 'plan', plan.completionPercentage || 0, plan.id);
+                markers.push(marker);
+                markerClusters.addLayer(marker);
+            });
+
+            destinations.visitedCities.forEach(function (visit) {
+                if (!isValidLatitude(visit.latitude) || !isValidLongitude(visit.longitude)) {
+                    console.error(`Coordinate non valide per ${visit.cityName}: lat=${visit.latitude}, lng=${visit.longitude}`);
+                    return;
+                }
+                const marker = createMarker(visit.latitude, visit.longitude, visit.cityName, visit.countryName, 'visited', null, visit.id);
+                markers.push(marker);
+                markerClusters.addLayer(marker);
+            });
         }
 
-        const marker = createMarker(
-            dream.latitude,
-            dream.longitude,
-            dream.cityName,
-            dream.countryName,
-            'dream',
-            dream.priority,
-            dream.id
-        );
-        markers.push(marker);
-        markerClusters.addLayer(marker);
-    });
-
-    // Aggiungi i marker per i piani
-    destinations.plannedTrips.forEach(function(plan) {
-        if (!isValidLatitude(plan.latitude) || !isValidLongitude(plan.longitude)) {
-            console.error(`Coordinate non valide per ${plan.cityName}: lat=${plan.latitude}, lng=${plan.longitude}`);
-            return;
-        }
-
-        const marker = createMarker(
-            plan.latitude, 
-            plan.longitude, 
-            plan.cityName, 
-            plan.countryName, 
-            'plan', 
-            plan.completionPercentage || 0,
-            plan.id
-        );
-        markers.push(marker);
-        markerClusters.addLayer(marker);
-    });
-    
-    // Aggiungi i marker per le città visitate
-    destinations.visitedCities.forEach(function(visit) {
-        if (!isValidLatitude(visit.latitude) || !isValidLongitude(visit.longitude)) {
-            console.error(`Coordinate non valide per ${visit.cityName}: lat=${visit.latitude}, lng=${visit.longitude}`);
-            return;
-        }
-
-        const marker = createMarker(
-            visit.latitude, 
-            visit.longitude, 
-            visit.cityName, 
-            visit.countryName, 
-            'visited',
-            null,
-            visit.id
-        );
-        markers.push(marker);
-        markerClusters.addLayer(marker);
-    });
-}
-        
         function createMarker(lat, lng, city, country, type, detail, id) {
-    // Determina il colore e l'icona in base al tipo
-    let color, icon;
-    
-    switch (type) {
-        case 'dream':
-            color = '#ff9800';
-            icon = 'star';
-            break;
-        case 'plan':
-            color = '#4a90e2';
-            icon = 'plane-departure';
-            break;
-        case 'visited':
-            color = '#4caf50';
-            icon = 'check-circle';
-            break;
-        default:
-            color = '#607d8b';
-            icon = 'map-marker-alt';
-    }
-    
-    // Crea un'icona personalizzata
-    const customIcon = L.divIcon({
-        html: `<div style="background-color: ${color}"><i class="fas fa-${icon}"></i></div>`,
-        className: 'custom-marker-icon',
-        iconSize: [30, 30]
-    });
-    
-    // Crea il marker con l'icona personalizzata
-    const marker = L.marker([lat, lng], { icon: customIcon });
-    
-    // Aggiungi informazioni sul marker
-    marker.itemId = id;
-    marker.itemType = type;
-    
-    // Crea il popup con funzioni di callback corrette in base al tipo
-    let popupContent = `
-        <div class="custom-popup">
-            <h3>${city}</h3>
-            <p>${country}</p>
-    `;
-    
-    // Aggiungi dettagli specifici in base al tipo
-    if (type === 'dream') {
-        const stars = '⭐'.repeat(detail || 1);
-        popupContent += `<p>Priorità: ${stars}</p>`;
-        popupContent += `<button class="btn btn-sm btn-primary" onclick="showDreamDetails('${id}')">Dettagli</button>`;
-    } else if (type === 'plan') {
-        popupContent += `<p>Completamento: ${detail || 0}%</p>`;
-        popupContent += `<div class="progress mb-2" style="height: 5px">
-            <div class="progress-bar" style="width: ${detail || 0}%"></div>
-        </div>`;
-        popupContent += `<button class="btn btn-sm btn-primary" onclick="showPlanDetails('${id}')">Dettagli</button>`;
-    } else {
-        popupContent += `<p>Già visitata</p>`;
-        popupContent += `<button class="btn btn-sm btn-primary" onclick="showVisitDetails('${id}')">Ricordi</button>`;
-    }
-    
-    popupContent += `</div>`;
-    
-    marker.bindPopup(popupContent);
-    
-    return marker;
-}
-        
+            let color, icon;
+            switch (type) {
+                case 'dream': color = '#ff9800'; icon = 'star'; break;
+                case 'plan': color = '#4a90e2'; icon = 'plane-departure'; break;
+                case 'visited': color = '#4caf50'; icon = 'check-circle'; break;
+                default: color = '#607d8b'; icon = 'map-marker-alt';
+            }
+
+            const customIcon = L.divIcon({
+                html: `<div style="background-color: ${color}"><i class="fas fa-${icon}"></i></div>`,
+                className: 'custom-marker-icon',
+                iconSize: [30, 30]
+            });
+
+            const marker = L.marker([lat, lng], { icon: customIcon });
+            marker.itemId = id;
+            marker.itemType = type;
+
+            let popupContent = `<div class="custom-popup"><h3>${city}</h3><p>${country}</p>`;
+            if (type === 'dream') {
+                const stars = '⭐'.repeat(detail || 1);
+                popupContent += `<p>Priorità: ${stars}</p><button class="btn btn-sm btn-primary" onclick="showDreamDetails('${id}')">Dettagli</button>`;
+            } else if (type === 'plan') {
+                popupContent += `<p>Completamento: ${detail || 0}%</p><div class="progress mb-2" style="height: 5px"><div class="progress-bar" style="width: ${detail || 0}%"></div></div><button class="btn btn-sm btn-primary" onclick="showPlanDetails('${id}')">Dettagli</button>`;
+            } else {
+                popupContent += `<p>Già visitata</p><button class="btn btn-sm btn-primary" onclick="showVisitDetails('${id}')">Ricordi</button>`;
+            }
+            popupContent += `</div>`;
+            marker.bindPopup(popupContent);
+            return marker;
+        }
+
         function flyToDestination(lat, lng) {
-            if (!map) {
-                console.error("Mappa non inizializzata");
-                return;
-            }
-            
-            // Verifica che le coordinate siano valide
-            if (!isValidLatitude(lat) || !isValidLongitude(lng)) {
-                console.error(`Coordinate non valide: lat=${lat}, lng=${lng}`);
-                return;
-            }
-            
+            if (!map) { console.error("Mappa non inizializzata"); return; }
+            if (!isValidLatitude(lat) || !isValidLongitude(lng)) { console.error(`Coordinate non valide: lat=${lat}, lng=${lng}`); return; }
+
             console.log(`Spostamento della mappa a: lat=${lat}, lng=${lng}`);
-            
-            // Assicurati che le coordinate siano numeri
             lat = parseFloat(lat);
             lng = parseFloat(lng);
-            
-            // Limita le coordinate all'intervallo valido per evitare aree grigie
-            lat = Math.max(-85, Math.min(85, lat)); // Limita la latitudine tra -85 e 85
-            
-            // Normalizza la longitudine tra -180 e 180
+            lat = Math.max(-85, Math.min(85, lat));
             lng = ((lng + 540) % 360) - 180;
-            
-            // Esegui lo spostamento della mappa
-            map.flyTo([lat, lng], 10, {
-                duration: 1.5,
-                easeLinearity: 0.25,
-                animate: true
-            });
-            
-            // Trova e apri il popup del marker corrispondente
-            let foundMarker = null;
-            
-            markers.forEach(function(marker) {
+
+            map.flyTo([lat, lng], 10, { duration: 1.5, easeLinearity: 0.25, animate: true });
+
+            let foundMarker = markers.find(marker => {
                 const markerLat = marker.getLatLng().lat;
                 const markerLng = marker.getLatLng().lng;
-                
-                // Confronta con una piccola tolleranza per problemi di precisione
-                if (Math.abs(markerLat - lat) < 0.1 && Math.abs(markerLng - lng) < 0.1) {
-                    foundMarker = marker;
+                return Math.abs(markerLat - lat) < 0.1 && Math.abs(markerLng - lng) < 0.1;
+            });
+
+            if (foundMarker) {
+                setTimeout(() => { foundMarker.openPopup(); }, 1600);
+            }
+        }
+
+        function isValidLatitude(lat) { return typeof lat === 'number' && !isNaN(lat) && lat >= -90 && lat <= 90; }
+        function isValidLongitude(lng) { return typeof lng === 'number' && !isNaN(lng) && lng >= -180 && lng <= 180; }
+        function normalizeLongitude(lng) { lng = ((lng + 180) % 360) - 180; if (lng === -180) lng = 180; return lng; }
+
+        function setupEventListeners() {
+            document.querySelectorAll('[role="tab"]').forEach(tab => {
+                tab.addEventListener('shown.bs.tab', function (e) {
+                    setTimeout(() => { if (map) map.invalidateSize(); }, 100);
+                });
+            });
+
+            document.addEventListener('click', function (e) {
+                const dreamItem = e.target.closest('.dream-item');
+                const planItem = e.target.closest('.plan-item');
+                if (e.target.tagName === 'BUTTON' || e.target.closest('button') || e.target.tagName === 'A' || e.target.closest('a')) {
+                    return;
+                }
+                if (dreamItem) {
+                    const lat = parseFloat(dreamItem.getAttribute('data-lat'));
+                    const lng = parseFloat(dreamItem.getAttribute('data-lng'));
+                    if (isValidLatitude(lat) && isValidLongitude(lng)) flyToDestination(lat, lng);
+                } else if (planItem) {
+                    const lat = parseFloat(planItem.getAttribute('data-lat'));
+                    const lng = parseFloat(planItem.getAttribute('data-lng'));
+                    if (isValidLatitude(lat) && isValidLongitude(lng)) flyToDestination(lat, lng);
                 }
             });
-            
-            // Se abbiamo trovato un marker, apri il suo popup dopo un breve ritardo
-            if (foundMarker) {
-                setTimeout(function() {
-                    foundMarker.openPopup();
-                }, 1600);
-            }
         }
 
-        // Funzioni helper per validare le coordinate
-        function isValidLatitude(lat) {
-            return typeof lat === 'number' && !isNaN(lat) && lat >= -90 && lat <= 90;
-        }
-
-        function isValidLongitude(lng) {
-            return typeof lng === 'number' && !isNaN(lng) && lng >= -180 && lng <= 180;
-        }
-
-        function normalizeLongitude(lng) {
-            // Normalizza la longitudine nell'intervallo -180 a 180
-            lng = ((lng + 180) % 360) - 180;
-            if (lng === -180) lng = 180;
-            return lng;
-        }
-        
-        function setupEventListeners() {
-    // Eventi già esistenti
-    
-    // Aggiungi questo nuovo gestore per la sincronizzazione delle viste
-    // Aggiorna i gestori eventi per le schede
-    document.querySelectorAll('[role="tab"]').forEach(tab => {
-        tab.addEventListener('shown.bs.tab', function(e) {
-            // Quando cambia tab, aggiorna la vista corrente
-            setTimeout(() => {
-                if (map) {
-                    map.invalidateSize();
-                }
-            }, 100);
-        });
-    });
-    
-    // Listener per i click sulle destinazioni (delega eventi)
-    document.addEventListener('click', function(e) {
-        // Trova l'elemento dream-item o plan-item più vicino
-        const dreamItem = e.target.closest('.dream-item');
-        const planItem = e.target.closest('.plan-item');
-        
-        // Se è un bottone o un elemento dentro un bottone, ignora
-        if (e.target.tagName === 'BUTTON' || e.target.closest('button') || 
-            e.target.tagName === 'A' || e.target.closest('a')) {
-            return;
-        }
-        
-        if (dreamItem) {
-            const lat = parseFloat(dreamItem.getAttribute('data-lat'));
-            const lng = parseFloat(dreamItem.getAttribute('data-lng'));
-            if (isValidLatitude(lat) && isValidLongitude(lng)) {
-                flyToDestination(lat, lng);
-            }
-        } else if (planItem) {
-            const lat = parseFloat(planItem.getAttribute('data-lat'));
-            const lng = parseFloat(planItem.getAttribute('data-lng'));
-            if (isValidLatitude(lat) && isValidLongitude(lng)) {
-                flyToDestination(lat, lng);
-            }
-        }
-    });
-}
-
-
-        
         function filterItems(containerId, searchText) {
             const container = document.getElementById(containerId);
             if (!container) return;
-            
             const items = container.querySelectorAll('.dream-item, .plan-item');
-            
             items.forEach(item => {
                 const cityName = (item.dataset.city || '').toLowerCase();
                 const countryName = (item.dataset.country || '').toLowerCase();
-                
-                if (cityName.includes(searchText) || countryName.includes(searchText)) {
-                    item.style.display = '';
-                } else {
-                    item.style.display = 'none';
-                }
+                item.style.display = (cityName.includes(searchText) || countryName.includes(searchText)) ? '' : 'none';
             });
         }
 
-
-
-
-
-
-        // Mostra un overlay di caricamento
-function showLoadingOverlay(message = 'Caricamento...') {
-    const overlay = document.createElement('div');
-    overlay.id = 'loadingOverlay';
-    overlay.className = 'position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center';
-    overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
-    overlay.style.zIndex = '9999';
-    
-    overlay.innerHTML = `
-        <div class="bg-white p-4 rounded shadow">
-            <div class="d-flex align-items-center">
-                <div class="spinner-border text-primary me-3" role="status"></div>
-                <span>${message}</span>
-            </div>
-        </div>
-    `;
-    
-    document.body.appendChild(overlay);
-}
-
-// Nascondi l'overlay di caricamento
-function hideLoadingOverlay() {
-    const overlay = document.getElementById('loadingOverlay');
-    if (overlay) {
-        document.body.removeChild(overlay);
-    }
-}
-
-// Ottieni l'Anti-Forgery Token dal DOM
-function getAntiForgeryToken() {
-    const tokenElement = document.querySelector('input[name="__RequestVerificationToken"]');
-    return tokenElement ? tokenElement.value : '';
-}
-
-// Funzione per formattare la data per gli input HTML
-function formatDateForInput(date) {
-    if (!date) return '';
-    
-    if (typeof date === 'string') {
-        date = new Date(date);
-    }
-    
-    if (isNaN(date.getTime())) {
-        return '';
-    }
-    
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    
-    return `${year}-${month}-${day}`;
-}
-
-function showDreamDetails(dreamId) {
-    try {
-        console.log('Mostra dettagli sogno:', dreamId);
-        
-        if (!dreamId) {
-            console.error('ID non valido passato a showDreamDetails');
-            showToast('Errore', 'ID destinazione non valido', 'danger');
-            return;
-        }
-        
-        // Cerca prima nei dati in memoria
-        let dreamData = null;
-        let dataSource = '';
-        
-        if (destinations && destinations.wishlist) {
-            dreamData = destinations.wishlist.find(d => d.id && d.id.toString() === dreamId.toString());
-            if (dreamData) dataSource = 'wishlist';
-        }
-        
-        // Se non trovato nella wishlist, cerca nei piani
-        if (!dreamData && destinations && destinations.plannedTrips) {
-            dreamData = destinations.plannedTrips.find(p => p.id && p.id.toString() === dreamId.toString());
-            if (dreamData) {
-                dataSource = 'plans';
-                // Se l'elemento è nei piani, mostra i dettagli del piano invece
-                showPlanDetails(dreamId);
-                return;
-            }
-        }
-        
-        // Se non trovato nei piani, cerca nelle visite
-        if (!dreamData && destinations && destinations.visitedCities) {
-            dreamData = destinations.visitedCities.find(v => v.id && v.id.toString() === dreamId.toString());
-            if (dreamData) {
-                dataSource = 'visits';
-                // Se l'elemento è nelle visite, mostra i dettagli della visita invece
-                showVisitDetails(dreamId);
-                return;
-            }
-        }
-        
-        // Se ancora non trovato, cerca nel DOM
-        if (!dreamData) {
-            const element = document.querySelector(`.dream-item[data-id="${dreamId}"]`);
-            if (element) {
-                dreamData = {
-                    id: dreamId,
-                    cityName: element.querySelector('.dream-name')?.textContent || 'Città sconosciuta',
-                    countryName: element.querySelector('.dream-country')?.textContent || 'Paese sconosciuto',
-                    imageUrl: element.querySelector('img')?.src || '/images/placeholder-city.jpg',
-                    notes: '',
-                    latitude: parseFloat(element.getAttribute('data-lat')),
-                    longitude: parseFloat(element.getAttribute('data-lng')),
-                    priority: element.querySelector('.dream-priority')?.classList.contains('high') ? 3 :
-                             element.querySelector('.dream-priority')?.classList.contains('medium') ? 2 : 1,
-                    tags: ['viaggio'],
-                    addedOn: new Date().toLocaleDateString()
-                };
-                dataSource = 'dom';
-            }
-        }
-        
-        // Se ancora non trovato, usa un fallback
-        if (!dreamData) {
-            dreamData = {
-                id: dreamId,
-                cityName: 'Città sconosciuta',
-                countryName: 'Paese sconosciuto',
-                imageUrl: '/images/placeholder-city.jpg',
-                notes: '',
-                latitude: 0,
-                longitude: 0,
-                priority: 1,
-                tags: ['viaggio'],
-                addedOn: new Date().toLocaleDateString()
-            };
-            dataSource = 'fallback';
-        }
-        
-        console.log(`Dati sogno trovati in ${dataSource}:`, dreamData);
-        
-        // Memorizza l'ID corrente nel modal per i pulsanti di azione
-        const modal = document.getElementById('dreamDetailsModal');
-        if (modal) {
-            modal.setAttribute('data-dream-id', dreamId);
-        }
-        
-        // Popola il modal con i dati
-        document.getElementById('detailsCityName').textContent = dreamData.cityName;
-        document.getElementById('detailsCountryName').textContent = dreamData.countryName;
-        
-        // Gestione dell'immagine
-        const bannerImg = document.getElementById('detailsBannerImg');
-        if (bannerImg) {
-            bannerImg.onerror = function() {
-                this.src = '/images/placeholder-city.jpg';
-            };
-            bannerImg.src = dreamData.imageUrl;
-        }
-        
-        // Data aggiunta
-        const dateElement = document.getElementById('detailsDate');
-        if (dateElement) {
-            const formattedDate = dreamData.addedOn ? 
-                (typeof dreamData.addedOn === 'string' ? dreamData.addedOn : new Date(dreamData.addedOn).toLocaleDateString()) : 
-                'Data sconosciuta';
-            dateElement.textContent = formattedDate;
-        }
-        
-        // Note
-        const noteElement = document.getElementById('detailsNote');
-        if (noteElement) {
-            noteElement.textContent = dreamData.notes || 'Nessuna nota aggiunta.';
-            noteElement.style.fontStyle = dreamData.notes ? 'normal' : 'italic';
-            noteElement.style.color = dreamData.notes ? '#333' : '#777';
-        }
-        
-        // Priorità - stelle gialle
-        const priorityDiv = document.getElementById('detailsPriority');
-        if (priorityDiv) {
-            priorityDiv.innerHTML = '';
-            for (let i = 0; i < (dreamData.priority || 1); i++) {
-                const star = document.createElement('i');
-                star.className = 'fas fa-star';
-                star.style.color = '#FFD700'; // Colore giallo per le stelle
-                priorityDiv.appendChild(star);
-            }
-        }
-        
-        // Tag
-        const tagsDiv = document.getElementById('detailsTags');
-        if (tagsDiv) {
-            tagsDiv.innerHTML = '';
-            (dreamData.tags || ['viaggio']).forEach(tag => {
-                const tagSpan = document.createElement('span');
-                tagSpan.className = 'dream-tag';
-                tagSpan.textContent = tag;
-                tagSpan.style.backgroundColor = '#e9ecef';
-                tagSpan.style.color = '#495057';
-                tagSpan.style.padding = '2px 8px';
-                tagSpan.style.borderRadius = '15px';
-                tagSpan.style.margin = '0 4px 4px 0';
-                tagSpan.style.display = 'inline-block';
-                tagSpan.style.fontSize = '0.9rem';
-                tagsDiv.appendChild(tagSpan);
-            });
+        function showLoadingOverlay(message = 'Caricamento...') {
+            const overlay = document.createElement('div');
+            overlay.id = 'loadingOverlay';
+            overlay.className = 'position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center';
+            overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+            overlay.style.zIndex = '9999';
+            overlay.innerHTML = `<div class="bg-white p-4 rounded shadow"><div class="d-flex align-items-center"><div class="spinner-border text-primary me-3" role="status"></div><span>${message}</span></div></div>`;
+            document.body.appendChild(overlay);
         }
 
-        // Configura i link esterni per l'esplorazione
-        setupExternalLinks(dreamData.cityName, dreamData.countryName);
-
-        // Carica le informazioni AI per i vari tab
-        loadAISuggestions('attractions', dreamData.cityName);
-        loadAISuggestions('gastronomy', dreamData.cityName);
-        loadAISuggestions('history', dreamData.cityName);
-        loadAISuggestions('tips', dreamData.cityName);
-
-         setTimeout(initializeSuggestionTabs, 100);
-        
-        // Mostra o nascondi il bottone "Pianifica" in base alla posizione
-        const planTripBtn = document.getElementById('planTripBtn');
-        if (planTripBtn) {
-            if (dataSource === 'wishlist') {
-                planTripBtn.style.display = 'block';
-                planTripBtn.onclick = function() {
-                    moveToPlanningPhase(dreamId);
-                };
-            } else {
-                planTripBtn.style.display = 'none';
-            }
+        function hideLoadingOverlay() {
+            const overlay = document.getElementById('loadingOverlay');
+            if (overlay) document.body.removeChild(overlay);
         }
-        
-        // Centra la mappa sulla destinazione
-        if (isValidLatitude(dreamData.latitude) && isValidLongitude(dreamData.longitude)) {
-            flyToDestination(dreamData.latitude, dreamData.longitude);
+
+        // UNICA DEFINIZIONE CORRETTA
+        function formatDateForInput(date) {
+            if (!date) return '';
+            const d = new Date(date);
+            if (isNaN(d.getTime())) return '';
+
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
         }
-        
-        // Mostra il modal
-        const bsModal = new bootstrap.Modal(document.getElementById('dreamDetailsModal'));
-        bsModal.show();
-    } catch (error) {
-        console.error('Errore in showDreamDetails:', error);
-        showToast('Errore', 'Si è verificato un errore durante il caricamento dei dettagli', 'danger');
-    }
-}
 
+        function showDreamDetails(dreamId) {
+            try {
+                console.log('Mostra dettagli sogno:', dreamId);
+                if (!dreamId) { console.error('ID non valido'); showToast('Errore', 'ID destinazione non valido', 'danger'); return; }
 
-function addToWishlist(cityId) {
-    // Show loading indicator
-    showLoadingOverlay('Aggiunta alla wishlist...');
-    
-    // Get the anti-forgery token
-    const token = getAntiForgeryToken();
-    
-    // Make API call to add city to wishlist
-    fetch('/DreamMap?handler=AddToWishlist', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'RequestVerificationToken': token
-        },
-        body: JSON.stringify({ cityId: cityId })
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error(`HTTP error: ${response.status}`);
-        }
-        return response.json();
-    })
-    .then(data => {
-        // Hide loading overlay
-        hideLoadingOverlay();
-        
-        if (data.success) {
-            // Initialize the wishlist array if it doesn't exist
-            if (!destinations.wishlist) {
-                destinations.wishlist = [];
-            }
-            
-            // Add the new item to the array WITHOUT replacing the entire array
-            destinations.wishlist.push(data.newItem);
-            
-            // Update the UI
-            sincronizzaStatoApp();
-            
-            // Show success message
-            showToast('Successo', 'Destinazione aggiunta con successo!', 'success');
-        } else {
-            showToast('Errore', data.message || 'Si è verificato un errore', 'danger');
-        }
-    })
-    .catch(error => {
-        hideLoadingOverlay();
-        console.error('Error:', error);
-        showToast('Errore', 'Si è verificato un errore di connessione', 'danger');
-    });
-}
+                let dreamData = destinations.wishlist.find(d => d.id && d.id.toString() === dreamId.toString());
+                let dataSource = dreamData ? 'wishlist' : '';
 
-function ricostruisciSidebar() {
-    // Rebuild wishlist
-    const wishlistContainer = document.getElementById('wishlistItems');
-    if (wishlistContainer && destinations.wishlist) {
-        // Log for debugging
-        console.log('Rebuilding wishlist UI with', destinations.wishlist.length, 'items');
-        
-        // Clear the container
-        wishlistContainer.innerHTML = '';
-        
-        // Check if wishlist is empty first
-        if (destinations.wishlist.length === 0) {
-            wishlistContainer.innerHTML = `
-                <div class="empty-state">
-                    <img src="/images/empty-wishlist.svg" alt="Wishlist vuota" class="empty-state-icon">
-                    <p>La tua lista dei desideri è vuota</p>
-                    <p class="text-muted">Aggiungi le destinazioni dei tuoi sogni con il pulsante qui sotto</p>
-                </div>
-            `;
-            return;
-        }
-        
-        // Add each dream item to the container
-        destinations.wishlist.forEach(dream => {
-            // Validate the dream object has required properties
-            if (!dream || !dream.cityName) {
-                console.error('Invalid dream item:', dream);
-                return;
-            }
-            
-            const priorityClass = dream.priority === 3 ? 'high' : 
-                                 dream.priority === 2 ? 'medium' : 'low';
-            
-            // Create the HTML for the dream item
-            const dreamItemHtml = `
-                <div class="dream-item" data-city="${(dream.cityName || '').toLowerCase()}" data-country="${(dream.countryName || '').toLowerCase()}"
-                     data-id="${dream.id}" data-lat="${dream.latitude}" data-lng="${dream.longitude}"
-                     onclick="flyToDestination(${dream.latitude}, ${dream.longitude})">
-                    <div class="dream-item-image">
-                        <img src="${dream.imageUrl || '/images/placeholder-city.jpg'}" alt="${dream.cityName}" onerror="this.src='/images/placeholder-city.jpg'">
-                        <div class="dream-flag">
-                            <img src="/images/flags/${getCountryCode(dream.countryName).toLowerCase()}.png" alt="${dream.countryName}">
-                        </div>
-                        <div class="dream-priority ${priorityClass}">
-                            <i class="fas fa-star"></i>
-                            ${priorityClass === 'high' ? '<i class="fas fa-star"></i><i class="fas fa-star"></i>' : 
-                              priorityClass === 'medium' ? '<i class="fas fa-star"></i>' : ''}
-                        </div>
-                    </div>
-                    <div class="dream-item-content">
-                        <h3 class="dream-name">${dream.cityName}</h3>
-                        <p class="dream-country">${dream.countryName || ''}</p>
-                        <div class="dream-tags">
-                            ${(dream.tags || ['viaggio']).map(tag => `<span class="dream-tag">${tag}</span>`).join('')}
-                        </div>
-                        <div class="dream-note">${dream.notes ? (dream.notes.length > 100 ? dream.notes.substring(0, 100) + '...' : dream.notes) : ''}</div>
-                    </div>
-                    <div class="dream-item-actions">
-                        <button type="button" class="btn btn-sm btn-outline-info show-details-btn" data-id="${dream.id}">
-                            <i class="fas fa-info-circle"></i>
-                        </button>
-                        <button type="button" class="btn btn-sm btn-outline-warning" onclick="moveToPlanningPhase('${dream.id}')">
-                            <i class="fas fa-calendar-plus"></i>
-                        </button>
-                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeDream('${dream.id}')">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
-                </div>
-            `;
-            
-            // Append the dream item to the container
-            wishlistContainer.innerHTML += dreamItemHtml;
-        });
-        
-        // Re-initialize all buttons after rebuilding the UI
-        initializeDetailButtons();
-    }
-    
-    // Continue with rebuilding planning section as before...
-    // [Rest of the planning section code]
-}
-
-
-// Funzione per inizializzare correttamente tutti i pulsanti dettagli
-function initializeDetailButtons() {
-    console.log("Inizializzazione di tutti i pulsanti dettagli");
-    
-    // Rimuove tutti i listener precedenti per evitare duplicazioni
-    document.querySelectorAll('.btn-outline-info[onclick*="showDreamDetails"], .btn-outline-info[onclick*="showPlanDetails"]').forEach(button => {
-        const newButton = button.cloneNode(true);
-        button.parentNode.replaceChild(newButton, button);
-    });
-    
-    // Gestori per i pulsanti dettagli nella wishlist
-    document.querySelectorAll('.dream-item .btn-outline-info').forEach(button => {
-        button.addEventListener('click', function(event) {
-            // Ferma la propagazione per evitare che altri handler catturino l'evento
-            event.stopPropagation();
-            
-            // Ottieni l'ID dalla dream-item parent
-            const dreamItem = this.closest('.dream-item');
-            if (dreamItem) {
-                const dreamId = dreamItem.getAttribute('data-id');
-                console.log("Clic su dettagli dream:", dreamId);
-                if (dreamId) {
-                    showDreamDetails(dreamId);
-                } else {
-                    console.error("ID dream non trovato");
+                if (!dreamData) {
+                    const planAttempt = destinations.plannedTrips.find(p => p.id && p.id.toString() === dreamId.toString());
+                    if (planAttempt) { showPlanDetails(dreamId); return; }
                 }
-            }
-        });
-    });
-    
-    // Gestori per i pulsanti dettagli nella pianificazione
-    document.querySelectorAll('.plan-item .btn-outline-info').forEach(button => {
-        button.addEventListener('click', function(event) {
-            // Ferma la propagazione per evitare che altri handler catturino l'evento
-            event.stopPropagation();
-            
-            // Ottieni l'ID dalla plan-item parent
-            const planItem = this.closest('.plan-item');
-            if (planItem) {
-                const planId = planItem.getAttribute('data-id');
-                console.log("Clic su dettagli plan:", planId);
-                if (planId) {
-                    showPlanDetails(planId);
-                } else {
-                    console.error("ID piano non trovato");
-                }
-            }
-        });
-    });
-    
-    console.log("Inizializzazione pulsanti dettagli completata");
-}
-
-
-
-
-
-
-function handleDetailsButtonClick(event) {
-    event.preventDefault();
-    event.stopPropagation();
-    
-    console.log("Click su pulsante dettagli");
-    
-    const button = event.currentTarget;
-    const id = button.getAttribute('data-id');
-    
-    // Se l'ID non è nell'attributo data-id, cerca nel parent
-    if (!id) {
-        const parent = button.closest('.dream-item, .plan-item');
-        if (parent) {
-            const parentId = parent.getAttribute('data-id');
-            if (parentId) {
-                if (parent.classList.contains('dream-item')) {
-                    showDreamDetails(parentId);
-                } else {
-                    showPlanDetails(parentId);
-                }
-                return;
-            }
-        }
-        console.error("Impossibile trovare l'ID");
-        return;
-    }
-    
-    // Se abbiamo l'ID direttamente dal pulsante
-    const isDream = button.closest('.dream-item');
-    const isPlan = button.closest('.plan-item');
-    
-    if (isDream) {
-        showDreamDetails(id);
-    } else if (isPlan) {
-        showPlanDetails(id);
-    } else {
-        console.error("Tipo di elemento non identificato");
-    }
-}
-
-
-
-
-
-        function loadAISuggestions(type, cityName) {
-    console.log(`Caricamento suggerimenti ${type} per ${cityName}`);
-
-    const suggestionPane = document.getElementById(`suggestions${type.charAt(0).toUpperCase() + type.slice(1)}`);
-    if (!suggestionPane) {
-        console.error('Elemento DOM non trovato per i suggerimenti:', `suggestions${type.charAt(0).toUpperCase() + type.slice(1)}`);
-        return;
-    }
-
-    // Mostra indicatore di caricamento
-    suggestionPane.innerHTML = `
-        <div class="ai-loading">
-            <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">Caricamento...</span>
-            </div>
-            <p>Generando suggerimenti con AI...</p>
-        </div>
-    `;
-
-    // Chiama l'handler per ottenere i suggerimenti
-    fetch(`/DreamMap?handler=Travelsuggestions&cityName=${encodeURIComponent(cityName)}&suggestionType=${encodeURIComponent(type)}`)
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`Errore HTTP: ${response.status} ${response.statusText}`);
-            }
-            return response.json();
-        })
-        .then(data => {
-            console.log("Risposta API ricevuta:", data);
-
-            // Gestisci il nuovo formato di risposta semplificato
-            if (data.success && data.html) {
-                // Pulizia lato client di eventuali delimitatori residui
-                let cleanedHtml = data.html;
-
-                // Rimuovi ```html all'inizio e ``` alla fine
-                cleanedHtml = cleanedHtml.replace(/^\s*```(?:html|HTML)?\s*\n?/i, '');
-                cleanedHtml = cleanedHtml.replace(/\s*```\s*$/, '');
-
-                // Rimuovi eventuali <pre> e </pre> indesiderati
-                cleanedHtml = cleanedHtml.replace(/^\s*<pre>\s*|\s*<\/pre>\s*$/g, '');
-
-                // Controlla se il contenuto è vuoto dopo la pulizia
-                if (!cleanedHtml.trim()) {
-                    throw new Error("Contenuto ricevuto vuoto dopo la pulizia");
+                if (!dreamData) {
+                    const visitedAttempt = destinations.visitedCities.find(v => v.id && v.id.toString() === dreamId.toString());
+                    if (visitedAttempt) { showVisitDetails(dreamId); return; }
                 }
 
-                // Usa l'HTML pulito
-                suggestionPane.innerHTML = cleanedHtml;
-
-                // Assicurati che il tab sia correttamente selezionato se questo è il primo contenuto caricato
-                if (type === 'attractions') {
-                    const attractionsTab = document.querySelector('.suggestion-tab[data-tab="attractions"]');
-                    if (attractionsTab && !attractionsTab.classList.contains('active')) {
-                        attractionsTab.click();
+                if (!dreamData) { // Fallback if not found anywhere
+                    const element = document.querySelector(`.dream-item[data-id="${dreamId}"]`);
+                    if (element) {
+                        dreamData = {
+                            id: dreamId,
+                            cityName: element.querySelector('.dream-name')?.textContent || 'N/A',
+                            countryName: element.querySelector('.dream-country')?.textContent || 'N/A',
+                            imageUrl: element.querySelector('img')?.src || '/images/placeholder-city.jpg',
+                            notes: '', latitude: parseFloat(element.getAttribute('data-lat')), longitude: parseFloat(element.getAttribute('data-lng')),
+                            priority: element.querySelector('.dream-priority')?.classList.contains('high') ? 3 : (element.querySelector('.dream-priority')?.classList.contains('medium') ? 2 : 1),
+                            tags: ['viaggio'], addedOn: new Date().toLocaleDateString()
+                        };
+                        dataSource = 'dom-fallback';
+                    } else {
+                        dreamData = { id: dreamId, cityName: 'Sconosciuto', countryName: 'Sconosciuto', imageUrl: '/images/placeholder-city.jpg', notes: '', latitude: 0, longitude: 0, priority: 1, tags: [], addedOn: new Date().toLocaleDateString() };
+                        dataSource = 'super-fallback';
                     }
                 }
+                console.log(`Dati sogno trovati in ${dataSource}:`, dreamData);
 
-                // Aggiungi classe per animazione di fade-in
-                suggestionPane.classList.add('content-loaded');
-            }
-            // In caso di errore dal backend
-            else if (data.error) {
-                console.error("Errore server:", data.error);
+                const modal = document.getElementById('dreamDetailsModal');
+                modal.setAttribute('data-dream-id', dreamId);
 
-                // Mostra messaggio di errore all'utente
-                suggestionPane.innerHTML = `
-                <div class="ai-error">
-                    <p>Non è stato possibile generare suggerimenti per ${cityName}.</p>
-                    <p>Errore: ${data.error}</p>
-                    <p>Riprova più tardi o cerca informazioni su
-                       <a href="https://www.google.com/search?q=cosa+vedere+a+${encodeURIComponent(cityName)}"
-                       target="_blank" rel="noopener noreferrer">Google</a>.</p>
-                </div>
-            `;
-            }
-            // Fallback se nessun formato è riconosciuto
-            else {
-                console.error("Formato risposta API non riconosciuto:", data);
-                throw new Error("Formato risposta non valido");
-            }
-        })
-        .catch(error => {
-            console.error("Errore chiamata API:", error);
+                document.getElementById('detailsCityName').textContent = dreamData.cityName;
+                document.getElementById('detailsCountryName').textContent = dreamData.countryName;
+                const bannerImg = document.getElementById('detailsBannerImg');
+                bannerImg.onerror = function () { this.src = '/images/placeholder-city.jpg'; };
+                bannerImg.src = dreamData.imageUrl;
+                document.getElementById('detailsDate').textContent = dreamData.addedOn ? (typeof dreamData.addedOn === 'string' ? dreamData.addedOn : new Date(dreamData.addedOn).toLocaleDateString()) : 'N/A';
+                const noteElement = document.getElementById('detailsNote');
+                noteElement.textContent = dreamData.notes || 'Nessuna nota.';
+                noteElement.style.fontStyle = dreamData.notes ? 'normal' : 'italic';
 
-            // Mostra un messaggio di errore chiaro all'utente
-            suggestionPane.innerHTML = `
-            <div class="ai-error">
-                <p>Errore durante il caricamento delle informazioni su ${cityName}.</p>
-                <p>Problema tecnico: ${error.message}</p>
-                <p>Riprova più tardi o visita
-                   <a href="https://www.lonelyplanet.com/search?q=${encodeURIComponent(cityName)}"
-                   target="_blank" rel="noopener noreferrer">Lonely Planet</a> per informazioni.</p>
-                <button class="btn btn-sm btn-outline-primary mt-3" onclick="loadAISuggestions('${type}', '${cityName}')">
-                    Riprova
-                </button>
-            </div>
-        `;
-        });
-}
+                const priorityDiv = document.getElementById('detailsPriority');
+                priorityDiv.innerHTML = Array(dreamData.priority || 1).fill(0).map(() => '<i class="fas fa-star" style="color: #FFD700;"></i>').join('');
 
+                const tagsDiv = document.getElementById('detailsTags');
+                tagsDiv.innerHTML = (dreamData.tags || ['viaggio']).map(tag => `<span class="dream-tag" style="background-color: #e9ecef; color: #495057; padding: 2px 8px; border-radius: 15px; margin: 0 4px 4px 0; display: inline-block; font-size: 0.9rem;">${tag}</span>`).join('');
 
-       function showPlanDetails(planId) {
-    try {
-        console.log('Mostra dettagli piano:', planId);
-        
-        if (!planId) {
-            console.error('ID non valido passato a showPlanDetails');
-            showToast('Errore', 'ID piano non valido', 'danger');
-            return;
-        }
-        
-        // Cerca il piano nei dati in memoria
-        let planData = null;
-        let dataSource = '';
-        
-        // Cerca nei piani pianificati
-        if (destinations && destinations.plannedTrips) {
-            planData = destinations.plannedTrips.find(p => p.id && p.id.toString() === planId.toString());
-            if (planData) dataSource = 'plans';
-        }
-        
-        // Se non trovato nei piani, cerca nella wishlist
-        if (!planData && destinations && destinations.wishlist) {
-            planData = destinations.wishlist.find(d => d.id && d.id.toString() === planId.toString());
-            if (planData) {
-                dataSource = 'wishlist';
-                // Se l'elemento è nella wishlist, mostra i dettagli del sogno invece
-                showDreamDetails(planId);
-                return;
+                setupExternalLinks(dreamData.cityName, dreamData.countryName);
+                ['attractions', 'gastronomy', 'history', 'tips'].forEach(type => loadAISuggestions(type, dreamData.cityName));
+                setTimeout(initializeSuggestionTabs, 100);
+
+                const planTripBtn = document.getElementById('planTripBtn');
+                planTripBtn.style.display = (dataSource === 'wishlist' || dataSource === 'dom-fallback') ? 'block' : 'none'; // Allow planning if from DOM fallback as well
+                if (planTripBtn.style.display === 'block') {
+                    planTripBtn.onclick = () => moveToPlanningPhase(dreamId);
+                }
+
+                if (isValidLatitude(dreamData.latitude) && isValidLongitude(dreamData.longitude)) flyToDestination(dreamData.latitude, dreamData.longitude);
+
+                new bootstrap.Modal(modal).show();
+            } catch (error) {
+                console.error('Errore in showDreamDetails:', error);
+                showToast('Errore', 'Dettagli non caricati.', 'danger');
             }
         }
-        
-        // Se non trovato nella wishlist, cerca nelle visite
-        if (!planData && destinations && destinations.visitedCities) {
-            planData = destinations.visitedCities.find(v => v.id && v.id.toString() === planId.toString());
-            if (planData) {
-                dataSource = 'visits';
-                // Se l'elemento è nelle visite, mostra i dettagli della visita invece
-                showVisitDetails(planId);
-                return;
-            }
+
+        function addToWishlist(cityId) {
+            showLoadingOverlay('Aggiunta alla wishlist...');
+            fetch('/DreamMap?handler=AddToWishlist', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': getAntiForgeryToken() },
+                body: JSON.stringify({ cityId: cityId })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    hideLoadingOverlay();
+                    if (data.success) {
+                        if (!destinations.wishlist) destinations.wishlist = [];
+                        destinations.wishlist.push(data.newItem);
+                        sincronizzaStatoApp();
+                        showToast('Successo', 'Destinazione aggiunta!', 'success');
+                    } else {
+                        showToast('Errore', data.message || 'Errore aggiunta.', 'danger');
+                    }
+                })
+                .catch(error => {
+                    hideLoadingOverlay();
+                    console.error('Error:', error);
+                    showToast('Errore', 'Errore connessione.', 'danger');
+                });
         }
-        
-        // Se ancora non trovato, cerca nel DOM
-        if (!planData) {
-            const element = document.querySelector(`.plan-item[data-id="${planId}"]`);
-            if (element) {
-                // Estrai i dati dal DOM
-                const cityName = element.querySelector('.plan-name')?.textContent || 'Città sconosciuta';
-                const countryName = element.querySelector('.plan-country')?.textContent || 'Paese sconosciuto';
-                const imageUrl = element.querySelector('img')?.src || '/images/placeholder-city.jpg';
-                const lat = parseFloat(element.getAttribute('data-lat'));
-                const lng = parseFloat(element.getAttribute('data-lng'));
-                
-                // Crea un oggetto dai dati estratti
-                planData = {
-                    id: planId,
-                    cityName: cityName,
-                    countryName: countryName,
-                    imageUrl: imageUrl,
-                    startDate: new Date(),
-                    endDate: new Date(new Date().getTime() + 7 * 24 * 60 * 60 * 1000),
-                    completionPercentage: 0,
-                    notes: '',
-                    latitude: lat,
-                    longitude: lng,
-                    checklist: []
+
+        function ricostruisciSidebar() {
+            const wishlistContainer = document.getElementById('wishlistItems');
+            if (wishlistContainer) {
+                wishlistContainer.innerHTML = '';
+                if (!destinations.wishlist || destinations.wishlist.length === 0) {
+                    wishlistContainer.innerHTML = `<div class="empty-state"><img src="/images/empty-wishlist.svg" alt="Wishlist vuota" class="empty-state-icon"><p>La tua lista dei desideri è vuota</p><p class="text-muted">Aggiungi destinazioni qui sotto</p></div>`;
+                } else {
+                    destinations.wishlist.forEach(dream => {
+                        if (!dream || !dream.cityName) { console.error('Invalid dream item:', dream); return; }
+                        const priorityClass = dream.priority === 3 ? 'high' : dream.priority === 2 ? 'medium' : 'low';
+                        const starsHtml = Array(dream.priority || 1).fill(0).map(() => '<i class="fas fa-star"></i>').join('');
+                        const dreamItemHtml = `
+                                    <div class="dream-item" data-city="${(dream.cityName || '').toLowerCase()}" data-country="${(dream.countryName || '').toLowerCase()}"
+                                        data-id="${dream.id}" data-lat="${dream.latitude}" data-lng="${dream.longitude}"
+                                        onclick="flyToDestination(${dream.latitude}, ${dream.longitude})">
+                                        <div class="dream-item-image">
+                                            <img src="${dream.imageUrl || '/images/placeholder-city.jpg'}" alt="${dream.cityName}" onerror="this.src='/images/placeholder-city.jpg'">
+                                            <div class="dream-flag"><img src="/images/flags/${getCountryCode(dream.countryName).toLowerCase()}.png" alt="${dream.countryName}"></div>
+                                        </div>
+                                        <div class="dream-item-content">
+                                            <div class="dream-priority ${priorityClass}">${starsHtml}</div>
+                                            <h3 class="dream-name">${dream.cityName}</h3>
+                                            <p class="dream-country">${dream.countryName || ''}</p>
+                                            <div class="dream-tags">${(dream.tags || ['viaggio']).map(tag => `<span class="dream-tag">${tag}</span>`).join('')}</div>
+                                            <div class="dream-note">${dream.notes ? (dream.notes.length > 100 ? dream.notes.substring(0, 100) + "..." : dream.notes) : ''}</div>
+                                        </div>
+                                        <div class="dream-item-actions">
+                                            <button type="button" class="btn btn-sm btn-outline-info show-details-btn" data-id="${dream.id}"><i class="fas fa-info-circle"></i></button>
+                                            <button type="button" class="btn btn-sm btn-outline-warning" onclick="moveToPlanningPhase('${dream.id}')"><i class="fas fa-calendar-plus"></i></button>
+                                            <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeDream('${dream.id}')"><i class="fas fa-trash"></i></button>
+                                        </div>
+                                    </div>`;
+                        wishlistContainer.innerHTML += dreamItemHtml;
+                    });
+                }
+            }
+            // Ricostruzione della sezione "In Pianificazione" (simile alla wishlist)
+            const planningContainer = document.getElementById('planningItems');
+            if (planningContainer) {
+                planningContainer.innerHTML = '';
+                if (!destinations.plannedTrips || destinations.plannedTrips.length === 0) {
+                    planningContainer.innerHTML = `<div class="empty-state"><img src="/images/empty-planning.svg" alt="Nessun viaggio" class="empty-state-icon"><p>Non hai viaggi pianificati</p><p class="text-muted">Sposta un sogno qui per iniziare.</p></div>`;
+                } else {
+                    destinations.plannedTrips.forEach(plan => {
+                        if (!plan || !plan.cityName) { console.error('Invalid plan item:', plan); return; }
+                        const countdownDays = plan.startDate ? Math.max(0, Math.ceil((new Date(plan.startDate) - new Date()) / (1000 * 60 * 60 * 24))) : 0;
+                        const checklistPreview = plan.checklist && plan.checklist.length > 0 ?
+                            plan.checklist.slice(0, 3).map(item => `<li class="${item.isCompleted ? "completed" : ""}"><i class="${item.isCompleted ? "fas fa-check-circle" : "far fa-circle"}"></i> ${item.title}</li>`).join('') +
+                            (plan.checklist.length > 3 ? `<li class="more">+ altri ${plan.checklist.length - 3} elementi</li>` : '')
+                            : '<li>Nessuna checklist.</li>';
+
+                        const planItemHtml = `
+                                    <div class="plan-item" data-city="${(plan.cityName || '').toLowerCase()}" data-country="${(plan.countryName || '').toLowerCase()}"
+                                        data-id="${plan.id}" data-lat="${plan.latitude}" data-lng="${plan.longitude}"
+                                        onclick="flyToDestination(${plan.latitude}, ${plan.longitude})">
+                                        <div class="plan-item-image">
+                                            <img src="${plan.imageUrl || '/images/placeholder-city.jpg'}" alt="${plan.cityName}" onerror="this.src='/images/placeholder-city.jpg'">
+                                            <div class="plan-flag"><img src="/images/flags/${getCountryCode(plan.countryName).toLowerCase()}.png" alt="${plan.countryName}"></div>
+                                            <div class="plan-dates"><div class="plan-date-icon"><i class="fas fa-plane-departure"></i></div><div class="plan-date-range">${plan.startDate ? new Date(plan.startDate).toLocaleDateString("it-IT") : 'N/A'}</div></div>
+                                        </div>
+                                        <div class="plan-item-content">
+                                            <h3 class="plan-name">${plan.cityName}</h3>
+                                            <p class="plan-country">${plan.countryName || ''}</p>
+                                            <div class="plan-countdown"><i class="far fa-calendar-alt"></i><strong>${countdownDays}</strong> giorni rimanenti</div>
+                                            <div class="plan-progress">
+                                                <div class="progress"><div class="progress-bar" role="progressbar" style="width: ${plan.completionPercentage || 0}%" aria-valuenow="${plan.completionPercentage || 0}" aria-valuemin="0" aria-valuemax="100"></div></div>
+                                                <span class="plan-progress-text">${plan.completionPercentage || 0}% completato</span>
+                                            </div>
+                                            <ul class="plan-checklist">${checklistPreview}</ul>
+                                        </div>
+                                        <div class="plan-item-actions">
+                                            <button type="button" class="btn btn-sm btn-outline-info show-details-btn" data-id="${plan.id}"><i class="fas fa-info-circle"></i></button>
+                                            <button type="button" class="btn btn-sm btn-outline-success" onclick="markAsVisited('${plan.id}')"><i class="fas fa-check"></i></button>
+                                            <button type="button" class="btn btn-sm btn-outline-danger" onclick="removePlan('${plan.id}')"><i class="fas fa-trash"></i></button>
+                                        </div>
+                                    </div>`;
+                        planningContainer.innerHTML += planItemHtml;
+                    });
+                }
+            }
+            initializeDetailButtons(); // Cruciale riattaccare listener ai nuovi bottoni
+        }
+
+        function initializeDetailButtons() {
+            console.log("Inizializzazione pulsanti dettagli");
+            document.querySelectorAll('.show-details-btn').forEach(button => {
+                // Rimuove listener esistenti clonando il bottone
+                const newButton = button.cloneNode(true);
+                button.parentNode.replaceChild(newButton, button);
+
+                newButton.addEventListener('click', function (event) {
+                    event.stopPropagation();
+                    const itemId = this.getAttribute('data-id');
+                    const itemElement = this.closest('.dream-item, .plan-item');
+                    if (itemElement && itemId) {
+                        if (itemElement.classList.contains('dream-item')) {
+                            showDreamDetails(itemId);
+                        } else if (itemElement.classList.contains('plan-item')) {
+                            showPlanDetails(itemId);
+                        }
+                    } else {
+                        console.error("ID o elemento non trovato per il pulsante dettagli.");
+                    }
+                });
+            });
+        }
+
+        function loadAISuggestions(type, cityName) {
+            console.log(`Caricamento suggerimenti ${type} per ${cityName}`);
+            const suggestionPane = document.getElementById(`suggestions${type.charAt(0).toUpperCase() + type.slice(1)}`);
+            if (!suggestionPane) { console.error('Pane non trovato:', `suggestions${type.charAt(0).toUpperCase() + type.slice(1)}`); return; }
+
+            suggestionPane.innerHTML = `<div class="ai-loading"><div class="spinner-border text-primary"></div><p>Generando suggerimenti...</p></div>`;
+            fetch(`/DreamMap?handler=Travelsuggestions&cityName=${encodeURIComponent(cityName)}&suggestionType=${encodeURIComponent(type)}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.html) {
+                        let cleanedHtml = data.html.replace(/^\s*```(?:html|HTML)?\s*\n?/i, '').replace(/\s*```\s*$/, '').replace(/^\s*<pre>\s*|\s*<\/pre>\s*$/g, '');
+                        suggestionPane.innerHTML = cleanedHtml.trim() ? cleanedHtml : '<div class="ai-error"><p>Nessun suggerimento disponibile.</p></div>';
+                        if (type === 'attractions') document.querySelector('.suggestion-tab[data-tab="attractions"]')?.click();
+                    } else {
+                        suggestionPane.innerHTML = `<div class="ai-error"><p>Errore suggerimenti: ${data.error || 'Sconosciuto'}</p></div>`;
+                    }
+                })
+                .catch(error => {
+                    console.error("Errore API suggerimenti:", error);
+                    suggestionPane.innerHTML = `<div class="ai-error"><p>Errore caricamento suggerimenti per ${cityName}.</p><button class="btn btn-sm btn-outline-primary mt-3" onclick="loadAISuggestions('${type}', '${cityName}')">Riprova</button></div>`;
+                });
+        }
+
+        function showPlanDetails(planId) {
+            try {
+                console.log('Mostra dettagli piano:', planId);
+                if (!planId) { console.error('ID piano non valido'); showToast('Errore', 'ID piano non valido', 'danger'); return; }
+
+                let planData = destinations.plannedTrips.find(p => p.id && p.id.toString() === planId.toString());
+                if (!planData) { // Fallback se non trovato nei dati principali
+                    const element = document.querySelector(`.plan-item[data-id="${planId}"]`);
+                    if (element) {
+                        planData = {
+                            id: planId, cityName: element.querySelector('.plan-name')?.textContent || 'N/A', countryName: element.querySelector('.plan-country')?.textContent || 'N/A',
+                            imageUrl: element.querySelector('img')?.src || '/images/placeholder-city.jpg', startDate: new Date(), endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+                            completionPercentage: 0, notes: '', latitude: parseFloat(element.getAttribute('data-lat')), longitude: parseFloat(element.getAttribute('data-lng')), checklist: []
+                        };
+                        // Aggiungi ai dati principali se era solo nel DOM (per consistenza)
+                        if (!destinations.plannedTrips.find(p => p.id.toString() === planId.toString())) {
+                            destinations.plannedTrips.push(planData);
+                        }
+                    } else { showToast('Errore', 'Dati piano non trovati.', 'danger'); return; }
+                }
+                planData.checklist = planData.checklist || []; // Assicura che checklist sia sempre un array
+
+                console.log(`Dati piano trovati:`, planData);
+                const modal = document.getElementById('planDetailsModal');
+                modal.setAttribute('data-plan-id', planId);
+
+                document.getElementById('planCityName').textContent = planData.cityName;
+                document.getElementById('planCountryName').textContent = planData.countryName;
+                const bannerImg = document.getElementById('planBannerImg');
+                bannerImg.onerror = function () { this.src = '/images/placeholder-city.jpg'; };
+                bannerImg.src = planData.imageUrl;
+
+                const startDate = planData.startDate ? new Date(planData.startDate) : new Date();
+                const endDate = planData.endDate ? new Date(planData.endDate) : new Date(new Date(startDate).setDate(startDate.getDate() + 7));
+
+                const planDateRangeDisplay = document.getElementById('planDateRange').querySelector('span');
+                if (planDateRangeDisplay) planDateRangeDisplay.textContent = `${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}`;
+
+                document.getElementById('planStartDateInput').value = formatDateForInput(startDate);
+                document.getElementById('planEndDateInput').value = formatDateForInput(endDate);
+                document.getElementById('planNotes').value = planData.notes || '';
+
+                renderChecklistInModal(planId);
+                updateCompletionPercentage(planId);
+
+                const addChecklistItemBtnInModal = document.getElementById('addChecklistItem');
+                const newAddBtn = addChecklistItemBtnInModal.cloneNode(true);
+                addChecklistItemBtnInModal.parentNode.replaceChild(newAddBtn, addChecklistItemBtnInModal);
+                newAddBtn.onclick = () => {
+                    const addModalEl = document.getElementById('addChecklistItemModal');
+                    addModalEl.setAttribute('data-current-plan-id', planId);
+                    document.getElementById('checklistItemTitle').value = '';
+                    document.getElementById('checklistItemCategory').value = 'travel';
+                    document.getElementById('checklistItemDueDate').value = '';
+                    new bootstrap.Modal(addModalEl).show();
                 };
-                dataSource = 'dom';
+
+                populateCountryInfo(planData.countryName);
+                setupExternalLinks(planData.cityName, planData.countryName);
+                if (isValidLatitude(planData.latitude) && isValidLongitude(planData.longitude)) flyToDestination(planData.latitude, planData.longitude);
+
+                new bootstrap.Modal(modal).show();
+            } catch (error) {
+                console.error('Errore in showPlanDetails:', error);
+                showToast('Errore', 'Caricamento dettagli piano fallito.', 'danger');
             }
         }
-        
-        // Se ancora non trovato, usa un fallback generico
-        if (!planData) {
-            planData = {
-                id: planId,
-                cityName: 'Destinazione',
-                countryName: 'Paese non specificato',
-                imageUrl: '/images/placeholder-city.jpg',
-                startDate: new Date(),
-                endDate: new Date(new Date().getTime() + 7 * 24 * 60 * 60 * 1000),
-                completionPercentage: 0,
-                notes: 'Nessuna nota disponibile',
-                latitude: 0,
-                longitude: 0,
-                checklist: []
-            };
-            dataSource = 'fallback';
-        }
-        
-        console.log(`Dati piano trovati in ${dataSource}:`, planData);
-        
-        // Memorizza l'ID corrente nel modal per i pulsanti di azione
-        const modal = document.getElementById('planDetailsModal');
-        if (modal) {
-            modal.setAttribute('data-plan-id', planId);
-        }
-        
-        // Popola il modal con i dati
-        document.getElementById('planCityName').textContent = planData.cityName;
-        document.getElementById('planCountryName').textContent = planData.countryName;
 
-        // Gestione sicura dell'immagine
-        const bannerImg = document.getElementById('planBannerImg');
-        if (bannerImg) {
-            bannerImg.onerror = function () {
-                this.src = '/images/placeholder-city.jpg';
-            };
-            bannerImg.src = planData.imageUrl;
-        }
+        function renderChecklistInModal(planId) {
+            const planIndex = destinations.plannedTrips.findIndex(p => p.id && p.id.toString() === planId);
+            if (planIndex === -1) { console.error("Piano non trovato per renderChecklistInModal:", planId); return; }
+            const planData = destinations.plannedTrips[planIndex];
+            planData.checklist = planData.checklist || []; // Assicura che sia un array
 
-        // Formatta e imposta date
-        const startDate = planData.startDate ? new Date(planData.startDate) : new Date();
-        const endDate = planData.endDate ? new Date(planData.endDate) : new Date(startDate.getTime() + 7 * 24 * 60 * 60 * 1000);
-
-        const dateRangeText = `${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}`;
-        const planDateRange = document.getElementById('planDateRange');
-        if (planDateRange && planDateRange.querySelector('span')) {
-            planDateRange.querySelector('span').textContent = dateRangeText;
-        }
-
-        // Imposta i valori per i campi di modifica
-        const planStartDate = document.getElementById('planStartDate');
-        if (planStartDate) {
-            planStartDate.value = formatDateForInput(startDate);
-        }
-        
-        const planEndDate = document.getElementById('planEndDate');
-        if (planEndDate) {
-            planEndDate.value = formatDateForInput(endDate);
-        }
-
-        // Percentuale di completamento
-        const planProgressBar = document.getElementById('planProgressBar');
-        if (planProgressBar) {
-            planProgressBar.style.width = `${planData.completionPercentage || 0}%`;
-        }
-        
-        const progressPercentage = document.getElementById('progressPercentage');
-        if (progressPercentage) {
-            progressPercentage.textContent = planData.completionPercentage || 0;
-        }
-
-        // Note
-        const planNotes = document.getElementById('planNotes');
-        if (planNotes) {
-            planNotes.value = planData.notes || '';
-        }
-
-        // Configura i pulsanti di azione nel footer
-        const removePlanBtn = document.getElementById('removePlanBtn');
-        const updatePlanBtn = document.getElementById('updatePlanBtn');
-        const markVisitedBtn = document.getElementById('markVisitedBtn');
-        
-        if (removePlanBtn) {
-            removePlanBtn.onclick = function() {
-                removePlan(planId);
-            };
-        }
-        
-        if (updatePlanBtn) {
-            updatePlanBtn.onclick = function() {
-                updatePlanDetails(planId);
-            };
-        }
-        
-        if (markVisitedBtn) {
-            markVisitedBtn.onclick = function() {
-                markAsVisited(planId);
-            };
-        }
-
-        // Popola la checklist
-        const checklistContainer = document.getElementById('planChecklist');
-        if (checklistContainer) {
+            const checklistContainer = document.getElementById('planChecklist');
             checklistContainer.innerHTML = '';
-            
-            if (planData.checklist && planData.checklist.length > 0) {
+            if (planData.checklist.length > 0) {
                 planData.checklist.forEach(item => {
                     const listItem = document.createElement('li');
                     listItem.className = item.isCompleted ? 'completed' : '';
@@ -2790,7 +2246,7 @@ function handleDetailsButtonClick(event) {
                     const checkIcon = document.createElement('i');
                     checkIcon.className = item.isCompleted ? 'fas fa-check-circle' : 'far fa-circle';
                     checkIcon.style.cursor = 'pointer';
-                    checkIcon.onclick = () => toggleChecklistItem(item.id);
+                    checkIcon.onclick = () => toggleChecklistItem(planId, item.id);
 
                     const textDiv = document.createElement('div');
                     textDiv.className = 'checklist-text';
@@ -2806,1240 +2262,489 @@ function handleDetailsButtonClick(event) {
                         dueSpan.innerHTML = `<i class="far fa-calendar-alt"></i> ${new Date(item.dueDate).toLocaleDateString()}`;
                     }
 
+                    const removeBtn = document.createElement('button');
+                    removeBtn.className = 'btn btn-sm btn-outline-danger ms-auto remove-checklist-item-btn';
+                    removeBtn.innerHTML = '<i class="fas fa-trash"></i>';
+                    removeBtn.type = 'button';
+                    removeBtn.onclick = () => removeChecklistItem(planId, item.id);
+
                     listItem.appendChild(checkIcon);
                     listItem.appendChild(textDiv);
                     listItem.appendChild(categorySpan);
                     listItem.appendChild(dueSpan);
+                    listItem.appendChild(removeBtn);
                     checklistContainer.appendChild(listItem);
                 });
             } else {
-                // Se non ci sono elementi nella checklist, mostra un messaggio
-                const emptyItem = document.createElement('li');
-                emptyItem.textContent = 'Nessun elemento nella checklist';
-                checklistContainer.appendChild(emptyItem);
+                checklistContainer.innerHTML = '<li class="text-muted fst-italic">Nessun elemento nella checklist.</li>';
             }
         }
 
-        // Popola le informazioni sul paese
-        populateCountryInfo(planData.countryName);
-
-        // Configura i pulsanti esterni
-        setupExternalLinks(planData.cityName, planData.countryName);
-
-        // Sposta la mappa alla destinazione se le coordinate sono valide
-        if (planData.latitude && planData.longitude &&
-            isValidLatitude(planData.latitude) && isValidLongitude(planData.longitude)) {
-            console.log(`Spostamento mappa a: ${planData.latitude}, ${planData.longitude}`);
-            flyToDestination(planData.latitude, planData.longitude);
-        }
-
-        // Mostra il modal
-        const bsModal = new bootstrap.Modal(document.getElementById('planDetailsModal'));
-        bsModal.show();
-    } catch (error) {
-        console.error('Errore in showPlanDetails:', error);
-        showToast('Errore', 'Si è verificato un errore durante il caricamento dei dettagli del piano', 'danger');
-    }
-}
-
-// Helper per formatData
-function formatDateForInput(date) {
-    if (!date) return '';
-    
-    if (typeof date === 'string') {
-        date = new Date(date);
-    }
-    
-    if (isNaN(date.getTime())) {
-        return '';
-    }
-    
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    
-    return `${year}-${month}-${day}`;
-}
-
-// Helper per ottenere l'etichetta della categoria
-function getCategoryLabel(category) {
-    const labels = {
-        'travel': 'Viaggio',
-        'accommodation': 'Alloggio',
-        'documents': 'Documenti',
-        'activities': 'Attività',
-        'other': 'Altro'
-    };
-    return labels[category] || category;
-}
-
-
-
-
-// Funzione che sincronizza completamente l'intero stato dell'app
-function sincronizzaStatoApp() {
-    console.log('Sincronizzazione stato app con wishlist items:', destinations.wishlist ? destinations.wishlist.length : 0);
-    
-    // Ensure all arrays exist to prevent "cannot read properties of undefined" errors
-    if (!destinations) {
-        console.error('Destinations object is undefined, initializing it');
-        destinations = {};
-    }
-    if (!destinations.wishlist) destinations.wishlist = [];
-    if (!destinations.plannedTrips) destinations.plannedTrips = [];
-    if (!destinations.visitedCities) destinations.visitedCities = [];
-    
-    // Log current data for debugging
-    console.log('Current wishlist data:', JSON.parse(JSON.stringify(destinations.wishlist)));
-    
-    // Rebuild the sidebar with current data
-    ricostruisciSidebar();
-    
-    // Update map markers
-    if (map) {
-        setTimeout(() => {
-            loadMapMarkers();
-            map.invalidateSize();
-        }, 200);
-    }
-}
-
-// Example AJAX form submission (update to match your implementation)
-function submitWishlistForm(form) {
-    const formData = new FormData(form);
-    
-    // Log form data being sent
-    console.log("Submitting form data:");
-    for (let [key, value] of formData.entries()) {
-        console.log(key + ': ' + value);
-    }
-    
-    fetch('/DreamMap?handler=SaveToWishlist', {
-        method: 'POST',
-        body: formData,
-        headers: {
-            'RequestVerificationToken': getAntiForgeryToken()
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Handle success
-        } else {
-            // Show error message
-            alert("Error: " + data.message);
-        }
-    })
-    .catch(error => {
-        console.error('Error submitting form:', error);
-    });
-}
-
-// Helper per configurare i pulsanti nei modal
-function configuraPulsantiModal() {
-    // Configura i pulsanti nel footer del modal dei piani
-    const removePlanBtn = document.getElementById('removePlanBtn');
-    const updatePlanBtn = document.getElementById('updatePlanBtn');
-    const markVisitedBtn = document.getElementById('markVisitedBtn');
-    
-    if (removePlanBtn) {
-        removePlanBtn.onclick = function() {
-            const modal = document.getElementById('planDetailsModal');
-            const planId = modal.getAttribute('data-plan-id');
-            if (planId) removePlan(planId);
-        };
-    }
-    
-    if (updatePlanBtn) {
-        updatePlanBtn.onclick = function() {
-            const modal = document.getElementById('planDetailsModal');
-            const planId = modal.getAttribute('data-plan-id');
-            if (planId) updatePlanDetails(planId);
-        };
-    }
-    
-    if (markVisitedBtn) {
-        markVisitedBtn.onclick = function() {
-            const modal = document.getElementById('planDetailsModal');
-            const planId = modal.getAttribute('data-plan-id');
-            if (planId) markAsVisited(planId);
-        };
-    }
-    
-    // Configura il pulsante planTripBtn nel modal dei dettagli
-    const planTripBtn = document.getElementById('planTripBtn');
-    if (planTripBtn) {
-        planTripBtn.onclick = function() {
-            const modal = document.getElementById('dreamDetailsModal');
-            const dreamId = modal.getAttribute('data-dream-id');
-            if (dreamId) moveToPlanningPhase(dreamId);
-        };
-    }
-}
-
-
-
-// Helper per ottenere codice paese
-function getCountryCode(countryName) {
-    const countryMap = {
-        'Italia': 'it',
-        'Francia': 'fr',
-        'Germania': 'de',
-        'Spagna': 'es',
-        'Regno Unito': 'gb',
-        'Stati Uniti': 'us',
-        'Giappone': 'jp',
-        // Aggiungi altri paesi se necessario
-    };
-    
-    return countryMap[countryName] || 'unknown';
-}
-
-// Helper per ottenere codice paese (semplificato)
-function getCountryCode(countryName) {
-    const countryMap = {
-        'Italia': 'it',
-        'Francia': 'fr',
-        'Germania': 'de',
-        'Spagna': 'es',
-        'Regno Unito': 'gb',
-        'Stati Uniti': 'us',
-        'Giappone': 'jp',
-        // Aggiungi altri paesi qui
-    };
-    
-    return countryMap[countryName] || 'unknown';
-}
-
-
-
-function getDestinationType(itemId) {
-    // Verifica in quale collezione si trova l'ID
-    if (destinations && destinations.wishlist) {
-        const inWishlist = destinations.wishlist.some(item => 
-            item.id && item.id.toString() === itemId.toString());
-        if (inWishlist) return "wishlist";
-    }
-    
-    if (destinations && destinations.plannedTrips) {
-        const inPlanned = destinations.plannedTrips.some(item => 
-            item.id && item.id.toString() === itemId.toString());
-        if (inPlanned) return "plannedTrips";
-    }
-    
-    if (destinations && destinations.visitedCities) {
-        const inVisited = destinations.visitedCities.some(item => 
-            item.id && item.id.toString() === itemId.toString());
-        if (inVisited) return "visitedCities";
-    }
-    
-    // Se non è stato trovato in nessuna collezione
-    return "unknown";
-}
-
-        // Helper per formattare date per input
-        function formatDateForInput(date) {
-            const d = new Date(date);
-            const month = '' + (d.getMonth() + 1);
-            const day = '' + d.getDate();
-            const year = d.getFullYear();
-
-            return [year, month.padStart(2, '0'), day.padStart(2, '0')].join('-');
-        }
-
-
-
-
-        // Funzione per impostare i link esterni
-        function setupExternalLinks(cityName, countryName) {
-    console.log(`Configurazione link esterni per ${cityName}, ${countryName}`);
-    
-    if (!cityName || !countryName) {
-        console.error('Nome città o paese mancante');
-        return;
-    }
-    
-    // Prepara una query di ricerca
-    const searchQuery = `${cityName}, ${countryName}`;
-    const encodedQuery = encodeURIComponent(searchQuery);
-    
-    // Google Maps - usa ID invece di :contains
-    const googleMapsBtn = document.getElementById('googleMapsBtn');
-    if (googleMapsBtn) {
-        googleMapsBtn.onclick = function(e) {
-            e.preventDefault();
-            window.open(`https://www.google.com/maps/search/${encodedQuery}`, '_blank');
-            return false;
-        };
-        googleMapsBtn.href = `https://www.google.com/maps/search/${encodedQuery}`;
-    }
-    
-    // Booking.com
-    const bookingBtn = document.getElementById('bookingBtn');
-    if (bookingBtn) {
-        bookingBtn.onclick = function(e) {
-            e.preventDefault();
-            window.open(`https://www.booking.com/searchresults.html?ss=${encodedQuery}`, '_blank');
-            return false;
-        };
-        bookingBtn.href = `https://www.booking.com/searchresults.html?ss=${encodedQuery}`;
-    }
-    
-    // TripAdvisor
-    const tripAdvisorBtn = document.getElementById('tripAdvisorBtn');
-    if (tripAdvisorBtn) {
-        tripAdvisorBtn.onclick = function(e) {
-            e.preventDefault();
-            window.open(`https://www.tripadvisor.com/Search?q=${encodedQuery}`, '_blank');
-            return false;
-        };
-        tripAdvisorBtn.href = `https://www.tripadvisor.com/Search?q=${encodedQuery}`;
-    }
-}
-
-
-
-
-        // Funzione per visualizzare i dettagli di una città visitata
-        function showVisitDetails(visitId) {
-            alert("Funzionalità in sviluppo - Ricordi per ID: " + visitId);
-            // Qui implementerai la visualizzazione dei ricordi di viaggio
-        }
-
-        function removePlan(planId) {
-    if (!confirm('Sei sicuro di voler eliminare questo piano di viaggio?')) return;
-
-    // Mostra indicatore di caricamento
-    showLoadingOverlay('Eliminazione in corso...');
-
-    fetch('/DreamMap?handler=RemovePlan', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'RequestVerificationToken': getAntiForgeryToken()
-        },
-        body: JSON.stringify({ planId })
-    })
-    .then(response => response.json())
-    .then(data => {
-        // Nascondi l'indicatore di caricamento
-        hideLoadingOverlay();
-        
-        if (data.success) {
-            // Chiudi il modal
-            const modal = bootstrap.Modal.getInstance(document.getElementById('planDetailsModal'));
-            if (modal) modal.hide();
-            
-            // Rimuovi l'elemento dall'interfaccia
-            const planElement = document.querySelector(`.plan-item[data-id="${planId}"]`);
-            if (planElement) planElement.remove();
-            
-            // Rimuovi dai dati in memoria
-            if (destinations && destinations.plannedTrips) {
-                destinations.plannedTrips = destinations.plannedTrips.filter(
-                    plan => plan.id.toString() !== planId.toString()
-                );
-            }
-            
-            // Aggiorna i marker sulla mappa
-            loadMapMarkers();
-            
-            // Sincronizza lo stato dell'app
-            sincronizzaStatoApp();
-            
-            // Mostra un messaggio di successo
-            showToast('Successo', 'Piano eliminato con successo!', 'success');
-        } else {
-            showToast('Errore', data.message || 'Errore durante l\'eliminazione del piano', 'danger');
-        }
-    })
-    .catch(error => {
-        hideLoadingOverlay();
-        console.error('Errore durante l\'eliminazione:', error);
-        showToast('Errore', 'Si è verificato un errore durante l\'eliminazione', 'danger');
-    });
-}
-
-        // Funzione per segnare un viaggio pianificato come visitato
-        function markAsVisited(planId) {
-    if (!confirm('Sei sicuro di voler segnare questa destinazione come visitata?')) return;
-
-    // Trova il piano nei dati
-    if (!destinations || !destinations.plannedTrips) {
-        showToast('Errore', 'Dati non disponibili', 'danger');
-        return;
-    }
-    
-    const plan = destinations.plannedTrips.find(
-        item => item.id && item.id.toString() === planId.toString()
-    );
-    
-    if (!plan) {
-        showToast('Errore', 'Piano non trovato nei dati', 'danger');
-        return;
-    }
-
-    // Mostra indicatore di caricamento
-    showLoadingOverlay('Spostamento in corso...');
-
-    // Chiama l'API per segnare come visitato
-    fetch('/DreamMap?handler=MarkAsVisited', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'RequestVerificationToken': getAntiForgeryToken()
-        },
-        body: JSON.stringify({ planId })
-    })
-    .then(response => response.json())
-    .then(data => {
-        hideLoadingOverlay();
-        
-        if (data.success) {
-            // Chiudi il modal
-            const modal = bootstrap.Modal.getInstance(document.getElementById('planDetailsModal'));
-            if (modal) modal.hide();
-            
-            // Inizializza l'array delle città visitate se necessario
-            if (!destinations.visitedCities) {
-                destinations.visitedCities = [];
-            }
-            
-            // Crea un nuovo oggetto per le città visitate
-            const visitData = {
-                id: plan.id,
-                cityName: plan.cityName,
-                countryName: plan.countryName,
-                imageUrl: plan.imageUrl,
-                latitude: plan.latitude,
-                longitude: plan.longitude,
-                visitDate: plan.endDate || new Date(),
-                rating: 0, // Rating iniziale
-                memories: plan.notes || '',
-                photos: []
-            };
-            
-            // Aggiungi alle città visitate
-            destinations.visitedCities.push(visitData);
-            
-            // Rimuovi dalla pianificazione
-            destinations.plannedTrips = destinations.plannedTrips.filter(
-                item => item.id.toString() !== planId.toString()
-            );
-            
-            // Aggiorna l'interfaccia
-            sincronizzaStatoApp();
-            
-            // Passa alla tab delle visite
-            const visitedTab = document.getElementById('visited-tab');
-            if (visitedTab) {
-                visitedTab.click();
-            }
-            
-            showToast('Successo', 'Destinazione segnata come visitata!', 'success');
-        } else {
-            showToast('Errore', data.message || 'Errore durante lo spostamento', 'danger');
-        }
-    })
-    .catch(error => {
-        hideLoadingOverlay();
-        console.error('Errore durante lo spostamento:', error);
-        showToast('Errore', 'Si è verificato un errore durante lo spostamento', 'danger');
-    });
-}
-
-        // Funzione per ottenere l'etichetta della categoria
+        // UNICA DEFINIZIONE CORRETTA
         function getCategoryLabel(category) {
-            const labels = {
-                'travel': 'Viaggio',
-                'accommodation': 'Alloggio',
-                'documents': 'Documenti',
-                'activities': 'Attività',
-                'other': 'Altro'
-            };
+            const labels = { 'travel': 'Viaggio', 'accommodation': 'Alloggio', 'documents': 'Documenti', 'activities': 'Attività', 'other': 'Altro' };
             return labels[category] || category;
         }
 
-        // Funzione per aggiornare i dettagli del piano
-       function updatePlanDetails(planId) {
-    console.log('Aggiornamento piano:', planId);
-    
-    // Trova il piano nei dati
-    if (!destinations || !destinations.plannedTrips) {
-        showToast('Errore', 'Dati non disponibili', 'danger');
-        return;
-    }
-    
-    const planIndex = destinations.plannedTrips.findIndex(
-        plan => plan.id && plan.id.toString() === planId.toString()
-    );
-    
-    if (planIndex === -1) {
-        showToast('Errore', 'Piano non trovato nei dati', 'danger');
-        return;
-    }
-    
-    // Raccogli i dati dal form
-    const startDateInput = document.getElementById('planStartDate');
-    const endDateInput = document.getElementById('planEndDate');
-    const notesInput = document.getElementById('planNotes');
-    
-    if (!startDateInput || !endDateInput) {
-        showToast('Errore', 'Form incompleto', 'danger');
-        return;
-    }
-    
-    const startDate = startDateInput.value;
-    const endDate = endDateInput.value;
-    const notes = notesInput ? notesInput.value : '';
-    
-    // Verifica le date
-    if (!startDate || !endDate) {
-        showToast('Errore', 'Le date sono obbligatorie', 'danger');
-        return;
-    }
-    
-    if (new Date(startDate) > new Date(endDate)) {
-        showToast('Errore', 'La data di inizio deve essere precedente alla data di fine', 'danger');
-        return;
-    }
-    
-    // Prepara i dati da inviare
-    const updateData = {
-        planId: planId,
-        startDate: startDate,
-        endDate: endDate,
-        notes: notes
-    };
-    
-    // Mostra indicatore di caricamento
-    showLoadingOverlay('Salvataggio in corso...');
-    
-    // Chiama l'API per aggiornare i dati
-    fetch('/DreamMap?handler=UpdatePlan', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'RequestVerificationToken': getAntiForgeryToken()
-        },
-        body: JSON.stringify(updateData)
-    })
-    .then(response => response.json())
-    .then(data => {
-        hideLoadingOverlay();
-        
-        if (data.success) {
-            // Aggiorna i dati in memoria
-            const plan = destinations.plannedTrips[planIndex];
-            plan.startDate = new Date(startDate);
-            plan.endDate = new Date(endDate);
-            plan.notes = notes;
-            
-            // Aggiorna la visualizzazione
-            sincronizzaStatoApp();
-            
-            // Aggiorna il modal
-            const dateRangeText = `${new Date(startDate).toLocaleDateString()} - ${new Date(endDate).toLocaleDateString()}`;
-            const planDateRange = document.getElementById('planDateRange');
-            if (planDateRange && planDateRange.querySelector('span')) {
-                planDateRange.querySelector('span').textContent = dateRangeText;
+        function sincronizzaStatoApp() {
+            console.log('Sincronizzazione stato app...');
+            if (!destinations) destinations = { wishlist: [], plannedTrips: [], visitedCities: [] };
+            if (!destinations.wishlist) destinations.wishlist = [];
+            if (!destinations.plannedTrips) destinations.plannedTrips = [];
+            if (!destinations.visitedCities) destinations.visitedCities = [];
+
+            ricostruisciSidebar();
+            if (map) {
+                setTimeout(() => { loadMapMarkers(); map.invalidateSize(); }, 200);
             }
-            
-            showToast('Successo', 'Modifiche salvate con successo!', 'success');
-        } else {
-            showToast('Errore', data.message || 'Errore durante il salvataggio delle modifiche', 'danger');
-        }
-    })
-    .catch(error => {
-        hideLoadingOverlay();
-        console.error('Errore durante l\'aggiornamento:', error);
-        showToast('Errore', 'Si è verificato un errore durante il salvataggio', 'danger');
-    });
-}
-
-        // Helper per convertire l'etichetta categoria nel codice
-        function getCategoryCode(label) {
-            const mapping = {
-                'Viaggio': 'travel',
-                'Alloggio': 'accommodation',
-                'Documenti': 'documents',
-                'Attività': 'activities',
-                'Altro': 'other'
-            };
-            return mapping[label] || 'other';
         }
 
-        // Funzione helper per ottenere il token antiforgery
-        function getAntiForgeryToken() {
-            const tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
-            return tokenInput ? tokenInput.value : '';
+        function configuraPulsantiModal() {
+            console.log("Configurazione pulsanti modal...");
+            const removePlanBtn = document.getElementById('removePlanBtn');
+            const updatePlanBtn = document.getElementById('updatePlanBtn');
+            const markVisitedBtn = document.getElementById('markVisitedBtn');
+            const planDetailsModalEl = document.getElementById('planDetailsModal'); // Per ottenere planId
+
+            if (removePlanBtn) {
+                removePlanBtn.onclick = function () {
+                    const planId = planDetailsModalEl.getAttribute('data-plan-id');
+                    if (planId) removePlan(planId); else console.error("removePlanBtn: planId non trovato nel modal.");
+                };
+            }
+            if (updatePlanBtn) {
+                updatePlanBtn.onclick = function () {
+                    const planId = planDetailsModalEl.getAttribute('data-plan-id');
+                    console.log("Pulsante Salva Modifiche cliccato, planId:", planId); // Log cruciale
+                    if (planId) updatePlanDetails(planId); else console.error("updatePlanBtn: planId non trovato nel modal.");
+                };
+            }
+            if (markVisitedBtn) {
+                markVisitedBtn.onclick = function () {
+                    const planId = planDetailsModalEl.getAttribute('data-plan-id');
+                    if (planId) markAsVisited(planId); else console.error("markVisitedBtn: planId non trovato nel modal.");
+                };
+            }
+
+            const planTripBtn = document.getElementById('planTripBtn');
+            const dreamDetailsModalEl = document.getElementById('dreamDetailsModal'); // Per ottenere dreamId
+            if (planTripBtn) {
+                planTripBtn.onclick = function () {
+                    const dreamId = dreamDetailsModalEl.getAttribute('data-dream-id');
+                    if (dreamId) moveToPlanningPhase(dreamId); else console.error("planTripBtn: dreamId non trovato nel modal.");
+                };
+            }
         }
 
-        // Gestione degli elementi della checklist
-        function toggleChecklistItem(itemId) {
-            // Qui implementerai l'aggiornamento dello stato dell'elemento
-            console.log('Toggle item:', itemId);
+        // UNICA DEFINIZIONE CORRETTA
+        function getCountryCode(countryName) {
+            const countryMap = { 'Italia': 'it', 'Francia': 'fr', 'Germania': 'de', 'Spagna': 'es', 'Regno Unito': 'gb', 'Stati Uniti': 'us', 'Giappone': 'jp' };
+            return countryMap[countryName] || 'unknown';
+        }
 
-            // Per ora, simula il cambio di stato
-            const item = document.querySelector(`.plan-detailed-checklist li[data-id="${itemId}"]`);
-            if (item) {
-                if (item.classList.contains('completed')) {
-                    item.classList.remove('completed');
-                    item.querySelector('i').className = 'far fa-circle';
-                } else {
-                    item.classList.add('completed');
-                    item.querySelector('i').className = 'fas fa-check-circle';
+        function setupExternalLinks(cityName, countryName) {
+            if (!cityName || !countryName) { console.error('Nome città o paese mancante per link esterni'); return; }
+            const encodedQuery = encodeURIComponent(`${cityName}, ${countryName}`);
+            const setupLink = (id, urlPattern) => {
+                const btn = document.getElementById(id);
+                if (btn) {
+                    const finalUrl = urlPattern.replace('{QUERY}', encodedQuery);
+                    btn.href = finalUrl; // Imposta href per accessibilità e fallback
+                    btn.onclick = (e) => { e.preventDefault(); window.open(finalUrl, '_blank'); return false; };
                 }
+            };
+            setupLink('googleMapsBtn', 'https://www.google.com/maps/search/{QUERY}');
+            setupLink('bookingBtn', 'https://www.booking.com/searchresults.html?ss={QUERY}');
+            setupLink('tripAdvisorBtn', 'https://www.tripadvisor.com/Search?q={QUERY}');
+        }
 
-                // Ricalcola e aggiorna la percentuale
-                updateCompletionPercentage();
+        function showVisitDetails(visitId) { alert("Funzionalità Ricordi per ID: " + visitId + " in sviluppo."); }
+
+        function removePlan(planId) {
+            if (!confirm('Eliminare questo piano di viaggio?')) return;
+            showLoadingOverlay('Eliminazione...');
+            fetch('/DreamMap?handler=RemovePlan', {
+                method: 'POST', headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': getAntiForgeryToken() }, body: JSON.stringify({ planId })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    hideLoadingOverlay();
+                    if (data.success) {
+                        const modal = bootstrap.Modal.getInstance(document.getElementById('planDetailsModal'));
+                        if (modal) modal.hide();
+                        destinations.plannedTrips = destinations.plannedTrips.filter(plan => plan.id.toString() !== planId.toString());
+                        sincronizzaStatoApp();
+                        showToast('Successo', 'Piano eliminato!', 'success');
+                    } else { showToast('Errore', data.message || 'Errore eliminazione.', 'danger'); }
+                })
+                .catch(error => { hideLoadingOverlay(); console.error('Errore eliminazione:', error); showToast('Errore', 'Errore connessione.', 'danger'); });
+        }
+
+        function markAsVisited(planId) {
+            if (!confirm('Segnare come visitato?')) return;
+            const plan = destinations.plannedTrips.find(item => item.id && item.id.toString() === planId.toString());
+            if (!plan) { showToast('Errore', 'Piano non trovato.', 'danger'); return; }
+
+            showLoadingOverlay('Spostamento...');
+            fetch('/DreamMap?handler=MarkAsVisited', {
+                method: 'POST', headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': getAntiForgeryToken() }, body: JSON.stringify({ planId })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    hideLoadingOverlay();
+                    if (data.success) {
+                        const modal = bootstrap.Modal.getInstance(document.getElementById('planDetailsModal'));
+                        if (modal) modal.hide();
+                        if (!destinations.visitedCities) destinations.visitedCities = [];
+                        const visitData = { ...plan, visitDate: plan.endDate || new Date(), rating: 0, memories: plan.notes || '', photos: [] };
+                        destinations.visitedCities.push(visitData);
+                        destinations.plannedTrips = destinations.plannedTrips.filter(item => item.id.toString() !== planId.toString());
+                        sincronizzaStatoApp();
+                        document.getElementById('discover-tab')?.click(); // Vai alla tab Scopri o una tab Visitate se esiste
+                        showToast('Successo', 'Segnato come visitato!', 'success');
+                    } else { showToast('Errore', data.message || 'Errore spostamento.', 'danger'); }
+                })
+                .catch(error => { hideLoadingOverlay(); console.error('Errore spostamento:', error); showToast('Errore', 'Errore connessione.', 'danger'); });
+        }
+
+        function updatePlanDetails(planId) {
+            console.log('Attempting to update plan with ID:', planId);
+            if (!planId) { showToast('Errore', 'ID piano non valido.', 'danger'); console.error("updatePlanDetails: ID non valido"); return; }
+
+            const planIndex = destinations.plannedTrips.findIndex(p => p.id && p.id.toString() === planId.toString());
+            if (planIndex === -1) { showToast('Errore', 'Piano non trovato.', 'danger'); console.error("updatePlanDetails: Piano non trovato per ID", planId); return; }
+            const plan = destinations.plannedTrips[planIndex];
+
+            const startDateInput = document.getElementById('planStartDateInput');
+            const endDateInput = document.getElementById('planEndDateInput');
+            const notesInput = document.getElementById('planNotes');
+
+            if (!startDateInput || !endDateInput) { console.error("Campi data mancanti nel DOM."); showToast('Errore Modulo', 'Campi data mancanti.', 'danger'); return; }
+
+            const startDate = startDateInput.value;
+            const endDate = endDateInput.value;
+            const notes = notesInput ? notesInput.value : (plan.notes || '');
+
+            if (!startDate || !endDate) { showToast('Errore', 'Date obbligatorie.', 'danger'); return; }
+            if (new Date(startDate) > new Date(endDate)) { showToast('Errore', 'Data inizio successiva a data fine.', 'danger'); return; }
+
+            const updateData = { planId, startDate, endDate, notes, checklist: plan.checklist, completionPercentage: plan.completionPercentage };
+            console.log("Dati inviati al server per updatePlanDetails:", JSON.stringify(updateData));
+
+            showLoadingOverlay('Salvataggio...');
+            fetch('/DreamMap?handler=UpdatePlan', {
+                method: 'POST', headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': getAntiForgeryToken() }, body: JSON.stringify(updateData)
+            })
+                .then(response => {
+                    if (!response.ok) return response.text().then(text => { throw new Error(JSON.parse(text).message || `Errore HTTP: ${response.status}`); });
+                    return response.json();
+                })
+                .then(data => {
+                    hideLoadingOverlay();
+                    if (data.success) {
+                        plan.startDate = new Date(startDate);
+                        plan.endDate = new Date(endDate);
+                        plan.notes = notes;
+                        if (data.updatedPlan) { // Se il backend restituisce il piano aggiornato (es. con ID checklist)
+                            plan.checklist = data.updatedPlan.checklist || plan.checklist;
+                            plan.completionPercentage = data.updatedPlan.completionPercentage !== undefined ? data.updatedPlan.completionPercentage : plan.completionPercentage;
+                        }
+                        sincronizzaStatoApp();
+                        const planDateRangeDisplay = document.getElementById('planDateRange')?.querySelector('span');
+                        if (planDateRangeDisplay) planDateRangeDisplay.textContent = `${new Date(startDate).toLocaleDateString()} - ${new Date(endDate).toLocaleDateString()}`;
+                        showToast('Successo', 'Modifiche salvate!', 'success');
+                    } else { showToast('Errore', data.message || 'Salvataggio fallito.', 'danger'); }
+                })
+                .catch(error => { hideLoadingOverlay(); console.error('Errore aggiornamento:', error); showToast('Errore', `Errore connessione: ${error.message}`, 'danger'); });
+        }
+
+        function removeChecklistItem(planId, itemId) {
+            if (!confirm('Rimuovere elemento checklist?')) return;
+            const planIndex = destinations.plannedTrips.findIndex(p => p.id.toString() === planId);
+            if (planIndex === -1) { showToast('Errore', 'Piano non trovato.', 'danger'); return; }
+            const plan = destinations.plannedTrips[planIndex];
+            plan.checklist = plan.checklist.filter(item => item.id.toString() !== itemId.toString());
+            renderChecklistInModal(planId);
+            updateCompletionPercentage(planId);
+            showToast('Info', 'Elemento rimosso. Salva per confermare.', 'info');
+        }
+
+        function setupChecklistSubModalSave() {
+            const saveBtn = document.getElementById('saveChecklistItemBtn');
+            if (saveBtn) {
+                saveBtn.onclick = function () {
+                    const addModalEl = document.getElementById('addChecklistItemModal');
+                    const planId = addModalEl.getAttribute('data-current-plan-id');
+                    const title = document.getElementById('checklistItemTitle').value.trim();
+                    const category = document.getElementById('checklistItemCategory').value;
+                    const dueDate = document.getElementById('checklistItemDueDate').value;
+
+                    if (!title) { showToast('Errore', 'Titolo obbligatorio.', 'danger'); return; }
+                    if (!planId) { showToast('Errore', 'ID piano non trovato.', 'danger'); return; }
+
+                    const planIndex = destinations.plannedTrips.findIndex(p => p.id.toString() === planId);
+                    if (planIndex === -1) { showToast('Errore', 'Piano non trovato.', 'danger'); return; }
+                    const plan = destinations.plannedTrips[planIndex];
+
+                    const newItem = { id: 'client-' + Date.now(), title, category, dueDate: dueDate || null, isCompleted: false };
+                    plan.checklist = plan.checklist || [];
+                    plan.checklist.push(newItem);
+
+                    renderChecklistInModal(planId);
+                    updateCompletionPercentage(planId);
+                    bootstrap.Modal.getInstance(addModalEl)?.hide();
+                    showToast('Info', 'Elemento aggiunto. Salva per confermare.', 'info');
+                };
             }
         }
 
-        // Funzione per mostrare i toast
-        function showToast(title, message, type) {
-            // Crea un elemento toast
-            const toastContainer = document.getElementById('toast-container') || createToastContainer();
+        function toggleChecklistItem(planId, itemId) {
+            const planIndex = destinations.plannedTrips.findIndex(p => p.id.toString() === planId);
+            if (planIndex === -1) return;
+            const plan = destinations.plannedTrips[planIndex];
+            const itemIndex = plan.checklist.findIndex(item => item.id.toString() === itemId.toString());
+            if (itemIndex === -1) return;
 
-            const toastId = 'toast-' + new Date().getTime();
+            plan.checklist[itemIndex].isCompleted = !plan.checklist[itemIndex].isCompleted;
+
+            const listItemElement = document.querySelector(`#planChecklist li[data-id="${itemId}"]`);
+            if (listItemElement) {
+                listItemElement.classList.toggle('completed', plan.checklist[itemIndex].isCompleted);
+                listItemElement.querySelector('i:first-child').className = plan.checklist[itemIndex].isCompleted ? 'fas fa-check-circle' : 'far fa-circle';
+            }
+            updateCompletionPercentage(planId);
+        }
+
+        function showToast(title, message, type = 'info') { // Default type a info
+            const toastContainer = document.getElementById('toast-container') || createToastContainer();
+            const toastId = 'toast-' + Date.now();
             const toast = document.createElement('div');
-            toast.className = `toast align-items-center border-0 bg-${type} text-white`;
+            toast.className = `toast align-items-center text-white bg-${type} border-0`; // Bootstrap 5 classes
             toast.id = toastId;
             toast.setAttribute('role', 'alert');
             toast.setAttribute('aria-live', 'assertive');
             toast.setAttribute('aria-atomic', 'true');
-            toast.innerHTML = `
-                <div class="d-flex">
-                    <div class="toast-body">
-                        <strong>${title}</strong>: ${message}
-                    </div>
-                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-                </div>
-            `;
-
+            toast.innerHTML = `<div class="d-flex"><div class="toast-body"><strong>${title}</strong>: ${message}</div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button></div>`;
             toastContainer.appendChild(toast);
-
-            // Inizializza e mostra il toast
-            const bsToast = new bootstrap.Toast(toast, {
-                autohide: true,
-                delay: 5000
-            });
+            const bsToast = new bootstrap.Toast(toast, { delay: 5000, autohide: true });
             bsToast.show();
-
-            // Rimuovi il toast dal DOM dopo che è stato nascosto
-            toast.addEventListener('hidden.bs.toast', function () {
-                toast.remove();
-            });
+            toast.addEventListener('hidden.bs.toast', () => toast.remove());
         }
 
-        // Funzione per creare il container dei toast
         function createToastContainer() {
             const container = document.createElement('div');
             container.id = 'toast-container';
             container.className = 'toast-container position-fixed bottom-0 end-0 p-3';
-            container.style.zIndex = '9999';
+            container.style.zIndex = '1090'; // Higher than modals (Bootstrap modal z-index is 1055)
             document.body.appendChild(container);
             return container;
         }
 
-        // Funzione per aggiornare la percentuale di completamento
-        function updateCompletionPercentage() {
-            const items = document.querySelectorAll('.plan-detailed-checklist li');
-            const completedItems = document.querySelectorAll('.plan-detailed-checklist li.completed');
+        function updateCompletionPercentage(planId) {
+            const planIndex = destinations.plannedTrips.findIndex(p => p.id.toString() === planId);
+            if (planIndex === -1) { console.warn("updateCompletionPercentage: Piano non trovato", planId); return; }
+            const plan = destinations.plannedTrips[planIndex];
+            plan.checklist = plan.checklist || []; // Assicura che esista
 
-            if (items.length === 0) return;
+            let percentage = 0;
+            if (plan.checklist.length > 0) {
+                const completedItemsCount = plan.checklist.filter(item => item.isCompleted).length;
+                percentage = Math.round((completedItemsCount / plan.checklist.length) * 100);
+            }
+            plan.completionPercentage = percentage;
 
-            const percentage = Math.round((completedItems.length / items.length) * 100);
             const planProgressBar = document.getElementById('planProgressBar');
             if (planProgressBar) {
                 planProgressBar.style.width = `${percentage}%`;
+                planProgressBar.setAttribute('aria-valuenow', percentage);
             }
-            
-            const progressPercentage = document.getElementById('progressPercentage');
-            if (progressPercentage) {
-                progressPercentage.textContent = percentage;
-            }
+            const progressPercentageText = document.getElementById('progressPercentage');
+            if (progressPercentageText) progressPercentageText.textContent = percentage;
+
+            const sidebarPlanItem = document.querySelector(`.plan-item[data-id="${planId}"] .progress-bar`);
+            if (sidebarPlanItem) sidebarPlanItem.style.width = `${percentage}%`;
+            const sidebarProgressText = document.querySelector(`.plan-item[data-id="${planId}"] .plan-progress-text`);
+            if (sidebarProgressText) sidebarProgressText.textContent = `${percentage}% completato`;
         }
 
-        // Funzione per aggiungere elementi alla checklist
-        function addChecklistItem(title, category, dueDate) {
-            const checklistContainer = document.getElementById('planChecklist');
-            if (!checklistContainer) return;
+        function moveToPlanningPhase(dreamId) {
+            console.log('Sposta alla pianificazione:', dreamId);
+            const dreamToMove = destinations.wishlist.find(dream => dream.id.toString() === dreamId);
+            if (!dreamToMove) { showToast('Errore', 'Sogno non trovato.', 'danger'); return; }
 
-            // Genera un ID temporaneo
-            const tempId = new Date().getTime();
-
-            const listItem = document.createElement('li');
-            listItem.dataset.id = tempId;
-
-            const checkIcon = document.createElement('i');
-            checkIcon.className = 'far fa-circle';
-            checkIcon.style.cursor = 'pointer';
-            checkIcon.onclick = () => toggleChecklistItem(tempId);
-
-            const textDiv = document.createElement('div');
-            textDiv.className = 'checklist-text';
-            textDiv.textContent = title;
-
-            const categorySpan = document.createElement('span');
-            categorySpan.className = 'checklist-category';
-            categorySpan.textContent = getCategoryLabel(category);
-
-            const dueSpan = document.createElement('span');
-            dueSpan.className = 'checklist-due';
-            if (dueDate) {
-                dueSpan.innerHTML = `<i class="far fa-calendar-alt"></i> ${new Date(dueDate).toLocaleDateString()}`;
-            }
-
-            listItem.appendChild(checkIcon);
-            listItem.appendChild(textDiv);
-            listItem.appendChild(categorySpan);
-            listItem.appendChild(dueSpan);
-            checklistContainer.appendChild(listItem);
-
-            // Aggiorna la percentuale di completamento
-            updateCompletionPercentage();
+            showLoadingOverlay('Spostamento...');
+            fetch('/DreamMap?handler=MoveToPlanning', {
+                method: 'POST', headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': getAntiForgeryToken() }, body: JSON.stringify({ dreamId })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    hideLoadingOverlay();
+                    if (data.success) {
+                        bootstrap.Modal.getInstance(document.getElementById('dreamDetailsModal'))?.hide();
+                        const newPlan = { ...dreamToMove, startDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), endDate: new Date(Date.now() + 37 * 24 * 60 * 60 * 1000), completionPercentage: 0, checklist: [] };
+                        if (!destinations.plannedTrips) destinations.plannedTrips = [];
+                        destinations.plannedTrips.push(newPlan);
+                        destinations.wishlist = destinations.wishlist.filter(dream => dream.id.toString() !== dreamId);
+                        sincronizzaStatoApp();
+                        document.getElementById('planning-tab')?.click();
+                        showToast('Successo', 'Spostato in pianificazione!', 'success');
+                    } else { showToast('Errore', data.message || 'Errore spostamento.', 'danger'); }
+                })
+                .catch(error => { hideLoadingOverlay(); console.error('Errore spostamento:', error); showToast('Errore', 'Errore connessione.', 'danger'); });
         }
 
-        // Sposta un sogno alla fase di pianificazione
-function moveToPlanningPhase(dreamId) {
-    console.log('Sposta alla fase di pianificazione:', dreamId);
-
-    // Trova i dettagli dell'elemento nella wishlist
-    if (!destinations || !destinations.wishlist) {
-        showToast('Errore', 'Dati non disponibili', 'danger');
-        return;
-    }
-
-    // Cerca l'elemento nei dati
-    const dreamToMove = destinations.wishlist.find(dream => dream.id && dream.id.toString() === dreamId.toString());
-    if (!dreamToMove) {
-        showToast('Errore', 'Elemento non trovato nei dati', 'danger');
-        return;
-    }
-
-    // Mostra indicatore di caricamento
-    const loadingIndicator = document.createElement('div');
-    loadingIndicator.className = 'position-fixed top-50 start-50 translate-middle bg-white p-4 rounded shadow';
-    loadingIndicator.innerHTML = `
-        <div class="d-flex align-items-center">
-            <div class="spinner-border text-primary me-3" role="status"></div>
-            <span>Spostamento in corso...</span>
-        </div>
-    `;
-    document.body.appendChild(loadingIndicator);
-
-    // Ottieni il token anti-forgery
-    const token = getAntiForgeryToken();
-
-    // Esegui la chiamata AJAX per spostare la destinazione
-    fetch('/DreamMap?handler=MoveToPlanning', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'RequestVerificationToken': token
-        },
-        body: JSON.stringify({ dreamId: dreamId })
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error(`Errore HTTP: ${response.status}`);
-        }
-        return response.json();
-    })
-    .then(data => {
-        try {
-            // Rimuovi indicatore di caricamento
-            document.body.removeChild(loadingIndicator);
-
-            if (data.success) {
-                // Chiudi il modal se aperto
-                const modal = bootstrap.Modal.getInstance(document.getElementById('dreamDetailsModal'));
-                if (modal) modal.hide();
-
-                // Crea una nuova pianificazione dai dati del sogno
-                const newPlan = {
-                    id: dreamToMove.id,
-                    cityName: dreamToMove.cityName,
-                    countryName: dreamToMove.countryName,
-                    imageUrl: dreamToMove.imageUrl,
-                    notes: dreamToMove.notes || '',
-                    latitude: dreamToMove.latitude,
-                    longitude: dreamToMove.longitude,
-                    tags: dreamToMove.tags || [],
-                    startDate: new Date(new Date().getTime() + (30 * 24 * 60 * 60 * 1000)),
-                    endDate: new Date(new Date().getTime() + (37 * 24 * 60 * 60 * 1000)),
-                    completionPercentage: 0,
-                    checklist: []
-                };
-
-                // Inizializza l'array dei pianificati se necessario
-                if (!destinations.plannedTrips) {
-                    destinations.plannedTrips = [];
-                }
-
-                // Aggiungi alla pianificazione
-                destinations.plannedTrips.push(newPlan);
-
-                // Rimuovi dalla wishlist
-                destinations.wishlist = destinations.wishlist.filter(dream => 
-                    !dream.id || dream.id.toString() !== dreamId.toString());
-
-                // FONDAMENTALE: Sincronizza tutto lo stato dell'app
-                sincronizzaStatoApp();
-
-                // Passa alla tab di pianificazione
-                const planningTab = document.getElementById('planning-tab');
-                if (planningTab) {
-                    planningTab.click();
-                }
-
-                // Mostra messaggio di successo
-                showToast('Successo', 'Destinazione spostata nella fase di pianificazione!', 'success');
-            } else {
-                showToast('Errore', data.message || 'Si è verificato un errore durante lo spostamento della destinazione', 'danger');
-            }
-        } catch (error) {
-            console.error('Errore durante l\'elaborazione della risposta:', error);
-            showToast('Errore', 'Si è verificato un errore durante l\'elaborazione della risposta', 'danger');
-        }
-    })
-    .catch(error => {
-        // Rimuovi indicatore di caricamento
-        if (document.body.contains(loadingIndicator)) {
-            document.body.removeChild(loadingIndicator);
-        }
-
-        console.error('Errore durante lo spostamento:', error);
-        showToast('Errore', 'Si è verificato un errore durante lo spostamento della destinazione', 'danger');
-    });
-}
-
-
-
-
-        // Funzione per popolare le informazioni sui paesi
         function populateCountryInfo(countryName) {
-    // In una implementazione reale, questi dati verrebbero caricati da un'API
-    const currencyInfo = document.getElementById('currencyInfo');
-    const languageInfo = document.getElementById('languageInfo');
-    const timeInfo = document.getElementById('timeInfo');
-    
-    if (!currencyInfo || !languageInfo || !timeInfo) {
-        console.error('Elementi DOM per le informazioni sul paese non trovati');
-        return;
-    }
-    
-    if (countryName === 'Francia') {
-        currencyInfo.innerHTML = `
-            <p><strong>Euro (€)</strong></p>
-            <p>Cambio: 1 EUR = 1.09 USD</p>
-        `;
+            const currencyInfoEl = document.getElementById('currencyInfo');
+            const languageInfoEl = document.getElementById('languageInfo');
+            const timeInfoEl = document.getElementById('timeInfo');
+            if (!currencyInfoEl || !languageInfoEl || !timeInfoEl) { console.error('Elementi info paese mancanti.'); return; }
 
-        languageInfo.innerHTML = `
-            <p><strong>Francese</strong></p>
-            <p>Frasi utili:</p>
-            <ul>
-                <li>Bonjour - Buongiorno</li>
-                <li>Merci - Grazie</li>
-                <li>S'il vous plaît - Per favore</li>
-                <li>Excusez-moi - Mi scusi</li>
-                <li>Au revoir - Arrivederci</li>
-            </ul>
-        `;
-
-        timeInfo.innerHTML = `
-            <p><strong>CET/CEST</strong></p>
-            <p>UTC+1 (Inverno), UTC+2 (Estate)</p>
-            <p>Stessa ora dell'Italia</p>
-        `;
-    } else if (countryName === 'Giappone') {
-        currencyInfo.innerHTML = `
-            <p><strong>Yen (¥)</strong></p>
-            <p>Cambio: 1 JPY = 0.0067 USD</p>
-        `;
-
-        languageInfo.innerHTML = `
-            <p><strong>Giapponese</strong></p>
-            <p>Frasi utili:</p>
-            <ul>
-                <li>こんにちは (Konnichiwa) - Buongiorno</li>
-                <li>ありがとう (Arigatou) - Grazie</li>
-                <li>お願いします (Onegaishimasu) - Per favore</li>
-                <li>すみません (Sumimasen) - Mi scusi</li>
-                <li>さようなら (Sayounara) - Arrivederci</li>
-            </ul>
-        `;
-
-        timeInfo.innerHTML = `
-            <p><strong>JST</strong></p>
-            <p>UTC+9</p>
-            <p>+8 ore rispetto all'Italia</p>
-        `;
-    } else if (countryName === 'Stati Uniti') {
-        currencyInfo.innerHTML = `
-            <p><strong>Dollaro ($)</strong></p>
-            <p>Cambio: 1 USD = 0.92 EUR</p>
-        `;
-
-        languageInfo.innerHTML = `
-            <p><strong>Inglese</strong></p>
-            <p>Frasi utili:</p>
-            <ul>
-                <li>Hello - Ciao</li>
-                <li>Thank you - Grazie</li>
-                <li>Please - Per favore</li>
-                <li>Excuse me - Scusa/Permesso</li>
-                <li>Goodbye - Arrivederci</li>
-            </ul>
-        `;
-
-        timeInfo.innerHTML = `
-            <p><strong>Vari fusi orari</strong></p>
-            <p>New York (EST/EDT): UTC-5/UTC-4</p>
-            <p>Chicago (CST/CDT): UTC-6/UTC-5</p>
-            <p>Denver (MST/MDT): UTC-7/UTC-6</p>
-            <p>Los Angeles (PST/PDT): UTC-8/UTC-7</p>
-            <p>Da -6 a -9 ore rispetto all'Italia</p>
-        `;
-    } else {
-        // Per paesi non configurati, mostra un messaggio generico
-        const genericInfo = `
-            <p>Informazioni dettagliate su ${countryName} non disponibili.</p>
-            <p>Ti consigliamo di cercare informazioni su:</p>
-            <ul>
-                <li>Valuta locale e tasso di cambio</li>
-                <li>Lingua e frasi basilari</li>
-                <li>Fuso orario e differenza con l'Italia</li>
-                <li>Requisiti per il visto</li>
-                <li>Corrente elettrica e adattatori</li>
-            </ul>
-        `;
-        currencyInfo.innerHTML = genericInfo;
-        languageInfo.innerHTML = '';
-        timeInfo.innerHTML = '';
-    }
-}
-                       
-function initializeSuggestionTabs() {
-    console.log('Inizializzazione dei tab per le informazioni sulla destinazione');
-    
-    // Seleziona tutti i tab nel modal
-    document.querySelectorAll('.suggestion-tab').forEach(tab => {
-        // Rimuovi qualsiasi listener esistente clonando l'elemento
-        const newTab = tab.cloneNode(true);
-        tab.parentNode.replaceChild(newTab, tab);
-        
-        // Aggiungi nuovo listener
-        newTab.addEventListener('click', function() {
-            // Ottieni il tab target dal data-attribute
-            const targetTab = this.getAttribute('data-tab');
-            if (!targetTab) return;
-            
-            console.log('Click su tab:', targetTab);
-            
-            // Rimuovi la classe active da tutti i tab
-            document.querySelectorAll('.suggestion-tab').forEach(t => {
-                t.classList.remove('active');
-            });
-            
-            // Aggiungi la classe active al tab cliccato
-            this.classList.add('active');
-            
-            // Nascondi tutti i pannelli contenuto
-            document.querySelectorAll('.suggestion-pane').forEach(pane => {
-                pane.classList.remove('active');
-            });
-            
-            // Mostra il pannello target
-            const targetPane = document.querySelector(`.suggestion-pane[data-pane="${targetTab}"]`);
-            if (targetPane) {
-                targetPane.classList.add('active');
-            } else {
-                console.error('Pannello target non trovato:', targetTab);
+            let currencyText = '', languageText = '', timeText = '';
+            switch (countryName) {
+                case 'Francia':
+                    currencyText = `<p><strong>Euro (€)</strong></p><p>Cambio: ~1 EUR = 1.09 USD</p>`;
+                    languageText = `<p><strong>Francese</strong></p><p>Utili: Bonjour, Merci, Au revoir</p>`;
+                    timeText = `<p><strong>CET/CEST (UTC+1/UTC+2)</strong></p><p>Stessa ora Italia</p>`;
+                    break;
+                case 'Giappone':
+                    currencyText = `<p><strong>Yen (¥)</strong></p><p>Cambio: ~1 JPY = 0.0067 USD</p>`;
+                    languageText = `<p><strong>Giapponese</strong></p><p>Utili: Konnichiwa, Arigatou</p>`;
+                    timeText = `<p><strong>JST (UTC+9)</strong></p><p>+7/+8 ore da Italia</p>`;
+                    break;
+                // Aggiungi altri casi
+                default:
+                    currencyText = `<p>Info valuta per ${countryName} non disponibile.</p>`;
+                    languageText = `<p>Info lingua per ${countryName} non disponibile.</p>`;
+                    timeText = `<p>Info fuso orario per ${countryName} non disponibile.</p>`;
             }
-        });
-    });
-    
-    // Attiva il primo tab per impostazione predefinita
-    const firstTab = document.querySelector('.suggestion-tab');
-    if (firstTab) {
-        firstTab.click();
-    }
-}
-
-function removeDream(dreamId) {
-    if (!confirm('Sei sicuro di voler rimuovere questa destinazione?')) return;
-
-    // Show loading indicator
-    showLoadingOverlay('Rimozione in corso...');
-
-    fetch('/DreamMap?handler=RemoveDream', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'RequestVerificationToken': getAntiForgeryToken()
-        },
-        body: JSON.stringify({ dreamId })
-    })
-    .then(response => response.json())
-    .then(data => {
-        hideLoadingOverlay();
-        
-        if (data.success) {
-            // Update the data model by filtering out the removed item
-            if (destinations && destinations.wishlist) {
-                destinations.wishlist = destinations.wishlist.filter(
-                    d => d.id && d.id.toString() !== dreamId.toString()
-                );
-                
-                // Log the updated wishlist for debugging
-                console.log('Updated wishlist after removal:', destinations.wishlist);
-                
-                // Update the UI completely
-                sincronizzaStatoApp();
-                
-                // Show success message
-                showToast('Successo', 'Destinazione rimossa con successo!', 'success');
-            }
-        } else {
-            showToast('Errore', data.message || 'Si è verificato un errore durante la rimozione', 'danger');
+            currencyInfoEl.innerHTML = currencyText;
+            languageInfoEl.innerHTML = languageText;
+            timeInfoEl.innerHTML = timeText;
         }
-    })
-    .catch(error => {
-        hideLoadingOverlay();
-        console.error('Errore durante la rimozione:', error);
-        showToast('Errore', 'Si è verificato un errore durante la rimozione', 'danger');
-    });
-}
 
-function validateDestinationsData() {
-    // This function checks if the destinations data is valid and tries to repair it if not
-    if (!destinations) {
-        console.error('Destinations object is missing, creating it');
-        destinations = {
-            wishlist: [],
-            plannedTrips: [],
-            visitedCities: []
-        };
-        return false;
-    }
-    
-    let isValid = true;
-    
-    // Check and fix wishlist
-    if (!destinations.wishlist) {
-        console.error('Wishlist array is missing, creating it');
-        destinations.wishlist = [];
-        isValid = false;
-    } else if (!Array.isArray(destinations.wishlist)) {
-        console.error('Wishlist is not an array, fixing it');
-        destinations.wishlist = [];
-        isValid = false;
-    }
-    
-    // Check and fix plannedTrips
-    if (!destinations.plannedTrips) {
-        console.error('PlannedTrips array is missing, creating it');
-        destinations.plannedTrips = [];
-        isValid = false;
-    } else if (!Array.isArray(destinations.plannedTrips)) {
-        console.error('PlannedTrips is not an array, fixing it');
-        destinations.plannedTrips = [];
-        isValid = false;
-    }
-    
-    // Check and fix visitedCities
-    if (!destinations.visitedCities) {
-        console.error('VisitedCities array is missing, creating it');
-        destinations.visitedCities = [];
-        isValid = false;
-    } else if (!Array.isArray(destinations.visitedCities)) {
-        console.error('VisitedCities is not an array, fixing it');
-        destinations.visitedCities = [];
-        isValid = false;
-    }
-    
-    return isValid;
-}
-
-function initializeApp() {
-    console.log('Initializing WanderGlobe app...');
-
-    // Get the city dropdown element - Fixed selectors to match the actual IDs
-    const cityDropdown = document.getElementById('WishlistForm_City');
-    const countryField = document.getElementById('WishlistForm_Country');
-    const countryHiddenField = document.getElementById('Country');
-    const countryCodeHiddenField = document.getElementById('CountryCode');
-    
-    if (cityDropdown && countryField) {
-        // Add event listener to city dropdown
-        cityDropdown.addEventListener('change', function() {
-            // Get the selected option
-            const selectedOption = this.options[this.selectedIndex];
-            
-            // Get country and country code from data attributes
-            const country = selectedOption.getAttribute('data-country');
-            const countryCode = selectedOption.getAttribute('data-country-code');
-            
-            // Update the visible country field
-            countryField.value = country || '';
-            
-            // Update the hidden fields
-            if (countryHiddenField) countryHiddenField.value = country || '';
-            if (countryCodeHiddenField) countryCodeHiddenField.value = countryCode || '';
-            
-            console.log(`City changed to: ${this.value}, Country: ${country}, Code: ${countryCode}`);
-        });
-        
-        console.log('City-Country autofill functionality initialized');
-    } else {
-        console.warn('City or country fields not found in the form');
-    }
-    
-    function updateCountryFromCity(cityName) {
-        if (!cityName) return;
-        
-        // Find city info from the available cities
-        fetch('/DreamMap?handler=Cityinfo&city=' + encodeURIComponent(cityName), {
-            headers: {
-                'RequestVerificationToken': getAntiForgeryToken()
-            }
-        })
-        .then(response => response.json())
-        .then(cityInfo => {
-            if (cityInfo && cityInfo.country) {
-                countryField.value = cityInfo.country;
-                if (countryCodeField) countryCodeField.value = cityInfo.countryCode || '';
-            }
-        })
-        .catch(error => console.error('Error fetching city info:', error));
-    }
-    
-    // Validate destinations data structure
-    validateDestinationsData();
-    
-    // Initialize map
-    initMap();
-    
-    // Set up event listeners
-    setupEventListeners();
-
-    setupCityValidation();
-    
-    // Initial load of map markers
-    loadMapMarkers();
-    
-    // Initial UI synchronization
-    sincronizzaStatoApp();
-    
-    // Add form submission handler
-    setupFormHandlers();
-    
-    console.log('App initialized successfully');
-}
-
-// Add this function to run when you initialize the city dropdown
-function setupCityValidation() {
-    const submitButton = document.querySelector('#dreamForm button[type="submit"]');
-    const cityField = document.getElementById('WishlistForm_City');
-    
-    if (submitButton && cityField) {
-        submitButton.addEventListener('click', function(e) {
-            if (!cityField.value) {
-                e.preventDefault();
-                showToast('Errore', 'Seleziona una città prima di salvare', 'danger');
-                return false;
-            }
-        });
-    }
-    
-    // Update form initialization
-    const form = document.getElementById('dreamForm');
-    if (form) {
-        form.addEventListener('submit', function(e) {
-            if (!cityField.value) {
-                e.preventDefault();
-                showToast('Errore', 'Seleziona una città prima di salvare', 'danger');
-                return false;
-            }
-        });
-    }
-}
-
-function setupFormHandlers() {
-    // Handle wishlist form submission
-    const dreamForm = document.getElementById('dreamForm');
-    if (dreamForm) {
-        dreamForm.addEventListener('submit', function(event) {
-            event.preventDefault();
-            
-            // Show loading indicator
-            showLoadingOverlay('Salvataggio in corso...');
-            
-            // Create FormData object from the form
-            const formData = new FormData(dreamForm);
-            
-            // Add the anti-forgery token explicitly
-            const token = getAntiForgeryToken();
-            
-            // Log form data being sent (for debugging)
-            console.log("Submitting form data:");
-            for (let [key, value] of formData.entries()) {
-                console.log(key + ': ' + value);
-            }
-            
-            // Submit the form using fetch API
-            fetch('/DreamMap?handler=SaveToWishlist', {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'RequestVerificationToken': token
-                }
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`Server returned ${response.status}: ${response.statusText}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                hideLoadingOverlay();
-                
-                if (data.success) {
-                    // Add the new item to the wishlist
-                    if (!destinations.wishlist) {
-                        destinations.wishlist = [];
-                    }
-                    
-                    destinations.wishlist.push(data.newItem);
-                    
-                    // Update the UI
-                    sincronizzaStatoApp();
-                    
-                    // Close the modal
-                    const modal = bootstrap.Modal.getInstance(document.getElementById('addDreamModal'));
-                    if (modal) modal.hide();
-                    
-                    // Reset the form
-                    dreamForm.reset();
-                    
-                    // Show success message
-                    showToast('Successo', 'Destinazione aggiunta alla wishlist!', 'success');
-                } else {
-                    showToast('Errore', data.message || 'Si è verificato un errore durante il salvataggio', 'danger');
-                }
-            })
-            .catch(error => {
-                hideLoadingOverlay();
-                console.error('Error submitting form:', error);
-                showToast('Errore', 'Si è verificato un errore durante il salvataggio. Dettaglio: ' + error.message, 'danger');
+        function initializeSuggestionTabs() {
+            document.querySelectorAll('.suggestion-tab').forEach(tab => {
+                const newTab = tab.cloneNode(true);
+                tab.parentNode.replaceChild(newTab, tab);
+                newTab.addEventListener('click', function () {
+                    const targetTab = this.getAttribute('data-tab');
+                    if (!targetTab) return;
+                    document.querySelectorAll('.suggestion-tab').forEach(t => t.classList.remove('active'));
+                    this.classList.add('active');
+                    document.querySelectorAll('.suggestion-pane').forEach(pane => pane.classList.remove('active'));
+                    const targetPane = document.querySelector(`.suggestion-pane[data-pane="${targetTab}"]`);
+                    if (targetPane) targetPane.classList.add('active');
+                });
             });
-        });
-    }
-}
+            document.querySelector('.suggestion-tab[data-tab="attractions"]')?.click(); // Attiva il primo tab
+        }
 
-// Initialize app when document is ready
-document.addEventListener('DOMContentLoaded', initializeApp);
-</script>
+        function removeDream(dreamId) {
+            if (!confirm('Rimuovere questa destinazione?')) return;
+            showLoadingOverlay('Rimozione...');
+            fetch('/DreamMap?handler=RemoveDream', {
+                method: 'POST', headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': getAntiForgeryToken() }, body: JSON.stringify({ dreamId })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    hideLoadingOverlay();
+                    if (data.success) {
+                        destinations.wishlist = destinations.wishlist.filter(d => d.id.toString() !== dreamId.toString());
+                        sincronizzaStatoApp();
+                        showToast('Successo', 'Destinazione rimossa!', 'success');
+                    } else { showToast('Errore', data.message || 'Errore rimozione.', 'danger'); }
+                })
+                .catch(error => { hideLoadingOverlay(); console.error('Errore rimozione:', error); showToast('Errore', 'Errore connessione.', 'danger'); });
+        }
+
+        function validateDestinationsData() {
+            if (!destinations) destinations = { wishlist: [], plannedTrips: [], visitedCities: [] };
+            ['wishlist', 'plannedTrips', 'visitedCities'].forEach(key => {
+                if (!destinations[key] || !Array.isArray(destinations[key])) {
+                    console.warn(`destinations.${key} non era un array, inizializzato.`);
+                    destinations[key] = [];
+                }
+            });
+        }
+
+        function initializeApp() {
+            console.log('Initializing WanderGlobe app...');
+
+            configuraPulsantiModal(); // CHIAMATA CRUCIALE
+            setupChecklistSubModalSave();
+
+            const cityDropdown = document.getElementById('WishlistForm_City');
+            const countryField = document.getElementById('WishlistForm_Country');
+            const countryHiddenField = document.getElementById('Country');
+            const countryCodeHiddenField = document.getElementById('CountryCode');
+
+            if (cityDropdown && countryField) {
+                cityDropdown.addEventListener('change', function () {
+                    const selectedOption = this.options[this.selectedIndex];
+                    const country = selectedOption.getAttribute('data-country');
+                    const countryCode = selectedOption.getAttribute('data-country-code');
+                    countryField.value = country || '';
+                    if (countryHiddenField) countryHiddenField.value = country || '';
+                    if (countryCodeHiddenField) countryCodeHiddenField.value = countryCode || '';
+                });
+            }
+
+            validateDestinationsData();
+            initMap();
+            setupEventListeners();
+            setupCityValidation();
+            loadMapMarkers();
+            sincronizzaStatoApp();
+            setupFormHandlers();
+
+            console.log('App initialized successfully');
+        }
+
+        function setupCityValidation() {
+            const submitButton = document.querySelector('#dreamForm button[type="submit"]');
+            const cityField = document.getElementById('WishlistForm_City');
+            if (submitButton && cityField) {
+                submitButton.addEventListener('click', function (e) {
+                    if (!cityField.value) { e.preventDefault(); showToast('Errore', 'Seleziona una città.', 'danger'); return false; }
+                });
+            }
+            const form = document.getElementById('dreamForm');
+            if (form) {
+                form.addEventListener('submit', function (e) {
+                    if (!cityField.value) { e.preventDefault(); showToast('Errore', 'Seleziona una città.', 'danger'); return false; }
+                });
+            }
+        }
+
+        function setupFormHandlers() {
+            const dreamForm = document.getElementById('dreamForm');
+            if (dreamForm) {
+                dreamForm.addEventListener('submit', function (event) {
+                    event.preventDefault();
+                    showLoadingOverlay('Salvataggio...');
+                    const formData = new FormData(dreamForm);
+                    // Il token viene aggiunto automaticamente se il campo hidden è nel form, ma per fetch è meglio esplicitarlo
+                    fetch('/DreamMap?handler=SaveToWishlist', {
+                        method: 'POST', body: formData, headers: { 'RequestVerificationToken': getAntiForgeryToken() }
+                    })
+                        .then(response => response.json())
+                        .then(data => {
+                            hideLoadingOverlay();
+                            if (data.success) {
+                                if (!destinations.wishlist) destinations.wishlist = [];
+                                destinations.wishlist.push(data.newItem);
+                                sincronizzaStatoApp();
+                                bootstrap.Modal.getInstance(document.getElementById('addDreamModal'))?.hide();
+                                dreamForm.reset(); // Resetta i campi del form
+                                document.getElementById('WishlistForm_Country').value = ''; // Pulisci campo paese readonly
+                                showToast('Successo', 'Destinazione aggiunta!', 'success');
+                            } else { showToast('Errore', data.message || 'Salvataggio fallito.', 'danger'); }
+                        })
+                        .catch(error => { hideLoadingOverlay(); console.error('Errore submit form:', error); showToast('Errore', `Errore salvataggio: ${error.message}`, 'danger'); });
+                });
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', initializeApp);
+    </script>
 }

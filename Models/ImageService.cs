@@ -5,6 +5,8 @@ using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
+using System.Collections.Generic;
+using System.Text.Json;
 
 namespace WanderGlobe.Services
 {
@@ -19,14 +21,17 @@ namespace WanderGlobe.Services
             _httpClient = httpClient;
             _cache = cache;
             _unsplashAccessKey = configuration["UnsplashApi:AccessKey"];
+            
+            // Configure HttpClient for reuse
+            _httpClient.DefaultRequestHeaders.Add("Accept-Version", "v1");
         }
 
         public async Task<string> GetCityImageUrlAsync(string cityName, string countryName)
         {
-            // Crea una chiave di cache unica per questa città
+            // Create unique cache key for this city
             string cacheKey = $"CityImage_{cityName}_{countryName}";
 
-            // Controlla se l'URL dell'immagine è già in cache
+            // Check if image URL is already in cache
             if (_cache.TryGetValue(cacheKey, out string cachedImageUrl))
             {
                 return cachedImageUrl;
@@ -34,21 +39,37 @@ namespace WanderGlobe.Services
 
             try
             {
-                // Crea la query di ricerca (città + paese per risultati più accurati)
+                // Create search query (city + country for more accurate results)
                 string query = $"{cityName} {countryName} city skyline";
 
-                // Chiamata all'API di Unsplash
-                string apiUrl = $"https://api.unsplash.com/search/photos?query={Uri.EscapeDataString(query)}&per_page=1&orientation=landscape";
+                // Call Unsplash API with appropriate parameters
+                string apiUrl = $"https://api.unsplash.com/search/photos?query={Uri.EscapeDataString(query)}&per_page=1&orientation=landscape&content_filter=high";
+                
+                // Set authorization header for each request to avoid duplicates
+                _httpClient.DefaultRequestHeaders.Remove("Authorization");
                 _httpClient.DefaultRequestHeaders.Add("Authorization", $"Client-ID {_unsplashAccessKey}");
-
-                var response = await _httpClient.GetFromJsonAsync<UnsplashSearchResponse>(apiUrl);
-
-                if (response?.Results?.Count > 0)
+                
+                var response = await _httpClient.GetAsync(apiUrl);
+                
+                // Handle rate limits and other errors
+                if (!response.IsSuccessStatusCode)
                 {
-                    // Ottieni l'URL dell'immagine (versione regular è un buon compromesso tra qualità e dimensione)
-                    string imageUrl = response.Results[0].Urls.Regular;
+                    Console.WriteLine($"Error from Unsplash API: {response.StatusCode} - {await response.Content.ReadAsStringAsync()}");
+                    return GetDefaultImageUrl(cityName, countryName);
+                }
+                
+                var jsonContent = await response.Content.ReadAsStringAsync();
+                var searchResponse = JsonSerializer.Deserialize<UnsplashSearchResponse>(jsonContent);
 
-                    // Salva in cache per 24 ore
+                if (searchResponse?.Results?.Count > 0)
+                {
+                    // Get image URL (regular size is a good balance between quality and size)
+                    string imageUrl = searchResponse.Results[0].Urls.Regular;
+                    
+                    // Add attribution query param as required by Unsplash API terms
+                    imageUrl += $"&utm_source=WanderGlobe&utm_medium=referral";
+
+                    // Cache for 24 hours
                     _cache.Set(cacheKey, imageUrl, TimeSpan.FromHours(24));
 
                     return imageUrl;
@@ -58,26 +79,35 @@ namespace WanderGlobe.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Errore nel recupero dell'immagine per {cityName}: {ex.Message}");
+                Console.WriteLine($"Error retrieving image for {cityName}: {ex.Message}");
                 return GetDefaultImageUrl(cityName, countryName);
             }
         }
 
         public async Task<string> GetCountryFlagUrlAsync(string countryCode)
         {
-            // Le bandiere possono essere recuperate da servizi come Flagpedia
-            return $"https://flagcdn.com/w160/{countryCode.ToLower()}.png";
+            // You may want to implement this method to get flag images
+            // For now, use local flags
+            return $"/images/flags/{countryCode.ToLower()}.png";
         }
 
         private string GetDefaultImageUrl(string cityName, string countryName)
         {
-            // Controlla prima se esiste un'immagine locale
-            string localImagePath = $"/images/cities/{countryName.ToLower()}-{cityName.ToLower()}.jpg";
+            // Map to default images by continent or return generic placeholder
+            var continentMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                {"Europa", "/images/default/europe.jpg"},
+                {"Asia", "/images/default/asia.jpg"},
+                {"Africa", "/images/default/africa.jpg"},
+                {"Nord America", "/images/default/north-america.jpg"},
+                {"Sud America", "/images/default/south-america.jpg"},
+                {"Oceania", "/images/default/oceania.jpg"},
+                {"Antartide", "/images/default/antarctica.jpg"}
+            };
 
-            // Se non esiste, usa un'immagine generica basata sulla prima lettera della città
-            string fallbackPath = $"/images/cities/default-{cityName.Substring(0, 1).ToLower()}.jpg";
-
-            return fallbackPath;
+            // Logic to determine continent from country name could be added here
+            // For now, return a generic placeholder
+            return "/images/placeholder-city.jpg";
         }
     }
 

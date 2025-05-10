@@ -88,11 +88,11 @@ namespace WanderGlobe.Pages
             else
             {
                 // Dati di esempio per utenti non autenticati
-                CountriesVisited = 5;
-                ContinentsVisited = 2;
-                BadgesEarned = 3;
-                TotalMiles = 7500;
-                WorldPercentage = 2.6;
+                CountriesVisited = 0;
+                ContinentsVisited = 0;
+                BadgesEarned = 0;
+                TotalMiles = 0;
+                WorldPercentage = 0;
 
                 // Visite di esempio
                 RecentVisits = new List<RecentVisitViewModel>

@@ -2,7 +2,6 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using WanderGlobe.Data;
 
@@ -16,35 +15,30 @@ namespace WanderGlobe.Migrations
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder
-                .HasAnnotation("ProductVersion", "6.0.28")
-                .HasAnnotation("Relational:MaxIdentifierLength", 128);
-
-            SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder, 1L, 1);
+            modelBuilder.HasAnnotation("ProductVersion", "6.0.35");
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
                 {
                     b.Property<string>("Id")
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("Name")
                         .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("NormalizedName")
                         .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                        .HasColumnType("TEXT");
 
                     b.HasKey("Id");
 
                     b.HasIndex("NormalizedName")
                         .IsUnique()
-                        .HasDatabaseName("RoleNameIndex")
-                        .HasFilter("[NormalizedName] IS NOT NULL");
+                        .HasDatabaseName("RoleNameIndex");
 
                     b.ToTable("AspNetRoles", (string)null);
                 });
@@ -53,19 +47,17 @@ namespace WanderGlobe.Migrations
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"), 1L, 1);
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("ClaimType")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("ClaimValue")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("RoleId")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("TEXT");
 
                     b.HasKey("Id");
 
@@ -78,19 +70,17 @@ namespace WanderGlobe.Migrations
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"), 1L, 1);
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("ClaimType")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("ClaimValue")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("UserId")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("TEXT");
 
                     b.HasKey("Id");
 
@@ -102,17 +92,17 @@ namespace WanderGlobe.Migrations
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
                 {
                     b.Property<string>("LoginProvider")
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("ProviderKey")
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("ProviderDisplayName")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("UserId")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("TEXT");
 
                     b.HasKey("LoginProvider", "ProviderKey");
 
@@ -124,10 +114,10 @@ namespace WanderGlobe.Migrations
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserRole<string>", b =>
                 {
                     b.Property<string>("UserId")
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("RoleId")
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("TEXT");
 
                     b.HasKey("UserId", "RoleId");
 
@@ -139,16 +129,16 @@ namespace WanderGlobe.Migrations
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
                 {
                     b.Property<string>("UserId")
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("LoginProvider")
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("Name")
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("Value")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("TEXT");
 
                     b.HasKey("UserId", "LoginProvider", "Name");
 
@@ -158,66 +148,66 @@ namespace WanderGlobe.Migrations
             modelBuilder.Entity("WanderGlobe.Models.ApplicationUser", b =>
                 {
                     b.Property<string>("Id")
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("TEXT");
 
                     b.Property<int>("AccessFailedCount")
-                        .HasColumnType("int");
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("Email")
                         .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                        .HasColumnType("TEXT");
 
                     b.Property<bool>("EmailConfirmed")
-                        .HasColumnType("bit");
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("FirstName")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("TEXT");
 
                     b.Property<DateTime>("JoinDate")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("LastName")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("TEXT");
 
                     b.Property<bool>("LockoutEnabled")
-                        .HasColumnType("bit");
+                        .HasColumnType("INTEGER");
 
                     b.Property<DateTimeOffset?>("LockoutEnd")
-                        .HasColumnType("datetimeoffset");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("NormalizedEmail")
                         .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("NormalizedUserName")
                         .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("PasswordHash")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("PhoneNumber")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("TEXT");
 
                     b.Property<bool>("PhoneNumberConfirmed")
-                        .HasColumnType("bit");
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("ProfilePicture")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("SecurityStamp")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("TEXT");
 
                     b.Property<bool>("TwoFactorEnabled")
-                        .HasColumnType("bit");
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("UserName")
                         .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                        .HasColumnType("TEXT");
 
                     b.HasKey("Id");
 
@@ -226,8 +216,7 @@ namespace WanderGlobe.Migrations
 
                     b.HasIndex("NormalizedUserName")
                         .IsUnique()
-                        .HasDatabaseName("UserNameIndex")
-                        .HasFilter("[NormalizedUserName] IS NOT NULL");
+                        .HasDatabaseName("UserNameIndex");
 
                     b.ToTable("AspNetUsers", (string)null);
                 });
@@ -236,59 +225,317 @@ namespace WanderGlobe.Migrations
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"), 1L, 1);
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("Criteria")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("Description")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("ImageUrl")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("TEXT");
 
                     b.HasKey("Id");
 
                     b.ToTable("Badges");
                 });
 
+            modelBuilder.Entity("WanderGlobe.Models.City", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("CountryId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ImageUrl")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsCapital")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<double?>("Latitude")
+                        .HasColumnType("REAL");
+
+                    b.Property<double?>("Longitude")
+                        .HasColumnType("REAL");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CountryId");
+
+                    b.ToTable("Cities");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            CountryId = 1,
+                            IsCapital = true,
+                            Latitude = 41.902799999999999,
+                            Longitude = 12.4964,
+                            Name = "Roma"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            CountryId = 2,
+                            IsCapital = true,
+                            Latitude = 48.8566,
+                            Longitude = 2.3521999999999998,
+                            Name = "Parigi"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            CountryId = 3,
+                            IsCapital = true,
+                            Latitude = 38.907200000000003,
+                            Longitude = -77.036900000000003,
+                            Name = "Washington D.C."
+                        },
+                        new
+                        {
+                            Id = 4,
+                            CountryId = 4,
+                            IsCapital = true,
+                            Latitude = 52.520000000000003,
+                            Longitude = 13.404999999999999,
+                            Name = "Berlino"
+                        },
+                        new
+                        {
+                            Id = 5,
+                            CountryId = 5,
+                            IsCapital = true,
+                            Latitude = 40.416800000000002,
+                            Longitude = -3.7038000000000002,
+                            Name = "Madrid"
+                        },
+                        new
+                        {
+                            Id = 6,
+                            CountryId = 6,
+                            IsCapital = true,
+                            Latitude = 38.722299999999997,
+                            Longitude = -9.1393000000000004,
+                            Name = "Lisbona"
+                        },
+                        new
+                        {
+                            Id = 7,
+                            CountryId = 7,
+                            IsCapital = true,
+                            Latitude = 46.948,
+                            Longitude = 7.4474,
+                            Name = "Berna"
+                        },
+                        new
+                        {
+                            Id = 8,
+                            CountryId = 8,
+                            IsCapital = true,
+                            Latitude = 48.208199999999998,
+                            Longitude = 16.373799999999999,
+                            Name = "Vienna"
+                        },
+                        new
+                        {
+                            Id = 9,
+                            CountryId = 9,
+                            IsCapital = true,
+                            Latitude = 50.850299999999997,
+                            Longitude = 4.3517000000000001,
+                            Name = "Bruxelles"
+                        },
+                        new
+                        {
+                            Id = 10,
+                            CountryId = 10,
+                            IsCapital = true,
+                            Latitude = 52.367600000000003,
+                            Longitude = 4.9040999999999997,
+                            Name = "Amsterdam"
+                        },
+                        new
+                        {
+                            Id = 11,
+                            CountryId = 11,
+                            IsCapital = true,
+                            Latitude = 51.507399999999997,
+                            Longitude = -0.1278,
+                            Name = "Londra"
+                        },
+                        new
+                        {
+                            Id = 12,
+                            CountryId = 12,
+                            IsCapital = true,
+                            Latitude = 45.421500000000002,
+                            Longitude = -75.697199999999995,
+                            Name = "Ottawa"
+                        },
+                        new
+                        {
+                            Id = 13,
+                            CountryId = 13,
+                            IsCapital = true,
+                            Latitude = 35.676200000000001,
+                            Longitude = 139.65029999999999,
+                            Name = "Tokyo"
+                        },
+                        new
+                        {
+                            Id = 14,
+                            CountryId = 14,
+                            IsCapital = true,
+                            Latitude = 39.904200000000003,
+                            Longitude = 116.4074,
+                            Name = "Pechino"
+                        },
+                        new
+                        {
+                            Id = 15,
+                            CountryId = 15,
+                            IsCapital = true,
+                            Latitude = -35.280900000000003,
+                            Longitude = 149.13,
+                            Name = "Canberra"
+                        },
+                        new
+                        {
+                            Id = 16,
+                            CountryId = 16,
+                            IsCapital = true,
+                            Latitude = 55.755800000000001,
+                            Longitude = 37.6173,
+                            Name = "Mosca"
+                        },
+                        new
+                        {
+                            Id = 17,
+                            CountryId = 17,
+                            IsCapital = true,
+                            Latitude = -15.780099999999999,
+                            Longitude = -47.929200000000002,
+                            Name = "Brasilia"
+                        },
+                        new
+                        {
+                            Id = 18,
+                            CountryId = 18,
+                            IsCapital = true,
+                            Latitude = 28.613900000000001,
+                            Longitude = 77.209000000000003,
+                            Name = "Nuova Delhi"
+                        },
+                        new
+                        {
+                            Id = 19,
+                            CountryId = 19,
+                            IsCapital = true,
+                            Latitude = -25.746099999999998,
+                            Longitude = 28.188099999999999,
+                            Name = "Pretoria"
+                        },
+                        new
+                        {
+                            Id = 20,
+                            CountryId = 20,
+                            IsCapital = true,
+                            Latitude = 19.432600000000001,
+                            Longitude = -99.133200000000002,
+                            Name = "Città del Messico"
+                        },
+                        new
+                        {
+                            Id = 21,
+                            CountryId = 21,
+                            IsCapital = true,
+                            Latitude = -34.603700000000003,
+                            Longitude = -58.381599999999999,
+                            Name = "Buenos Aires"
+                        },
+                        new
+                        {
+                            Id = 22,
+                            CountryId = 22,
+                            IsCapital = true,
+                            Latitude = 37.983800000000002,
+                            Longitude = 23.727499999999999,
+                            Name = "Atene"
+                        },
+                        new
+                        {
+                            Id = 23,
+                            CountryId = 23,
+                            IsCapital = true,
+                            Latitude = 30.0444,
+                            Longitude = 31.235700000000001,
+                            Name = "Il Cairo"
+                        },
+                        new
+                        {
+                            Id = 24,
+                            CountryId = 24,
+                            IsCapital = true,
+                            Latitude = 59.329300000000003,
+                            Longitude = 18.0686,
+                            Name = "Stoccolma"
+                        },
+                        new
+                        {
+                            Id = 25,
+                            CountryId = 25,
+                            IsCapital = true,
+                            Latitude = 59.913899999999998,
+                            Longitude = 10.7522,
+                            Name = "Oslo"
+                        });
+                });
+
             modelBuilder.Entity("WanderGlobe.Models.Country", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"), 1L, 1);
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("Code")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("Continent")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("FlagUrl")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("TEXT");
 
                     b.Property<double>("Latitude")
-                        .HasColumnType("float");
+                        .HasColumnType("REAL");
 
                     b.Property<double>("Longitude")
-                        .HasColumnType("float");
+                        .HasColumnType("REAL");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("TEXT");
 
                     b.HasKey("Id");
 
@@ -526,27 +773,25 @@ namespace WanderGlobe.Migrations
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"), 1L, 1);
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("Caption")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("FileName")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("FilePath")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("TEXT");
 
                     b.Property<int>("TravelJournalId")
-                        .HasColumnType("int");
+                        .HasColumnType("INTEGER");
 
                     b.Property<DateTime>("UploadedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("TEXT");
 
                     b.HasKey("Id");
 
@@ -559,33 +804,31 @@ namespace WanderGlobe.Migrations
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"), 1L, 1);
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("Content")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("TEXT");
 
                     b.Property<int>("CountryId")
-                        .HasColumnType("int");
+                        .HasColumnType("INTEGER");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("Title")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("TEXT");
 
                     b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("UserId")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("TEXT");
 
                     b.Property<DateTime>("VisitDate")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("TEXT");
 
                     b.HasKey("Id");
 
@@ -599,13 +842,13 @@ namespace WanderGlobe.Migrations
             modelBuilder.Entity("WanderGlobe.Models.UserBadge", b =>
                 {
                     b.Property<string>("UserId")
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("TEXT");
 
                     b.Property<int>("BadgeId")
-                        .HasColumnType("int");
+                        .HasColumnType("INTEGER");
 
                     b.Property<DateTime>("AchievedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("TEXT");
 
                     b.HasKey("UserId", "BadgeId");
 
@@ -617,25 +860,25 @@ namespace WanderGlobe.Migrations
             modelBuilder.Entity("WanderGlobe.Models.VisitedCountry", b =>
                 {
                     b.Property<string>("UserId")
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("TEXT");
 
                     b.Property<int>("CountryId")
-                        .HasColumnType("int");
+                        .HasColumnType("INTEGER");
 
                     b.Property<DateTime?>("CreatedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("TEXT");
 
                     b.Property<bool>("IsFavorite")
-                        .HasColumnType("bit");
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("Notes")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("TEXT");
 
                     b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("TEXT");
 
                     b.Property<DateTime>("VisitDate")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("TEXT");
 
                     b.HasKey("UserId", "CountryId");
 
@@ -693,6 +936,17 @@ namespace WanderGlobe.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("WanderGlobe.Models.City", b =>
+                {
+                    b.HasOne("WanderGlobe.Models.Country", "Country")
+                        .WithMany("Cities")
+                        .HasForeignKey("CountryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Country");
                 });
 
             modelBuilder.Entity("WanderGlobe.Models.Photo", b =>
@@ -777,6 +1031,8 @@ namespace WanderGlobe.Migrations
 
             modelBuilder.Entity("WanderGlobe.Models.Country", b =>
                 {
+                    b.Navigation("Cities");
+
                     b.Navigation("VisitedByUsers");
                 });
 

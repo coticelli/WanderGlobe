@@ -16,18 +16,21 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.AspNetCore.Http;
 using System.IO;
 using System.ComponentModel.DataAnnotations;
+using Microsoft.EntityFrameworkCore;
+using WanderGlobe.Data;
 
 namespace WanderGlobe.Pages
 {
     [Authorize]
     public class DreamMapModel : PageModel
-    {
-        private readonly UserManager<ApplicationUser> _userManager;
+    {        private readonly UserManager<ApplicationUser> _userManager;
         private readonly ICountryService _countryService;
         private readonly IDreamService _dreamService;
         private readonly IHttpClientFactory _clientFactory;
-        private readonly string _geminiApiKey = "AIzaSyDdEmi-z2ltv89z3WMA5t5HEkVQ5N5NP58";
+        private readonly string _geminiApiKey;
         private readonly IWebHostEnvironment _webHostEnvironment;
+        private readonly ApplicationDbContext _dbContext;
+        private readonly ICityService _cityService;
 
         public List<DreamDestination> Wishlist { get; set; } = new List<DreamDestination>();
         public List<PlannedTrip> PlannedTrips { get; set; } = new List<PlannedTrip>();
@@ -36,23 +39,25 @@ namespace WanderGlobe.Pages
         public MapDestinationsViewModel AllDestinations { get; set; } = new MapDestinationsViewModel();
 
         [BindProperty]
-        public WishlistItemViewModel WishlistForm { get; set; } = new WishlistItemViewModel();
-
-        // Costruttore unificato che combina tutte le dipendenze
+        public WishlistItemViewModel WishlistForm { get; set; } = new WishlistItemViewModel();        // Costruttore aggiornato con ICityService
         public DreamMapModel(
             UserManager<ApplicationUser> userManager,
             ICountryService countryService,
             IDreamService dreamService,
             IHttpClientFactory clientFactory,
             IConfiguration configuration,
-            IWebHostEnvironment webHostEnvironment)
+            IWebHostEnvironment webHostEnvironment,
+            ApplicationDbContext dbContext,
+            ICityService cityService)
         {
             _userManager = userManager;
             _countryService = countryService;
             _dreamService = dreamService;
             _clientFactory = clientFactory;
-            _geminiApiKey = configuration["GeminiApiKey"];
+            _geminiApiKey = configuration["GeminiApiKey"] ?? string.Empty;
             _webHostEnvironment = webHostEnvironment;
+            _dbContext = dbContext;
+            _cityService = cityService;
 
             // Debug della chiave API
             System.Diagnostics.Debug.WriteLine($"GeminiApiKey: {(_geminiApiKey != null ? "PRESENTE" : "MANCANTE")}");
@@ -93,6 +98,22 @@ namespace WanderGlobe.Pages
                     // Prepara i dati per la mappa
                     var visitedCountries = await _countryService.GetVisitedCountriesByUserAsync(user.Id);
 
+                    // Prepara la lista delle città visitate con operazioni asincrone
+                    var visitedCitiesItems = new List<MapDestinationItem>();
+                    foreach (var v in visitedCountries)
+                    {
+                        string capitalName = await GetCapitalAsync(v.Country.Code);
+                        visitedCitiesItems.Add(new MapDestinationItem
+                        {
+                            Id = NormalizeNameToId(capitalName, v.Country.Code),
+                            CityName = capitalName,
+                            CountryName = v.Country.Name,
+                            CountryCode = v.Country.Code,
+                            Latitude = v.Country.Latitude,
+                            Longitude = v.Country.Longitude
+                        });
+                    }
+
                     // Popola il modello con tutti i dati per la mappa
                     AllDestinations = new MapDestinationsViewModel
                     {
@@ -118,21 +139,13 @@ namespace WanderGlobe.Pages
                             CompletionPercentage = p.CompletionPercentage
                         }).ToList(),
 
-                        VisitedCities = visitedCountries.Select(v => new MapDestinationItem
-                        {
-                            Id = NormalizeNameToId(GetCapital(v.Country.Code), v.Country.Code),
-                            CityName = GetCapital(v.Country.Code),
-                            CountryName = v.Country.Name,
-                            CountryCode = v.Country.Code,
-                            Latitude = v.Country.Latitude,
-                            Longitude = v.Country.Longitude
-                        }).ToList()
+                        VisitedCities = visitedCitiesItems
                     };
 
                     // Inizializza il form per l'aggiunta alla wishlist con le città disponibili
                     WishlistForm = new WishlistItemViewModel
                     {
-                        AvailableCities = GetAvailableCapitals()
+                        AvailableCities = await GetAvailableCapitalsAsync()
                     };
                 }
             }
@@ -228,7 +241,7 @@ namespace WanderGlobe.Pages
                     return new JsonResult(new { success = false, message = "Utente non autenticato" });
                 }
 
-                var cityInfo = GetAvailableCapitals().FirstOrDefault(c => c.Name == model.City);
+                var cityInfo = (await GetAvailableCapitalsAsync()).FirstOrDefault(c => c.Name == model.City);
                 double latitude = 0, longitude = 0;
 
                 if (cityInfo != null)
@@ -283,12 +296,10 @@ namespace WanderGlobe.Pages
                         .Select(t => t.Trim())
                         .Where(t => !string.IsNullOrEmpty(t))
                         .ToList();
-                }
-
-                var newDream = new DreamDestination
+                }                var newDream = new DreamDestination
                 {
                     UserId = user.Id,
-                    CityName = model.City, // Should be valid if ModelState.IsValid was true
+                    CityName = model.City ?? "Città sconosciuta", // Added null check
                     CountryName = model.Country ?? "Paese non specificato",
                     CountryCode = model.CountryCode ?? "XX",
                     Note = model.Notes,
@@ -333,9 +344,9 @@ namespace WanderGlobe.Pages
 
         [HttpGet]
         [IgnoreAntiforgeryToken]
-        public IActionResult OnGetCityinfoAsync(string city)
+        public async Task<IActionResult> OnGetCityinfoAsync(string city)
         {
-            var cityInfo = GetAvailableCapitals().FirstOrDefault(c => c.Name == city);
+            var cityInfo = (await GetAvailableCapitalsAsync()).FirstOrDefault(c => c.Name == city);
 
             if (cityInfo == null)
             {
@@ -593,44 +604,60 @@ namespace WanderGlobe.Pages
             return content.Trim();
         }
 
-        // Metodo per ottenere le capitali disponibili
-        private List<CityInfo> GetAvailableCapitals()
+        // Metodo per ottenere le capitali disponibili dal database
+        private async Task<List<CityInfo>> GetAvailableCapitalsAsync()
         {
-            return new List<CityInfo>
+            try
             {
-                new CityInfo { Name = "Roma", Country = "Italia", CountryCode = "IT" },
-                new CityInfo { Name = "Parigi", Country = "Francia", CountryCode = "FR" },
-                new CityInfo { Name = "Londra", Country = "Regno Unito", CountryCode = "GB" },
-                new CityInfo { Name = "Madrid", Country = "Spagna", CountryCode = "ES" },
-                new CityInfo { Name = "Berlino", Country = "Germania", CountryCode = "DE" },
-                new CityInfo { Name = "Vienna", Country = "Austria", CountryCode = "AT" },
-                new CityInfo { Name = "Bruxelles", Country = "Belgio", CountryCode = "BE" },
-                new CityInfo { Name = "Amsterdam", Country = "Paesi Bassi", CountryCode = "NL" },
-                new CityInfo { Name = "Atene", Country = "Grecia", CountryCode = "GR" },
-                new CityInfo { Name = "Lisbona", Country = "Portogallo", CountryCode = "PT" },
-                new CityInfo { Name = "Budapest", Country = "Ungheria", CountryCode = "HU" },
-                new CityInfo { Name = "Praga", Country = "Repubblica Ceca", CountryCode = "CZ" },
-                new CityInfo { Name = "Varsavia", Country = "Polonia", CountryCode = "PL" },
-                new CityInfo { Name = "Dublino", Country = "Irlanda", CountryCode = "IE" },
-                new CityInfo { Name = "Copenhagen", Country = "Danimarca", CountryCode = "DK" },
-                new CityInfo { Name = "Stoccolma", Country = "Svezia", CountryCode = "SE" },
-                new CityInfo { Name = "Helsinki", Country = "Finlandia", CountryCode = "FI" },
-                new CityInfo { Name = "Oslo", Country = "Norvegia", CountryCode = "NO" },
-                new CityInfo { Name = "Washington D.C.", Country = "Stati Uniti", CountryCode = "US" },
-                new CityInfo { Name = "Ottawa", Country = "Canada", CountryCode = "CA" },
-                new CityInfo { Name = "Tokyo", Country = "Giappone", CountryCode = "JP" },
-                new CityInfo { Name = "Pechino", Country = "Cina", CountryCode = "CN" },
-                new CityInfo { Name = "Seoul", Country = "Corea del Sud", CountryCode = "KR" },
-                new CityInfo { Name = "Mosca", Country = "Russia", CountryCode = "RU" },
-                new CityInfo { Name = "Brasilia", Country = "Brasile", CountryCode = "BR" },
-                new CityInfo { Name = "Buenos Aires", Country = "Argentina", CountryCode = "AR" },
-                new CityInfo { Name = "Città del Messico", Country = "Messico", CountryCode = "MX" },
-                new CityInfo { Name = "Il Cairo", Country = "Egitto", CountryCode = "EG" },
-                new CityInfo { Name = "Bangkok", Country = "Thailandia", CountryCode = "TH" },
-                new CityInfo { Name = "Nuova Delhi", Country = "India", CountryCode = "IN" },
-                new CityInfo { Name = "Sydney", Country = "Australia", CountryCode = "AU" },
-                new CityInfo { Name = "Wellington", Country = "Nuova Zelanda", CountryCode = "NZ" }
-            };
+                // Ottieni tutti i paesi dal database
+                var countries = await _dbContext.Countries.ToListAsync();
+
+                // Crea la lista di città (capitali) dai paesi nel database
+                var capitals = new List<CityInfo>();
+
+                foreach (var country in countries)
+                {
+                    // Ottieni il nome della capitale per ogni paese
+                    string capitalName = await GetCapitalAsync(country.Code);
+
+                    capitals.Add(new CityInfo
+                    {
+                        Name = capitalName,
+                        Country = country.Name,
+                        CountryCode = country.Code
+                    });
+                }
+
+                // Ordina le città per nome
+                return capitals.OrderBy(c => c.Name).ToList();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Errore nel recupero delle capitali dal database: {ex.Message}");
+                // In caso di errore, restituisci una lista vuota
+                return new List<CityInfo>();            }
+        }        // Metodo per ottenere il nome della capitale dal database tramite ICityService
+        private async Task<string> GetCapitalAsync(string countryCode)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(countryCode))
+                    return "Capitale sconosciuta";
+
+                var country = await _dbContext.Countries
+                    .FirstOrDefaultAsync(c => c.Code.Equals(countryCode, StringComparison.OrdinalIgnoreCase));
+
+                if (country == null)
+                    return $"Capitale di {countryCode}";
+
+                var capital = await _cityService.GetCapitalCityByCountryIdAsync(country.Id);
+                
+                return capital?.Name ?? $"Capitale di {country.Name}";
+            }            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Errore nel recupero della capitale per {countryCode}: {ex.Message}");
+                return $"Capitale di {countryCode}";
+            }
         }
 
         // Metodo helper per costruire i prompt
@@ -705,25 +732,6 @@ namespace WanderGlobe.Pages
             return new JsonResult(new { status = "ok", message = "Test riuscito!" });
         }
 
-        // Helper per ottenere il nome della capitale
-        private string GetCapital(string countryCode)
-        {
-            var capitals = new Dictionary<string, string>
-            {
-                {"IT", "Roma"}, {"GB", "Londra"}, {"FR", "Parigi"}, {"DE", "Berlino"},
-                {"ES", "Madrid"}, {"PT", "Lisbona"}, {"NL", "Amsterdam"}, {"BE", "Bruxelles"},
-                {"GR", "Atene"}, {"US", "Washington D.C."}, {"JP", "Tokyo"}, {"CN", "Pechino"},
-                {"AT", "Vienna"}, {"HU", "Budapest"}, {"CZ", "Praga"}, {"PL", "Varsavia"},
-                {"IE", "Dublino"}, {"DK", "Copenhagen"}, {"SE", "Stoccolma"}, {"FI", "Helsinki"},
-                {"NO", "Oslo"}, {"CA", "Ottawa"}, {"KR", "Seoul"}, {"RU", "Mosca"},
-                {"BR", "Brasilia"}, {"AR", "Buenos Aires"}, {"MX", "Città del Messico"},
-                {"EG", "Il Cairo"}, {"TH", "Bangkok"}, {"IN", "Nuova Delhi"},
-                {"AU", "Sydney"}, {"NZ", "Wellington"}
-            };
-
-            return capitals.ContainsKey(countryCode) ? capitals[countryCode] : $"Capitale di {countryCode}";
-        }
-
         // HANDLERS PER LE OPERAZIONI AJAX
         [HttpPost]
         [IgnoreAntiforgeryToken]
@@ -751,22 +759,33 @@ namespace WanderGlobe.Pages
             {
                 return new JsonResult(new { success = false, message = ex.Message });
             }
-        }
-
-        [HttpPost]
+        }        [HttpPost]
         [IgnoreAntiforgeryToken]
         public IActionResult OnPostUpdatePlanDetailsAsync([FromBody] UpdatePlan request)
         {
             try
             {
+                if (request?.PlanId == null)
+                {
+                    return new JsonResult(new { success = false, message = "ID piano non valido" });
+                }
+
                 var plan = PlannedTrips.FirstOrDefault(p => p.Id.ToString() == request.PlanId);
                 if (plan != null)
                 {
-                    plan.Notes = request.Notes;
-                    plan.StartDate = DateTime.Parse(request.StartDate);
-                    plan.EndDate = DateTime.Parse(request.EndDate);
-
-                    // In un'implementazione reale, qui salveresti le modifiche nel database
+                    // Safely handle nullable properties
+                    plan.Notes = request.Notes ?? plan.Notes;
+                    
+                    // Parse dates with null checks
+                    if (!string.IsNullOrEmpty(request.StartDate))
+                    {
+                        plan.StartDate = DateTime.Parse(request.StartDate);
+                    }
+                    
+                    if (!string.IsNullOrEmpty(request.EndDate))
+                    {
+                        plan.EndDate = DateTime.Parse(request.EndDate);
+                    }                    // In un'implementazione reale, qui salveresti le modifiche nel database
                 }
 
                 return new JsonResult(new { success = true });
@@ -842,58 +861,50 @@ namespace WanderGlobe.Pages
                 System.Diagnostics.Debug.WriteLine($"Eccezione in MarkAsVisitedAsync: {ex.Message}");
                 return new JsonResult(new { success = false, message = ex.Message });
             }
-        }
-
-        // Classi per i modelli di richieste e form
+        }        // Classi per i modelli di richieste e form
         public class MoveToPlanning
         {
-            public string DreamId { get; set; }
+            public string? DreamId { get; set; }
         }
 
         public class MarkAsVisited
         {
-            public string PlanId { get; set; }
+            public string? PlanId { get; set; }
         }
 
         public class RemovePlan
         {
-            public string PlanId { get; set; }
+            public string? PlanId { get; set; }
         }
 
         public class UpdatePlan
         {
-            public string PlanId { get; set; }
-            public string Notes { get; set; }
-            public string StartDate { get; set; }
-            public string EndDate { get; set; }
+            public string? PlanId { get; set; }
+            public string? Notes { get; set; }
+            public string? StartDate { get; set; }
+            public string? EndDate { get; set; }
         }
 
         public class WishlistItemViewModel
         {
             [Required(ErrorMessage = "Seleziona una città")]
-            public string City { get; set; }
+            public string? City { get; set; }
 
-            // Remove Required attributes from these fields
-            public string Country { get; set; }
-
-            public string CountryCode { get; set; }
-
-            public string Notes { get; set; }
-
-            public string Tags { get; set; }
-
-            public string Priority { get; set; } = "Media";
-
-            public IFormFile ImageFile { get; set; }
+            public string? Country { get; set; }
+            public string? CountryCode { get; set; }
+            public string? Notes { get; set; }
+            public string? Tags { get; set; }
+            public string? Priority { get; set; } = "Media";
+            public IFormFile? ImageFile { get; set; }
 
             public List<CityInfo> AvailableCities { get; set; } = new List<CityInfo>();
         }
 
         public class CityInfo
         {
-            public string Name { get; set; }
-            public string Country { get; set; }
-            public string CountryCode { get; set; }
+            public string? Name { get; set; }
+            public string? Country { get; set; }
+            public string? CountryCode { get; set; }
         }
     }
 }
