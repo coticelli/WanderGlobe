@@ -2458,7 +2458,7 @@
             console.log("Dati inviati al server per updatePlanDetails:", JSON.stringify(updateData));
 
             showLoadingOverlay('Salvataggio...');
-            fetch('/DreamMap?handler=UpdatePlan', {
+            fetch('/DreamMap?handler=UpdatePlanDetails', {
                 method: 'POST', headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': getAntiForgeryToken() }, body: JSON.stringify(updateData)
             })
                 .then(response => {

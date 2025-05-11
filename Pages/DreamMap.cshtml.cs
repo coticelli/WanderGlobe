@@ -758,7 +758,9 @@ namespace WanderGlobe.Pages
             {
                 return new JsonResult(new { success = false, message = ex.Message });
             }
-        }        [HttpPost]
+        }        
+        
+        [HttpPost]
         [IgnoreAntiforgeryToken]
         public IActionResult OnPostUpdatePlanDetailsAsync([FromBody] UpdatePlan request)
         {
