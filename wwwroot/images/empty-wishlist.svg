@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="200px" height="200px" viewBox="0 0 200 200" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+    <circle fill="#F5F5F5" cx="100" cy="100" r="100"></circle>
+    <path d="M100,50 C87.3,50 77,60.3 77,73 C77,93.9 100,130 100,130 C100,130 123,93.8 123,73 C123,60.3 112.7,50 100,50 Z M100,83 C94.5,83 90,78.5 90,73 C90,67.5 94.5,63 100,63 C105.5,63 110,67.5 110,73 C110,78.5 105.5,83 100,83 Z" fill="#CCCCCC"></path>
+    <path d="M140,110 L130,110 L130,100 L120,100 L120,110 L110,110 L110,120 L120,120 L120,130 L130,130 L130,120 L140,120 Z" fill="#AAAAAA"></path>
+    <text font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#888888">
+      <tspan x="60" y="160">Wishlist vuota</tspan>
+    </text>
+  </g>
+</svg>

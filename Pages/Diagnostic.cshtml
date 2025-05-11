@@ -1,0 +1,153 @@
+@page
+@model WanderGlobe.Pages.DiagnosticModel
+@{
+    ViewData["Title"] = "Diagnostica";
+}
+
+<div class="container mt-4">
+    <h1>Diagnostica Database</h1>
+    
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger">
+            @Model.ErrorMessage
+        </div>
+    }
+    
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5>Statistiche Database</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Numero totale di paesi:</strong> @Model.AllCountries.Count</p>
+                    <p><strong>Numero totale di città:</strong> @Model.AllCities.Count</p>
+                    <p><strong>Numero di capitali:</strong> @Model.CapitalCities.Count</p>
+                    <p><strong>Città nella wishlist:</strong> @Model.UserWishlist.Count</p>
+                    <p><strong>Città filtrate disponibili:</strong> @Model.FilteredCities.Count</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5>Elenco città (max 100)</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Nome</th>
+                                    <th>Paese</th>
+                                    <th>Capitale</th>
+                                    <th>Latitudine</th>
+                                    <th>Longitudine</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var city in Model.AllCities.Take(100))
+                                {
+                                    <tr>
+                                        <td>@city.Id</td>
+                                        <td>@city.Name</td>
+                                        <td>@city.Country?.Name</td>
+                                        <td>@(city.IsCapital ? "Sì" : "No")</td>
+                                        <td>@city.Latitude</td>
+                                        <td>@city.Longitude</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                        @if (Model.AllCities.Count > 100)
+                        {
+                            <p class="text-center">Mostrando 100 delle @Model.AllCities.Count città...</p>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    @if (Model.UserWishlist.Any())
+    {
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5>Wishlist dell'utente</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Città</th>
+                                        <th>Paese</th>
+                                        <th>Priorità</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in Model.UserWishlist)
+                                    {
+                                        <tr>
+                                            <td>@item.Id</td>
+                                            <td>@item.CityName</td>
+                                            <td>@item.CountryName</td>
+                                            <td>@item.Priority</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+    
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5>Città filtrate disponibili (non visitate e non in wishlist)</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Nome</th>
+                                    <th>Paese</th>
+                                    <th>Capitale</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var city in Model.FilteredCities.Take(50))
+                                {
+                                    <tr>
+                                        <td>@city.Id</td>
+                                        <td>@city.Name</td>
+                                        <td>@city.Country?.Name</td>
+                                        <td>@(city.IsCapital ? "Sì" : "No")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                        @if (Model.FilteredCities.Count > 50)
+                        {
+                            <p class="text-center">Mostrando 50 delle @Model.FilteredCities.Count città filtrate...</p>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

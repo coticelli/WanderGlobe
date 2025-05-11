@@ -72,11 +72,12 @@ namespace WanderGlobe.Pages
         public JsonResult OnGetSimpletest()
         {
             return new JsonResult(new { success = true, message = "Test riuscito!" });
-        }
-
-        // Caricamento iniziale della pagina
+        }        // Caricamento iniziale della pagina
         public async Task OnGetAsync()
         {
+            // Verifica se le immagini richieste esistono
+            VerifyRequiredImages();
+            
             try
             {
                 var user = await _userManager.GetUserAsync(User);
@@ -523,36 +524,33 @@ namespace WanderGlobe.Pages
                 }
                 else
                 {
-                    System.Diagnostics.Debug.WriteLine($"Errore API: {response.StatusCode} - {responseContent}");
-
-                    // Se il modello non è disponibile, prova con modelli alternativi
+                    System.Diagnostics.Debug.WriteLine($"Errore API: {response.StatusCode} - {responseContent}");                    // Se il modello non è disponibile, prova con modelli alternativi
                     if (apiUrl.Contains("gemini-2.0-flash") && (response.StatusCode == System.Net.HttpStatusCode.NotFound || responseContent.Contains("not found")))
                     {
                         // Prova con gemini-1.5-flash
                         System.Diagnostics.Debug.WriteLine("Modello non trovato, tentativo con modello alternativo: gemini-1.5-flash");
-                        string alternativeUrl = $"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={_geminiApiKey}";
-
-                        var alternativeResponse = await client.PostAsync(alternativeUrl, content);
+                        string alternativeUrl = $"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={_geminiApiKey}";                        var alternativeResponse = await client.PostAsync(alternativeUrl, content);
                         if (alternativeResponse.IsSuccessStatusCode)
                         {
                             string altContent = await alternativeResponse.Content.ReadAsStringAsync();
-                            dynamic altParsed = JsonConvert.DeserializeObject(altContent);
-
-                            if (altParsed?.candidates != null &&
+                            dynamic? altParsed = JsonConvert.DeserializeObject(altContent);                            if (altParsed?.candidates != null &&
                                 altParsed.candidates.Count > 0 &&
-                                altParsed.candidates[0].content != null &&
-                                altParsed.candidates[0].content.parts != null &&
-                                altParsed.candidates[0].content.parts.Count > 0)
+                                altParsed.candidates[0]?.content != null &&
+                                altParsed.candidates[0].content?.parts != null &&
+                                altParsed.candidates[0].content.parts.Count > 0 &&
+                                altParsed.candidates[0].content.parts[0]?.text != null)
                             {
-                                string htmlContent = altParsed.candidates[0].content.parts[0].text;
-                                htmlContent = CleanupMarkdownCodeDelimiters(htmlContent);
+                                string htmlContent = altParsed.candidates[0].content.parts[0]?.text;
+                                if (htmlContent != null)
+                                {                                    htmlContent = CleanupMarkdownCodeDelimiters(htmlContent);
 
-                                return new JsonResult(new
-                                {
-                                    success = true,
-                                    html = htmlContent,
-                                    note = "Utilizzato modello alternativo"
-                                });
+                                    return new JsonResult(new
+                                    {
+                                        success = true,
+                                        html = htmlContent,
+                                        note = "Utilizzato modello alternativo"
+                                    });
+                                }
                             }
                         }
                     }
@@ -599,44 +597,45 @@ namespace WanderGlobe.Pages
                 @"^\s*<pre>\s*|\s*</pre>\s*$",
                 "",
                 System.Text.RegularExpressions.RegexOptions.Singleline
-            );
-
-            return content.Trim();
-        }
-
-        // Metodo per ottenere le capitali disponibili dal database
+            );            return content.Trim();
+        }          // Metodo per ottenere tutte le città disponibili dal database
         private async Task<List<CityInfo>> GetAvailableCapitalsAsync()
         {
             try
             {
-                // Ottieni tutti i paesi dal database
-                var countries = await _dbContext.Countries.ToListAsync();
-
-                // Crea la lista di città (capitali) dai paesi nel database
-                var capitals = new List<CityInfo>();
-
-                foreach (var country in countries)
-                {
-                    // Ottieni il nome della capitale per ogni paese
-                    string capitalName = await GetCapitalAsync(country.Code);
-
-                    capitals.Add(new CityInfo
+                var userId = _userManager.GetUserId(User);
+                
+                // Utilizziamo un approccio diretto con Entity Framework
+                var allCities = await _dbContext.Cities
+                    .Include(c => c.Country)
+                    .Where(c => c.Country != null)
+                    .ToListAsync();
+                
+                // Debug - quante città abbiamo trovato nel database?
+                System.Diagnostics.Debug.WriteLine($"Trovate {allCities.Count} città totali nel database");
+                
+                var availableCities = allCities
+                    .Select(city => new CityInfo
                     {
-                        Name = capitalName,
-                        Country = country.Name,
-                        CountryCode = country.Code
-                    });
-                }
-
-                // Ordina le città per nome
-                return capitals.OrderBy(c => c.Name).ToList();
+                        Name = city.Name,
+                        Country = city.Country.Name,
+                        CountryCode = city.Country.Code
+                    })
+                    .ToList();
+                
+                // Debug output
+                System.Diagnostics.Debug.WriteLine($"Totale città disponibili per il dropdown: {availableCities.Count}");
+                
+                return availableCities.OrderBy(c => c.Country).ThenBy(c => c.Name).ToList();
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Errore nel recupero delle capitali dal database: {ex.Message}");
-                // In caso di errore, restituisci una lista vuota
-                return new List<CityInfo>();            }
-        }        // Metodo per ottenere il nome della capitale dal database tramite ICityService
+                System.Diagnostics.Debug.WriteLine($"Errore in GetAvailableCapitalsAsync: {ex.Message}");
+                return new List<CityInfo>();
+            }
+        }
+        
+        // Metodo per ottenere il nome della capitale dal database tramite ICityService
         private async Task<string> GetCapitalAsync(string countryCode)
         {
             try
@@ -905,6 +904,182 @@ namespace WanderGlobe.Pages
             public string? Name { get; set; }
             public string? Country { get; set; }
             public string? CountryCode { get; set; }
+        }
+
+    public async Task<IActionResult> OnPostMarkAsVisitedAsync(int destinationId)
+    {
+        if (User?.Identity?.IsAuthenticated != true)
+        {
+            return RedirectToPage("/Account/Login", new { area = "Identity" });
+        }
+
+            var userId = _userManager.GetUserId(User);
+            
+            try
+            {
+                // Prima otteniamo i dettagli della destinazione
+                var userWishlist = await _dreamService.GetUserWishlistAsync(userId);
+                var wishlistItem = userWishlist.FirstOrDefault(d => d.Id == destinationId);
+                
+                if (wishlistItem == null)
+                {
+                    TempData["ErrorMessage"] = "Destinazione non trovata nella wishlist.";
+                    return RedirectToPage();
+                }
+                
+                // Cerchiamo la città nel database
+                var cities = await _cityService.GetAllCitiesAsync();
+                var city = cities.FirstOrDefault(c => 
+                    c.Name.Equals(wishlistItem.CityName, StringComparison.OrdinalIgnoreCase) &&
+                    c.Country.Name.Equals(wishlistItem.CountryName, StringComparison.OrdinalIgnoreCase));
+                
+                if (city == null)
+                {
+                    TempData["ErrorMessage"] = $"Non è stato possibile trovare la città {wishlistItem.CityName} nel database.";
+                    return RedirectToPage();
+                }
+                
+                // Segna la città come visitata e rimuovila dalla wishlist
+                var result = await _cityService.MarkCityAsVisitedAsync(city.Id, userId, DateTime.Now);
+                
+                if (result)
+                {
+                    TempData["SuccessMessage"] = $"La città {wishlistItem.CityName} è stata segnata come visitata e rimossa dalla wishlist.";
+                }
+                else
+                {
+                    TempData["ErrorMessage"] = "Si è verificato un errore durante il salvataggio.";
+                }
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Si è verificato un errore: {ex.Message}";
+            }
+            
+            return RedirectToPage();
+        }
+
+        [HttpGet]
+        [IgnoreAntiforgeryToken]
+        public async Task<IActionResult> OnGetDiagnosticAsync()
+        {
+            try
+            {
+                // Recupera tutte le città e i paesi
+                var userId = _userManager.GetUserId(User);
+                
+                // Otteni tutti i paesi
+                var allCountries = await _countryService.GetAllCountriesAsync();
+                
+                // Ottieni tutte le città
+                var allCities = await _dbContext.Cities
+                    .Include(c => c.Country)
+                    .ToListAsync();
+
+                // Verifica l'integrità della relazione
+                var citiesWithoutCountry = allCities.Count(c => c.Country == null);
+                
+                // Ottiene il numero di città per paese
+                var citiesPerCountry = allCities
+                    .Where(c => c.Country != null)
+                    .GroupBy(c => c.Country.Name)
+                    .Select(g => new { Country = g.Key, Count = g.Count() })
+                    .OrderByDescending(x => x.Count)
+                    .Take(10)
+                    .ToList();
+
+                // Prova ad usare il metodo GetAllCitiesWithCountryAsync
+                List<City> citiesWithCountry = new List<City>();
+                try
+                {
+                    citiesWithCountry = await _cityService.GetAllCitiesWithCountryAsync();
+                }
+                catch (Exception ex)
+                {
+                    return new JsonResult(new
+                    {
+                        success = false,
+                        error = $"Errore in GetAllCitiesWithCountryAsync: {ex.Message}",
+                        stack = ex.StackTrace
+                    });
+                }
+
+                return new JsonResult(new
+                {
+                    success = true,
+                    countriesCount = allCountries.Count,
+                    citiesCount = allCities.Count,
+                    citiesWithoutCountry = citiesWithoutCountry,
+                    citiesWithCountryCount = citiesWithCountry.Count,
+                    citiesPerCountry = citiesPerCountry,
+                    citiesWithoutCountryIds = allCities.Where(c => c.Country == null).Select(c => c.Id).ToList()
+                });
+            }
+            catch (Exception ex)
+            {
+                return new JsonResult(new
+                {
+                    success = false,
+                    error = ex.Message,
+                    stack = ex.StackTrace
+                });
+            }
+        }
+
+        private void VerifyRequiredImages()
+        {
+            try
+            {
+                // Percorsi delle immagini da verificare
+                var imagePaths = new[]
+                {
+                    Path.Combine(_webHostEnvironment.WebRootPath, "images", "empty-wishlist.svg"),
+                    Path.Combine(_webHostEnvironment.WebRootPath, "images", "empty-planning.svg"),
+                    Path.Combine(_webHostEnvironment.WebRootPath, "images", "placeholder-destination.jpg")
+                };
+
+                // Verifica se le immagini esistono e creale se mancano
+                foreach (var path in imagePaths)
+                {
+                    if (!System.IO.File.Exists(path))
+                    {
+                        string filename = Path.GetFileName(path);
+                        string extension = Path.GetExtension(path).ToLowerInvariant();
+                          // Crea la directory se non esiste
+                        string? directoryName = Path.GetDirectoryName(path);
+                        if (!string.IsNullOrEmpty(directoryName))
+                        {
+                            Directory.CreateDirectory(directoryName);
+                        }
+
+                        if (extension == ".svg")
+                        {
+                            // Crea un semplice SVG
+                            string svgContent = @"<?xml version=""1.0"" encoding=""UTF-8""?>
+<svg width=""200px"" height=""200px"" viewBox=""0 0 200 200"" xmlns=""http://www.w3.org/2000/svg"">
+  <rect width=""200"" height=""200"" fill=""#f8f9fa"" />
+  <text x=""50"" y=""100"" font-family=""Arial"" font-size=""14"" fill=""#6c757d"">
+    " + filename + @"
+  </text>
+</svg>";
+                            System.IO.File.WriteAllText(path, svgContent);
+                        }
+                        else if (extension == ".jpg" || extension == ".jpeg" || extension == ".png")
+                        {
+                            // Trova un'immagine predefinita da copiare
+                            string defaultImagePath = Path.Combine(_webHostEnvironment.WebRootPath, "images", "default-city.jpg");
+                            if (System.IO.File.Exists(defaultImagePath))
+                            {
+                                System.IO.File.Copy(defaultImagePath, path);
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Errore nella verifica delle immagini: {ex.Message}");
+            }
         }
     }
 }

@@ -6,21 +6,38 @@
     // Calcoli preliminari per evitare chiamate ripetute e prevenire errori
     bool hasVisitedCountries = Model.VisitedCountries?.Any() == true;
     int visitedCount = Model.VisitedCountries?.Count ?? 0;
-    int distinctContinents = hasVisitedCountries ? Model.VisitedCountries.Select(c => c.Country?.Continent).Where(c => c != null).Distinct().Count() : 0;
-
-    // Funzione helper per ottenere la capitale di un paese
+    int distinctContinents = hasVisitedCountries ? Model.VisitedCountries.Select(c => c.Country?.Continent).Where(c => c != null).Distinct().Count() : 0;    // Funzione helper per ottenere la capitale di un paese
+    // Utilizziamo un dizionario locale perché è più veloce che fare una query al database per ogni paese
     string GetCapital(string countryCode)
     {
         var capitals = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
             { "IT", "Roma" },
             { "FR", "Parigi" },
-            { "UK", "Londra" },
+            { "GB", "Londra" },
             { "US", "Washington D.C." },
             { "DE", "Berlino" },
             { "ES", "Madrid" },
             { "JP", "Tokyo" },
-            // Aggiungere altre capitali secondo necessità
+            { "CN", "Pechino" },
+            { "AU", "Canberra" },
+            { "RU", "Mosca" },
+            { "BR", "Brasilia" },
+            { "IN", "Nuova Delhi" },
+            { "ZA", "Pretoria" },
+            { "MX", "Città del Messico" },
+            { "AR", "Buenos Aires" },
+            { "EG", "Il Cairo" },
+            { "GR", "Atene" },
+            { "SE", "Stoccolma" },
+            { "NO", "Oslo" },
+            { "PT", "Lisbona" },
+            { "CH", "Berna" },
+            { "AT", "Vienna" },
+            { "BE", "Bruxelles" },
+            { "NL", "Amsterdam" },
+            { "CA", "Ottawa" }
+            // Ora include molte più capitali per evitare conflitti
         };
 
         return capitals.TryGetValue(countryCode, out string capital) ? capital : $"Capitale di {countryCode}";
@@ -266,15 +283,14 @@
                 <div class="add-city-card">
                     <h5 class="mb-3"><i class="fas fa-plus-circle" aria-hidden="true"></i> Aggiungi Nuova Città</h5>
 
-                    <form method="post" asp-page-handler="AddCountry" class="add-city-form">
-                        <div class="form-group mb-3">
-                            <label for="countryId" class="form-label">Seleziona una capitale</label>
+                    <form method="post" asp-page-handler="AddCountry" class="add-city-form">                        <div class="form-group mb-3">
+                            <label for="countryId" class="form-label">Seleziona una città</label>
                             <select class="form-select" id="countryId" name="countryId" required aria-describedby="countryHelp">
                                 <option value="">-- Seleziona una città --</option>
                                 @{
                                     var availableCountries = Model.AllCountries?
                                     .Where(c => !Model.VisitedCountries.Any(vc => vc.CountryId == c.Id))
-                                    .OrderBy(c => GetCapital(c.Code)) ?? Enumerable.Empty<dynamic>();
+                                    .OrderBy(c => c.Name) ?? Enumerable.Empty<dynamic>();
 
                                     var continentGroups = availableCountries
                                     .GroupBy(c => c.Continent ?? "Altro")
@@ -288,15 +304,17 @@
 
                                 @foreach (var continent in continentGroups)
                                 {
-                                    <optgroup label="@continent.Key">
-                                        @foreach (var country in continent)
+                                    <optgroup label="@continent.Key">                                        @foreach (var country in continent)
                                         {
-                                            <option value="@country.Id">@GetCapital(country.Code) (@country.Name)</option>
+                                            var capitalName = GetCapital(country.Code);
+                                            <option value="@country.Id">@capitalName (@country.Name)</option>
+                                            
+                                            @* Qui potremmo aggiungere altre città oltre alle capitali ma per ora lasciamo solo le capitali *@
                                         }
                                     </optgroup>
                                 }
                             </select>
-                            <div id="countryHelp" class="form-text">Seleziona la capitale del paese che hai visitato</div>
+                            <div id="countryHelp" class="form-text">Seleziona la città che hai visitato</div>
                         </div>
 
                         <div class="city-preview" id="cityPreview" style="display:none">

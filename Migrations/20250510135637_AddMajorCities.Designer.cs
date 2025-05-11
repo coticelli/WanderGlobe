@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using WanderGlobe.Data;
 
@@ -10,9 +11,10 @@ using WanderGlobe.Data;
 namespace WanderGlobe.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250510135637_AddMajorCities")]
+    partial class AddMajorCities
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "6.0.35");
@@ -1093,58 +1095,6 @@ namespace WanderGlobe.Migrations
                         });
                 });
 
-            modelBuilder.Entity("WanderGlobe.Models.Custom.DreamDestination", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("ApplicationUserId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("CityName")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("CountryCode")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("CountryName")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("ImageUrl")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<double>("Latitude")
-                        .HasColumnType("REAL");
-
-                    b.Property<double>("Longitude")
-                        .HasColumnType("REAL");
-
-                    b.Property<string>("Note")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<int>("Priority")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ApplicationUserId");
-
-                    b.ToTable("DreamDestination");
-                });
-
             modelBuilder.Entity("WanderGlobe.Models.Photo", b =>
                 {
                     b.Property<int>("Id")
@@ -1325,13 +1275,6 @@ namespace WanderGlobe.Migrations
                     b.Navigation("Country");
                 });
 
-            modelBuilder.Entity("WanderGlobe.Models.Custom.DreamDestination", b =>
-                {
-                    b.HasOne("WanderGlobe.Models.ApplicationUser", null)
-                        .WithMany("DreamDestinations")
-                        .HasForeignKey("ApplicationUserId");
-                });
-
             modelBuilder.Entity("WanderGlobe.Models.Photo", b =>
                 {
                     b.HasOne("WanderGlobe.Models.TravelJournal", "TravelJournal")
@@ -1403,8 +1346,6 @@ namespace WanderGlobe.Migrations
             modelBuilder.Entity("WanderGlobe.Models.ApplicationUser", b =>
                 {
                     b.Navigation("Badges");
-
-                    b.Navigation("DreamDestinations");
 
                     b.Navigation("VisitedCountries");
                 });

@@ -1,0 +1,150 @@
+@page
+@model WanderGlobe.Pages.CityFilterTestModel
+@{
+    ViewData["Title"] = "Test Filtro Città";
+}
+
+<div class="container mt-4">
+    <h1>Test Filtro Città</h1>
+    
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger">
+            @Model.ErrorMessage
+        </div>
+    }
+    
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success">
+            @TempData["SuccessMessage"]
+        </div>
+    }
+    
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Statistiche del filtro</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Totale città nel database:</strong> @Model.AllCities.Count</p>
+                    <p><strong>Città nella wishlist:</strong> @Model.UserWishlist.Count</p>
+                    <p><strong>Città già visitate:</strong> @Model.VisitedCities.Count</p>
+                    <p><strong>Città disponibili (filtrate):</strong> @Model.FilteredCities.Count</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Azioni di test</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" asp-page-handler="MarkRandomAsVisited">
+                        <button type="submit" class="btn btn-primary mb-2">Marca una città casuale della wishlist come visitata</button>
+                    </form>
+                    <form method="post" asp-page-handler="RefreshFilters">
+                        <button type="submit" class="btn btn-outline-primary">Aggiorna filtri</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Città nella Wishlist</h5>
+                </div>
+                <div class="card-body">
+                    @if (Model.UserWishlist.Any())
+                    {
+                        <ul class="list-group">
+                            @foreach (var dream in Model.UserWishlist)
+                            {
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <strong>@dream.CityName</strong>
+                                        <br />
+                                        <small>@dream.CountryName</small>
+                                    </div>
+                                    <form method="post" asp-page-handler="MarkAsVisited">
+                                        <input type="hidden" name="destinationId" value="@dream.Id" />
+                                        <button type="submit" class="btn btn-sm btn-outline-success">
+                                            <i class="fas fa-check-circle"></i> Visitata
+                                        </button>
+                                    </form>
+                                </li>
+                            }
+                        </ul>
+                    }
+                    else
+                    {
+                        <p class="text-muted">Nessuna città nella wishlist</p>
+                    }
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Città già visitate</h5>
+                </div>
+                <div class="card-body">
+                    @if (Model.VisitedCities.Any())
+                    {
+                        <ul class="list-group">
+                            @foreach (var city in Model.VisitedCities)
+                            {
+                                <li class="list-group-item">
+                                    <strong>@city.Name</strong>
+                                    <br />
+                                    <small>@city.Country.Name</small>
+                                </li>
+                            }
+                        </ul>
+                    }
+                    else
+                    {
+                        <p class="text-muted">Nessuna città visitata</p>
+                    }
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Città filtrate disponibili</h5>
+                </div>
+                <div class="card-body">
+                    @if (Model.FilteredCities.Any())
+                    {
+                        <ul class="list-group">
+                            @foreach (var city in Model.FilteredCities.Take(10))
+                            {
+                                <li class="list-group-item">
+                                    <strong>@city.Name</strong>
+                                    <br />
+                                    <small>@city.Country.Name</small>
+                                </li>
+                            }
+                        </ul>
+                        
+                        @if (Model.FilteredCities.Count > 10)
+                        {
+                            <p class="text-center mt-2">Mostrati 10 di @Model.FilteredCities.Count</p>
+                        }
+                    }
+                    else
+                    {
+                        <p class="text-muted">Nessuna città disponibile</p>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -40,9 +40,24 @@
             </li>
         </ul>
 
-        <div class="tab-content" id="dreamTabsContent">
-            <!-- TAB WISHLIST -->
+        <div class="tab-content" id="dreamTabsContent">            <!-- TAB WISHLIST -->
             <div class="tab-pane fade show active" id="wishlist" role="tabpanel">
+                @if (TempData["SuccessMessage"] != null)
+                {
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        @TempData["SuccessMessage"]
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                }
+                
+                @if (TempData["ErrorMessage"] != null)
+                {
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        @TempData["ErrorMessage"]
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                }
+                
                 <div class="search-container mb-3">
                     <div class="input-group">
                         <span class="input-group-text"><i class="fas fa-search"></i></span>
@@ -78,8 +93,7 @@
                                     }
                                 </div>
                                 <div class="dream-note">@(dream.Note?.Length > 100 ? dream.Note.Substring(0, 100) + "..." : dream.Note)</div>
-                            </div>
-                            <div class="dream-item-actions">
+                            </div>                            <div class="dream-item-actions">
                                 <!-- MODIFICATO: Aggiunta classe show-details-btn e data-id -->
                                 <button type="button" class="btn btn-sm btn-outline-info show-details-btn" data-id="@dream.Id">
                                     <i class="fas fa-info-circle"></i>
@@ -87,6 +101,12 @@
                                 <button type="button" class="btn btn-sm btn-outline-warning" onclick="moveToPlanningPhase('@dream.Id')">
                                     <i class="fas fa-calendar-plus"></i>
                                 </button>
+                                <form method="post" asp-page-handler="MarkAsVisited" class="d-inline-block">
+                                    <input type="hidden" name="destinationId" value="@dream.Id" />
+                                    <button type="submit" class="btn btn-sm btn-outline-success" title="Segna come visitata">
+                                        <i class="fas fa-check-circle"></i>
+                                    </button>
+                                </form>
                                 <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeDream('@dream.Id')">
                                     <i class="fas fa-trash"></i>
                                 </button>
@@ -289,16 +309,22 @@
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label for="WishlistForm_City" class="form-label">Città</label>
-                                <!-- Make sure this is correctly structured in your modal form -->
-                                <select class="form-select" id="WishlistForm_City" name="WishlistForm.City" required>
+                                <!-- Make sure this is correctly structured in your modal form -->                                <select class="form-select" id="WishlistForm_City" name="WishlistForm.City" required>
                                     <option value="">Seleziona una città</option>
-                                    @foreach (var city in Model.WishlistForm.AvailableCities)
+                                    @if (Model.WishlistForm.AvailableCities != null && Model.WishlistForm.AvailableCities.Any())
                                     {
-                                        <option value="@city.Name" 
-                                            data-country="@city.Country"
-                                            data-country-code="@city.CountryCode">
-                                            @city.Name
-                                        </option>
+                                        @foreach (var city in Model.WishlistForm.AvailableCities)
+                                        {
+                                            <option value="@city.Name" 
+                                                data-country="@city.Country"
+                                                data-country-code="@city.CountryCode">
+                                                @city.Name (@city.Country)
+                                            </option>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <option value="" disabled>Nessuna città disponibile - Ricarica la pagina</option>
                                     }
                                 </select>
                             </div>

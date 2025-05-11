@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="200px" height="200px" viewBox="0 0 200 200" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+    <circle fill="#F5F5F5" cx="100" cy="100" r="100"></circle>
+    <path d="M60,70 L140,70 L140,130 L60,130 Z" stroke="#CCCCCC" stroke-width="4"></path>
+    <path d="M60,70 L100,100 L140,70" stroke="#CCCCCC" stroke-width="4"></path>
+    <path d="M70,90 L80,95 L90,80 M115,85 L125,75" stroke="#AAAAAA" stroke-width="2"></path>
+    <text font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#888888">
+      <tspan x="45" y="160">Nessun viaggio pianificato</tspan>
+    </text>
+  </g>
+</svg>

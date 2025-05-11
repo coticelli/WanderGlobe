@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 
 namespace WanderGlobe.Services
 {
@@ -14,150 +15,135 @@ namespace WanderGlobe.Services
         public DreamService(ApplicationDbContext context)
         {
             _context = context;
-        }
-
-        public async Task<List<DreamDestination>> GetUserWishlistAsync(string userId)
+        }        public async Task<List<DreamDestination>> GetUserWishlistAsync(string userId)
         {
-            // Simula il recupero della wishlist
-            return new List<DreamDestination>
-            {
-                new DreamDestination
-                {
-                    Id = 1,
-                    UserId = userId,
-                    CityName = "Tokyo",
-                    CountryName = "Giappone",
-                    CountryCode = "JP",
-                    Latitude = 35.6762,
-                    Longitude = 139.6503,
-                    Priority = DreamPriority.High,
-                    ImageUrl = "/images/sample-photos/photo1.jpg",
-                    Note = "Voglio visitare i templi e i quartieri moderni",
-                    CreatedAt = DateTime.Now.AddMonths(-2),
-                    Tags = new List<string> { "cultura", "gastronomia", "tecnologia" }
-                },
-                new DreamDestination
-                {
-                    Id = 2,
-                    UserId = userId,
-                    CityName = "New York",
-                    CountryName = "Stati Uniti",
-                    CountryCode = "US",
-                    Latitude = 40.7128,
-                    Longitude = -74.0060,
-                    Priority = DreamPriority.Medium,
-                    ImageUrl = "/images/sample-photos/photo2.jpg",
-                    Note = "Voglio vedere la Statua della Libertà e Central Park",
-                    CreatedAt = DateTime.Now.AddMonths(-1),
-                    Tags = new List<string> { "metropoli", "arte", "shopping" }
-                }
-            };
+            // Recupera la wishlist dal database
+            return await _context.DreamDestinations
+                .Where(d => d.UserId == userId)
+                .ToListAsync();
         }
 
         public async Task<List<PlannedTrip>> GetUserPlannedTripsAsync(string userId)
         {
-            // Simula il recupero dei viaggi pianificati
-            return new List<PlannedTrip>
+            // Recupera i viaggi pianificati dal database
+            return await _context.PlannedTrips
+                .Where(p => p.UserId == userId)
+                .ToListAsync();
+        }        public Task<List<RecommendedDestination>> GetRecommendationsAsync(string userId)
+        {
+            // Per le raccomandazioni, potremmo implementare una logica più complessa in futuro
+            // Per ora, restituisci una lista vuota per non mostrare località non richieste
+            return Task.FromResult(new List<RecommendedDestination>());
+        }        // Implementazione di altri metodi
+        public async Task<DreamDestination> AddToWishlistAsync(DreamDestination destination)
+        {
+            // Aggiunge la destinazione alla wishlist nel database
+            _context.DreamDestinations.Add(destination);
+            await _context.SaveChangesAsync();
+            return destination;
+        }
+
+        public async Task<bool> RemoveFromWishlistAsync(int destinationId, string userId)
+        {
+            try
             {
-                new PlannedTrip
+                // Trova la destinazione nella wishlist dell'utente
+                var destination = await _context.DreamDestinations
+                    .FirstOrDefaultAsync(d => d.Id == destinationId && d.UserId == userId);
+                
+                if (destination != null)
                 {
-                    Id = 1,
-                    UserId = userId,
-                    CityName = "Parigi",
-                    CountryName = "Francia",
-                    CountryCode = "FR",
-                    Latitude = 48.8566,
-                    Longitude = 2.3522,
-                    StartDate = DateTime.Now.AddMonths(2),
-                    EndDate = DateTime.Now.AddMonths(2).AddDays(7),
-                    ImageUrl = "/images/sample-photos/photo3.jpg",
-                    Notes = "Prenotare una visita al Louvre con anticipo",
-                    CompletionPercentage = 65,
-                    Checklist = new List<ChecklistItem>
-                    {
-                        new ChecklistItem { Id = 1, Title = "Prenotare volo", Category = "travel", IsCompleted = true },
-                        new ChecklistItem { Id = 2, Title = "Prenotare hotel", Category = "accommodation", IsCompleted = true },
-                        new ChecklistItem { Id = 3, Title = "Acquistare assicurazione viaggio", Category = "documents", IsCompleted = false }
-                    }
+                    _context.DreamDestinations.Remove(destination);
+                    await _context.SaveChangesAsync();
+                    return true;
                 }
-            };
-        }
-
-        public async Task<List<RecommendedDestination>> GetRecommendationsAsync(string userId)
-        {
-            // Simula il recupero dei suggerimenti
-            return new List<RecommendedDestination>
+                
+                return false;
+            }
+            catch (Exception ex)
             {
-                new RecommendedDestination
+                System.Diagnostics.Debug.WriteLine($"Errore in RemoveFromWishlistAsync: {ex.Message}");
+                return false;
+            }
+        }        public async Task<PlannedTrip> CreatePlannedTripAsync(PlannedTrip trip)
+        {
+            // Aggiunge un nuovo viaggio pianificato al database
+            _context.PlannedTrips.Add(trip);
+            await _context.SaveChangesAsync();
+            return trip;
+        }
+
+        public async Task<bool> UpdatePlannedTripAsync(PlannedTrip trip)
+        {
+            try
+            {
+                _context.PlannedTrips.Update(trip);
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Errore in UpdatePlannedTripAsync: {ex.Message}");
+                return false;
+            }
+        }
+
+        public async Task<bool> DeletePlannedTripAsync(int tripId, string userId)
+        {
+            try
+            {
+                var trip = await _context.PlannedTrips
+                    .FirstOrDefaultAsync(t => t.Id == tripId && t.UserId == userId);
+                
+                if (trip != null)
                 {
-                    Id = 1,
-                    CityName = "Barcellona",
-                    CountryName = "Spagna",
-                    CountryCode = "ES",
-                    Latitude = 41.3851,
-                    Longitude = 2.1734,
-                    ImageUrl = "/images/sample-photos/photo4.jpg",
-                    MatchPercentage = 92,
-                    Weather = "Soleggiato",
-                    CostLevel = "Medio",
-                    Accommodations = 1245,
-                    Tags = new List<string> { "mare", "architettura", "gastronomia" }
-                },
-                new RecommendedDestination
-                {
-                    Id = 2,
-                    CityName = "Atene",
-                    CountryName = "Grecia",
-                    CountryCode = "GR",
-                    Latitude = 37.9838,
-                    Longitude = 23.7275,
-                    ImageUrl = "/images/sample-photos/photo5.jpg",
-                    MatchPercentage = 85,
-                    Weather = "Caldo",
-                    CostLevel = "Economico",
-                    Accommodations = 834,
-                    Tags = new List<string> { "storia", "archeologia", "mare" }
+                    _context.PlannedTrips.Remove(trip);
+                    await _context.SaveChangesAsync();
+                    return true;
                 }
-            };
+                
+                return false;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Errore in DeletePlannedTripAsync: {ex.Message}");
+                return false;
+            }
+        }        public async Task<bool> MarkTripAsVisitedAsync(int tripId, string userId)
+        {
+            try
+            {
+                // In una implementazione completa, potremmo trasformare un viaggio pianificato
+                // in un viaggio visitato, oppure creare un record nella tabella apposita
+                // Per ora, semplicemente eliminiamo il viaggio pianificato
+                return await DeletePlannedTripAsync(tripId, userId);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Errore in MarkTripAsVisitedAsync: {ex.Message}");
+                return false;
+            }
         }
 
-        // Implementazione di altri metodi
-        public Task<DreamDestination> AddToWishlistAsync(DreamDestination destination)
+        public async Task<bool> IsCityInUserWishlistAsync(int cityId, string userId)
         {
-            // Simula l'aggiunta alla wishlist
-            destination.Id = new Random().Next(100, 999);
-            return Task.FromResult(destination);
-        }
-
-        public Task<bool> RemoveFromWishlistAsync(int destinationId, string userId)
-        {
-            // Simula la rimozione dalla wishlist
-            return Task.FromResult(true);
-        }
-
-        public Task<PlannedTrip> CreatePlannedTripAsync(PlannedTrip trip)
-        {
-            // Simula la creazione di un viaggio pianificato
-            trip.Id = new Random().Next(100, 999);
-            return Task.FromResult(trip);
-        }
-
-        public Task<bool> UpdatePlannedTripAsync(PlannedTrip trip)
-        {
-            // Simula l'aggiornamento di un viaggio pianificato
-            return Task.FromResult(true);
-        }
-
-        public Task<bool> DeletePlannedTripAsync(int tripId, string userId)
-        {
-            // Simula l'eliminazione di un viaggio pianificato
-            return Task.FromResult(true);
-        }
-
-        public Task<bool> MarkTripAsVisitedAsync(int tripId, string userId)
-        {
-            // Simula l'operazione di segnare un viaggio come visitato
-            return Task.FromResult(true);
+            try
+            {
+                // Recupera la città dal database
+                var city = await _context.Cities.FindAsync(cityId);
+                if (city == null)
+                    return false;
+                
+                // Controlla se la città è nella wishlist dell'utente
+                return await _context.DreamDestinations
+                    .AnyAsync(d => d.UserId == userId && 
+                             d.CityName.Equals(city.Name, StringComparison.OrdinalIgnoreCase));
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Errore in IsCityInUserWishlistAsync: {ex.Message}");
+                return false;
+            }
         }
     }
 }
