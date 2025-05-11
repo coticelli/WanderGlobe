@@ -24,7 +24,7 @@ namespace WanderGlobe.Data
         public DbSet<Photo> Photos { get; set; } = null!;
         public DbSet<DreamDestination> DreamDestinations { get; set; } = null!;
         public DbSet<PlannedTrip> PlannedTrips { get; set; } = null!;
-        
+        public DbSet<ChecklistItem> ChecklistItems { get; set; }
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);

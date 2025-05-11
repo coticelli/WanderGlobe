@@ -59,7 +59,7 @@ namespace WanderGlobe.Models.Custom
         public List<string> Tags { get; set; } = new List<string>();
     }
 
-    public class PlannedTrip
+       public class PlannedTrip
     {
         public int Id { get; set; }
         public string UserId { get; set; }
@@ -74,16 +74,21 @@ namespace WanderGlobe.Models.Custom
         public string Notes { get; set; }
         public int CompletionPercentage { get; set; }
         public List<ChecklistItem> Checklist { get; set; } = new List<ChecklistItem>();
+        public DateTime CreatedAt { get; set; } // Aggiungi questa proprietà
     }
 
+    // Aggiungi al tuo modello di dati
     public class ChecklistItem
     {
         public int Id { get; set; }
+        public int PlannedTripId { get; set; }
+        public PlannedTrip PlannedTrip { get; set; }
         public string Title { get; set; }
         public string Category { get; set; }
-        public bool IsCompleted { get; set; }
         public DateTime? DueDate { get; set; }
+        public bool IsCompleted { get; set; }
     }
+    
 
     public class RecommendedDestination
     {

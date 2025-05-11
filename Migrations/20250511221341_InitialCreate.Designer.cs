@@ -11,14 +11,13 @@ using WanderGlobe.Data;
 namespace WanderGlobe.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250511203750_InitialCreate")]
+    [Migration("20250511221341_InitialCreate")]
     partial class InitialCreate
     {
-        /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "8.0.4");
+            modelBuilder.HasAnnotation("ProductVersion", "6.0.27");
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
                 {
@@ -1490,7 +1489,7 @@ namespace WanderGlobe.Migrations
                     b.Property<bool>("IsCompleted")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int?>("PlannedTripId")
+                    b.Property<int>("PlannedTripId")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Title")
@@ -1501,7 +1500,7 @@ namespace WanderGlobe.Migrations
 
                     b.HasIndex("PlannedTripId");
 
-                    b.ToTable("ChecklistItem");
+                    b.ToTable("ChecklistItems");
                 });
 
             modelBuilder.Entity("WanderGlobe.Models.Custom.DreamDestination", b =>
@@ -1545,10 +1544,6 @@ namespace WanderGlobe.Migrations
                     b.Property<int>("Priority")
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("Tags")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
                     b.Property<string>("UserId")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -1579,6 +1574,9 @@ namespace WanderGlobe.Migrations
 
                     b.Property<string>("CountryName")
                         .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime>("EndDate")
@@ -1792,9 +1790,13 @@ namespace WanderGlobe.Migrations
 
             modelBuilder.Entity("WanderGlobe.Models.Custom.ChecklistItem", b =>
                 {
-                    b.HasOne("WanderGlobe.Models.Custom.PlannedTrip", null)
+                    b.HasOne("WanderGlobe.Models.Custom.PlannedTrip", "PlannedTrip")
                         .WithMany("Checklist")
-                        .HasForeignKey("PlannedTripId");
+                        .HasForeignKey("PlannedTripId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("PlannedTrip");
                 });
 
             modelBuilder.Entity("WanderGlobe.Models.Custom.DreamDestination", b =>

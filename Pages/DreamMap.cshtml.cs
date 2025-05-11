@@ -158,187 +158,190 @@ namespace WanderGlobe.Pages
             }
         }
 
-        [HttpPost]
+               [HttpPost]
         [IgnoreAntiforgeryToken]
         public async Task<IActionResult> OnPostSaveToWishlistAsync()
         {
             try
             {
-                // Use this.WishlistForm as the model
-                var model = this.WishlistForm;
-
-                System.Diagnostics.Debug.WriteLine($"OnPostSaveToWishlistAsync called - City from bound model: {model?.City}, Country from bound model: {model?.Country}");
-
-                // Log all form data received by the server for detailed inspection
-                System.Diagnostics.Debug.WriteLine("--- Raw Form Data Received by Server ---");
-                if (Request.HasFormContentType)
-                {
-                    foreach (var key_form in Request.Form.Keys)
-                    {
-                        System.Diagnostics.Debug.WriteLine($"Form Key: {key_form}, Value: {Request.Form[key_form]}");
-                    }
-                }
-                System.Diagnostics.Debug.WriteLine("--- End Raw Form Data ---");
-
-
-                if (model == null) // Should not happen if WishlistForm is initialized
+                if (WishlistForm == null)
                 {
                     return new JsonResult(new { success = false, message = "Model binding failed (model is null)." });
                 }
-
-                // Correct key for the City property in ModelState when WishlistForm is a [BindProperty]
-                string cityFieldKeyInModelState = $"{nameof(this.WishlistForm)}.{nameof(WishlistItemViewModel.City)}"; // This resolves to "WishlistForm.City"
-
-                // Log ModelState before clearing
-                System.Diagnostics.Debug.WriteLine("--- ModelState Before Clearing ---");
-                foreach (var state_before in ModelState)
+        
+                // Correct key for the City property in ModelState
+                string cityFieldKeyInModelState = $"{nameof(this.WishlistForm)}.{nameof(WishlistItemViewModel.City)}";
+        
+                // Log ModelState before processing
+                System.Diagnostics.Debug.WriteLine("--- ModelState Before Processing ---");
+                foreach (var state in ModelState)
                 {
-                    System.Diagnostics.Debug.WriteLine($"Key: {state_before.Key}, Errors: {state_before.Value.Errors.Count}");
-                    foreach (var error in state_before.Value.Errors) System.Diagnostics.Debug.WriteLine($"  Error: {error.ErrorMessage}");
+                    System.Diagnostics.Debug.WriteLine($"Key: {state.Key}, Errors: {state.Value.Errors.Count}");
+                    foreach (var error in state.Value.Errors) 
+                        System.Diagnostics.Debug.WriteLine($"  Error: {error.ErrorMessage}");
                 }
-                System.Diagnostics.Debug.WriteLine("--- End ModelState Before Clearing ---");
-
-
-                // Clear ModelState errors for all fields EXCEPT WishlistForm.City
-                foreach (var key_loopvar in ModelState.Keys.ToList())
+        
+                // Clear any existing errors on City field to prevent validation issues
+                ModelState.Remove(cityFieldKeyInModelState);
+        
+                // Validate model manually
+                if (string.IsNullOrEmpty(WishlistForm.City))
                 {
-                    if (key_loopvar != cityFieldKeyInModelState)
-                    {
-                        ModelState.Remove(key_loopvar);
-                    }
+                    return new JsonResult(new { success = false, message = "Seleziona una città valida." });
                 }
-
-                // Log ModelState after clearing (should only contain WishlistForm.City if it had errors)
-                System.Diagnostics.Debug.WriteLine("--- ModelState After Clearing ---");
-                foreach (var state_after in ModelState)
-                {
-                    System.Diagnostics.Debug.WriteLine($"Key: {state_after.Key}, Errors: {state_after.Value.Errors.Count}");
-                    foreach (var error in state_after.Value.Errors) System.Diagnostics.Debug.WriteLine($"  Error: {error.ErrorMessage}");
-                }
-                System.Diagnostics.Debug.WriteLine("--- End ModelState After Clearing ---");
-
-
-                if (!ModelState.IsValid) // This will now correctly reflect if WishlistForm.City is invalid
-                {
-                    var errors = ModelState[cityFieldKeyInModelState]?.Errors.Select(e => e.ErrorMessage).ToList()
-                                 ?? new List<string>(); // Fallback if key not found, though unlikely
-
-                    if (!errors.Any()) // If ModelState is invalid but no specific error for City key, add general one
-                    {
-                        errors.Add(ModelState.Values.SelectMany(v => v.Errors).FirstOrDefault()?.ErrorMessage ?? "Errore di validazione sconosciuto.");
-                    }
-
-                    System.Diagnostics.Debug.WriteLine($"ModelState invalid. Error for {cityFieldKeyInModelState}: {string.Join("; ", errors)}");
-                    return new JsonResult(new
-                    {
-                        success = false,
-                        message = string.Join("; ", errors)
-                    });
-                }
-
+        
                 var user = await _userManager.GetUserAsync(User);
                 if (user == null)
                 {
                     return new JsonResult(new { success = false, message = "Utente non autenticato" });
                 }
-
-                var cityInfo = (await GetAvailableCapitalsAsync()).FirstOrDefault(c => c.Name == model.City);
-                double latitude = 0, longitude = 0;
-
-                if (cityInfo != null)
+        
+                // Get city information from available cities
+                var cityInfo = (await GetAvailableCapitalsAsync()).FirstOrDefault(c => c.Name == WishlistForm.City);
+                
+                // Debug for city info
+                System.Diagnostics.Debug.WriteLine($"CityInfo found: {(cityInfo != null ? "Yes" : "No")} for city: {WishlistForm.City}");
+                
+                // Make sure we have country information
+                if (cityInfo == null)
                 {
-                    // Crucially, ensure model's Country and CountryCode are set from cityInfo,
-                    // as the hidden form fields "Country" and "CountryCode" won't bind to "WishlistForm.Country"
-                    model.Country = cityInfo.Country;
-                    model.CountryCode = cityInfo.CountryCode;
-
-                    // Assuming Countries list is populated elsewhere or fetch it
-                    var countriesList = Countries.Any() ? Countries : await _countryService.GetAllCountriesAsync();
-                    var countryData = countriesList.FirstOrDefault(c => c.Code == cityInfo.CountryCode);
-                    if (countryData != null)
+                    System.Diagnostics.Debug.WriteLine($"CityInfo not found for selected city: {WishlistForm.City}");
+                    
+                    // Create default city info if not found
+                    cityInfo = new CityInfo
                     {
-                        latitude = countryData.Latitude;
-                        longitude = countryData.Longitude;
-                    }
-                    else
-                    {
-                        System.Diagnostics.Debug.WriteLine($"Country data not found in local/service list for code: {cityInfo.CountryCode}");
-                    }
+                        Name = WishlistForm.City,
+                        Country = WishlistForm.Country ?? "Paese sconosciuto",
+                        CountryCode = WishlistForm.CountryCode ?? "XX"
+                    };
                 }
                 else
                 {
-                    // This case means model.City (which should be non-empty due to [Required])
-                    // was not found in GetAvailableCapitals(). This indicates a potential data issue
-                    // or an unexpected city value being submitted.
-                    System.Diagnostics.Debug.WriteLine($"CityInfo not found for selected city: {model.City}. Country/Code might use defaults or remain null if not set.");
-                    // If model.City is valid (e.g. "Budapest") but not in GetAvailableCapitals(), then cityInfo would be null.
-                    // The error "Seleziona una città" means model.City itself is empty/null.
+                    // Ensure the model has country data from cityInfo
+                    WishlistForm.Country = cityInfo.Country;
+                    WishlistForm.CountryCode = cityInfo.CountryCode;
                 }
-
-                model.Tags = model.Tags ?? "";
-                model.Notes = model.Notes ?? "";
-                model.Priority = model.Priority ?? "Media";
-
+                
+                // Debug country data
+                System.Diagnostics.Debug.WriteLine($"Country data: {WishlistForm.Country}, Code: {WishlistForm.CountryCode}");
+        
+                // Ensure we have non-null values for required fields
+                WishlistForm.Tags = WishlistForm.Tags ?? "";
+                WishlistForm.Notes = WishlistForm.Notes ?? "";
+                WishlistForm.Priority = WishlistForm.Priority ?? "Media";
+        
+                // Parse priority enum
                 DreamPriority priority;
-                Enum.TryParse(model.Priority, true, out priority); // Added 'true' for case-insensitive parsing
-                if (!Enum.IsDefined(typeof(DreamPriority), priority)) priority = DreamPriority.Medium;
-
-
-                string imageUrl = null;
-                if (model.ImageFile != null && model.ImageFile.Length > 0)
+                if (!Enum.TryParse(WishlistForm.Priority, true, out priority))
                 {
-                    imageUrl = await SaveWishlistImageAsync(model.ImageFile);
+                    priority = DreamPriority.Medium;
                 }
-
-                List<string> tagList = new List<string>();
-                if (!string.IsNullOrEmpty(model.Tags))
+        
+                // Process image if available
+                string imageUrl = null;
+                if (WishlistForm.ImageFile != null && WishlistForm.ImageFile.Length > 0)
                 {
-                    tagList = model.Tags.Split(',')
+                    imageUrl = await SaveWishlistImageAsync(WishlistForm.ImageFile);
+                }
+        
+                // Process tags
+                List<string> tagList = new List<string>();
+                if (!string.IsNullOrEmpty(WishlistForm.Tags))
+                {
+                    tagList = WishlistForm.Tags.Split(',')
                         .Select(t => t.Trim())
                         .Where(t => !string.IsNullOrEmpty(t))
                         .ToList();
-                }                var newDream = new DreamDestination
+                }
+        
+                // Set default latitude/longitude if not available
+                double latitude = 0, longitude = 0;
+                
+                // Find the city in database to get proper coordinates
+                var cityFromDb = await _dbContext.Cities
+                    .Include(c => c.Country)
+                    .FirstOrDefaultAsync(c => 
+                        c.Name.ToLower() == WishlistForm.City.ToLower() && 
+                        c.Country.Name.ToLower() == WishlistForm.Country.ToLower());
+                if (cityFromDb != null)
+                {
+                    latitude = cityFromDb.Latitude  ?? 0.0;
+                    longitude = cityFromDb.Longitude  ?? 0.0;
+                    System.Diagnostics.Debug.WriteLine($"Found city in DB: {cityFromDb.Name}, Lat: {latitude}, Lon: {longitude}");
+                }
+                else
+                {
+                    // Use default coordinates - better than zeros
+                    System.Diagnostics.Debug.WriteLine($"City not found in DB, using default lat/long");
+                    latitude = 45.0; // Default latitude
+                    longitude = 9.0; // Default longitude
+                }
+        
+                // Create new dream destination with all fields properly set
+                var newDream = new DreamDestination
                 {
                     UserId = user.Id,
-                    CityName = model.City ?? "Città sconosciuta", // Added null check
-                    CountryName = model.Country ?? "Paese non specificato",
-                    CountryCode = model.CountryCode ?? "XX",
-                    Note = model.Notes,
+                    CityName = WishlistForm.City ?? "Città sconosciuta",
+                    CountryName = WishlistForm.Country ?? "Paese non specificato",
+                    CountryCode = WishlistForm.CountryCode ?? "XX",
+                    Note = WishlistForm.Notes,
                     Tags = tagList,
                     Priority = priority,
                     Latitude = latitude,
                     Longitude = longitude,
-                    ImageUrl = imageUrl ?? $"/images/cities/{(model.CountryCode ?? "default").ToLower()}-city.jpg",
+                    ImageUrl = imageUrl ?? $"/images/cities/{(WishlistForm.CountryCode ?? "default").ToLower()}-city.jpg",
                     CreatedAt = DateTime.UtcNow
                 };
-
-                var savedDream = await _dreamService.AddToWishlistAsync(newDream);
-
-                if (savedDream != null)
+        
+                // Extra debug logging before save
+                System.Diagnostics.Debug.WriteLine($"About to save new dream: City={newDream.CityName}, Country={newDream.CountryName}, Code={newDream.CountryCode}");
+        
+                try
                 {
-                    return new JsonResult(new
+                    var savedDream = await _dreamService.AddToWishlistAsync(newDream);
+        
+                    if (savedDream != null)
                     {
-                        success = true,
-                        message = $"{model.City} aggiunta alla tua wishlist!",
-                        newItem = savedDream
-                    });
+                        return new JsonResult(new
+                        {
+                            success = true,
+                            message = $"{WishlistForm.City} aggiunta alla tua wishlist!",
+                            newItem = savedDream
+                        });
+                    }
+                    else
+                    {
+                        return new JsonResult(new
+                        {
+                            success = false,
+                            message = "Errore nel salvataggio della destinazione."
+                        });
+                    }
                 }
-                else
+                catch (DbUpdateException dbEx)
                 {
+                    // Log the detailed inner exception for debugging
+                    var innerMsg = dbEx.InnerException?.Message ?? "No inner exception";
+                    System.Diagnostics.Debug.WriteLine($"Database error: {dbEx.Message}. Inner: {innerMsg}");
+                    
                     return new JsonResult(new
                     {
                         success = false,
-                        message = "Si è verificato un errore durante il salvataggio. Riprova."
+                        message = $"Errore database: {dbEx.Message}. Dettagli: {innerMsg}"
                     });
                 }
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Exception in OnPostSaveToWishlistAsync: {ex.Message}\nStackTrace: {ex.StackTrace}");
+                
+                // Include inner exception details if available
+                var innerMsg = ex.InnerException?.Message ?? "Nessun dettaglio aggiuntivo";
+                
                 return new JsonResult(new
                 {
                     success = false,
-                    message = $"Errore server: {ex.Message}"
+                    message = $"Errore server: {ex.Message}. Dettagli: {innerMsg}"
                 });
             }
         }
@@ -732,71 +735,162 @@ namespace WanderGlobe.Pages
         }
 
         // HANDLERS PER LE OPERAZIONI AJAX
-        [HttpPost]
-        [IgnoreAntiforgeryToken]
-        public async Task<IActionResult> OnPostMoveToPlanningAsync([FromBody] MoveToPlanning request)
-        {
-            if (string.IsNullOrEmpty(request?.DreamId))
-            {
-                return new JsonResult(new { success = false, message = "ID destinazione non valido" });
-            }
-
-            try
-            {
-                var user = await _userManager.GetUserAsync(User);
-                if (user == null)
+                [HttpPost]
+                [IgnoreAntiforgeryToken]
+                public async Task<IActionResult> OnPostMoveToPlanningAsync([FromBody] MoveToPlanning request)
                 {
-                    return new JsonResult(new { success = false, message = "Utente non autenticato" });
-                }
-
-                // In un'implementazione reale, qui chiameresti i metodi del servizio
-                // per spostare l'elemento dalla wishlist alla pianificazione
-
-                return new JsonResult(new { success = true });
-            }
-            catch (Exception ex)
-            {
-                return new JsonResult(new { success = false, message = ex.Message });
-            }
-        }        
-        
-        [HttpPost]
-        [IgnoreAntiforgeryToken]
-        public IActionResult OnPostUpdatePlanDetailsAsync([FromBody] UpdatePlan request)
-        {
-            try
-            {
-                if (request?.PlanId == null)
-                {
-                    return new JsonResult(new { success = false, message = "ID piano non valido" });
-                }
-
-                var plan = PlannedTrips.FirstOrDefault(p => p.Id.ToString() == request.PlanId);
-                if (plan != null)
-                {
-                    // Safely handle nullable properties
-                    plan.Notes = request.Notes ?? plan.Notes;
-                    
-                    // Parse dates with null checks
-                    if (!string.IsNullOrEmpty(request.StartDate))
+                    if (string.IsNullOrEmpty(request?.DreamId))
                     {
-                        plan.StartDate = DateTime.Parse(request.StartDate);
+                        return new JsonResult(new { success = false, message = "ID destinazione non valido" });
                     }
-                    
-                    if (!string.IsNullOrEmpty(request.EndDate))
+                
+                    try
                     {
-                        plan.EndDate = DateTime.Parse(request.EndDate);
-                    }                    // In un'implementazione reale, qui salveresti le modifiche nel database
-                }
-
-                return new JsonResult(new { success = true });
-            }
-            catch (Exception ex)
+                        var user = await _userManager.GetUserAsync(User);
+                        if (user == null)
+                        {
+                            return new JsonResult(new { success = false, message = "Utente non autenticato" });
+                        }
+                
+                        // Converti l'ID da string a int se necessario
+                        if (!int.TryParse(request.DreamId, out int dreamId))
+                        {
+                            return new JsonResult(new { success = false, message = "Formato ID non valido" });
+                        }
+                
+                        // Ottieni la destinazione wishlist
+                        var dreamItem = await _dbContext.DreamDestinations
+                            .FirstOrDefaultAsync(d => d.Id == dreamId && d.UserId == user.Id);
+                
+                        if (dreamItem == null)
+                        {
+                            return new JsonResult(new { success = false, message = "Destinazione non trovata" });
+                        }
+                
+                        // Crea una nuova entità per il viaggio pianificato
+                        var plannedTrip = new PlannedTrip
+                        {
+                            UserId = user.Id,
+                            CityName = dreamItem.CityName,
+                            CountryName = dreamItem.CountryName,
+                            CountryCode = dreamItem.CountryCode,
+                            Notes = dreamItem.Note,
+                            Latitude = dreamItem.Latitude,
+                            Longitude = dreamItem.Longitude,
+                            ImageUrl = dreamItem.ImageUrl,
+                            StartDate = DateTime.UtcNow.AddDays(30), // Default a 30 giorni da oggi
+                            EndDate = DateTime.UtcNow.AddDays(37),   // Default a 37 giorni da oggi
+                            CompletionPercentage = 0,
+                            CreatedAt = DateTime.UtcNow
+                        };
+                
+                        // Salva nel database
+                        _dbContext.PlannedTrips.Add(plannedTrip);
+                        _dbContext.DreamDestinations.Remove(dreamItem);
+                        await _dbContext.SaveChangesAsync();
+                
+                        return new JsonResult(new { 
+                            success = true,
+                            plannedTrip = new {
+                                id = plannedTrip.Id,
+                                cityName = plannedTrip.CityName,
+                                countryName = plannedTrip.CountryName,
+                                countryCode = plannedTrip.CountryCode,
+                                startDate = plannedTrip.StartDate,
+                                endDate = plannedTrip.EndDate,
+                                completionPercentage = plannedTrip.CompletionPercentage,
+                                notes = plannedTrip.Notes,
+                                latitude = plannedTrip.Latitude,
+                                longitude = plannedTrip.Longitude,
+                                imageUrl = plannedTrip.ImageUrl
+                            }
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Eccezione in MoveToPlanningAsync: {ex.Message}");
+                        return new JsonResult(new { success = false, message = ex.Message });
+                    }
+                }  
+                
+                [HttpPost]
+            [IgnoreAntiforgeryToken]
+            public async Task<IActionResult> OnPostUpdatePlanDetailsAsync([FromBody] UpdatePlan request)
             {
-                return new JsonResult(new { success = false, message = ex.Message });
+                try
+                {
+                    if (string.IsNullOrEmpty(request?.PlanId))
+                    {
+                        return new JsonResult(new { success = false, message = "ID piano non valido" });
+                    }
+            
+                    var user = await _userManager.GetUserAsync(User);
+                    if (user == null)
+                    {
+                        return new JsonResult(new { success = false, message = "Utente non autenticato" });
+                    }
+            
+                    // Converti l'ID da string a int se necessario
+                    if (!int.TryParse(request.PlanId, out int planId))
+                    {
+                        return new JsonResult(new { success = false, message = "Formato ID non valido" });
+                    }
+            
+                    // Trova il viaggio pianificato nel database
+                    var plan = await _dbContext.PlannedTrips
+                        .FirstOrDefaultAsync(p => p.Id == planId && p.UserId == user.Id);
+            
+                    if (plan == null)
+                    {
+                        return new JsonResult(new { success = false, message = "Piano non trovato" });
+                    }
+            
+                    // Aggiorna i campi
+                    if (!string.IsNullOrEmpty(request.StartDate) && DateTime.TryParse(request.StartDate, out DateTime startDate))
+                    {
+                        plan.StartDate = startDate;
+                    }
+            
+                    if (!string.IsNullOrEmpty(request.EndDate) && DateTime.TryParse(request.EndDate, out DateTime endDate))
+                    {
+                        plan.EndDate = endDate;
+                    }
+            
+                    plan.Notes = request.Notes ?? plan.Notes;
+            
+                    // Se hai una tabella specifica per la checklist
+                    if (request.Checklist != null)
+                    {
+                        // Aggiorna la percentuale di completamento
+                        plan.CompletionPercentage = request.CompletionPercentage ?? plan.CompletionPercentage;
+                        
+                        // In una implementazione completa, qui dovresti aggiornare anche gli elementi della checklist
+                        // ad esempio:
+                        // await UpdateChecklistItems(planId, request.Checklist);
+                    }
+            
+                    // Salva le modifiche
+                    await _dbContext.SaveChangesAsync();
+            
+                    return new JsonResult(new { 
+                        success = true,
+                        updatedPlan = new {
+                            id = plan.Id,
+                            startDate = plan.StartDate,
+                            endDate = plan.EndDate,
+                            notes = plan.Notes,
+                            completionPercentage = plan.CompletionPercentage
+                            // Includi altri campi se necessario
+                        }
+                    });
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Eccezione in UpdatePlanDetailsAsync: {ex.Message}");
+                    return new JsonResult(new { success = false, message = ex.Message });
+                }
             }
-        }
-
+        
         [HttpPost]
         [IgnoreAntiforgeryToken]
         public IActionResult OnPostRemovePlanAsync([FromBody] RemovePlan request)
@@ -878,13 +972,15 @@ namespace WanderGlobe.Pages
             public string? PlanId { get; set; }
         }
 
-        public class UpdatePlan
-        {
-            public string? PlanId { get; set; }
-            public string? Notes { get; set; }
-            public string? StartDate { get; set; }
-            public string? EndDate { get; set; }
-        }
+                         public class UpdatePlan
+            {
+                public string? PlanId { get; set; }
+                public string? Notes { get; set; }
+                public string? StartDate { get; set; }
+                public string? EndDate { get; set; }
+                public int? CompletionPercentage { get; set; }
+                public List<ChecklistItem>? Checklist { get; set; }
+            }
 
         public class WishlistItemViewModel
         {

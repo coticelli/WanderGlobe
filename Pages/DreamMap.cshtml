@@ -2593,31 +2593,50 @@
             if (sidebarProgressText) sidebarProgressText.textContent = `${percentage}% completato`;
         }
 
-        function moveToPlanningPhase(dreamId) {
-            console.log('Sposta alla pianificazione:', dreamId);
-            const dreamToMove = destinations.wishlist.find(dream => dream.id.toString() === dreamId);
-            if (!dreamToMove) { showToast('Errore', 'Sogno non trovato.', 'danger'); return; }
+function moveToPlanningPhase(dreamId) {
+    console.log('Sposta alla pianificazione:', dreamId);
+    const dreamToMove = destinations.wishlist.find(dream => dream.id.toString() === dreamId);
+    if (!dreamToMove) { showToast('Errore', 'Sogno non trovato.', 'danger'); return; }
 
-            showLoadingOverlay('Spostamento...');
-            fetch('/DreamMap?handler=MoveToPlanning', {
-                method: 'POST', headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': getAntiForgeryToken() }, body: JSON.stringify({ dreamId })
-            })
-                .then(response => response.json())
-                .then(data => {
-                    hideLoadingOverlay();
-                    if (data.success) {
-                        bootstrap.Modal.getInstance(document.getElementById('dreamDetailsModal'))?.hide();
-                        const newPlan = { ...dreamToMove, startDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), endDate: new Date(Date.now() + 37 * 24 * 60 * 60 * 1000), completionPercentage: 0, checklist: [] };
-                        if (!destinations.plannedTrips) destinations.plannedTrips = [];
-                        destinations.plannedTrips.push(newPlan);
-                        destinations.wishlist = destinations.wishlist.filter(dream => dream.id.toString() !== dreamId);
-                        sincronizzaStatoApp();
-                        document.getElementById('planning-tab')?.click();
-                        showToast('Successo', 'Spostato in pianificazione!', 'success');
-                    } else { showToast('Errore', data.message || 'Errore spostamento.', 'danger'); }
-                })
-                .catch(error => { hideLoadingOverlay(); console.error('Errore spostamento:', error); showToast('Errore', 'Errore connessione.', 'danger'); });
+    showLoadingOverlay('Spostamento...');
+    fetch('/DreamMap?handler=MoveToPlanning', {
+        method: 'POST', 
+        headers: { 
+            'Content-Type': 'application/json', 
+            'RequestVerificationToken': getAntiForgeryToken() 
+        }, 
+        body: JSON.stringify({ dreamId })
+    })
+    .then(response => response.json())
+    .then(data => {
+        hideLoadingOverlay();
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('dreamDetailsModal'))?.hide();
+            
+            // Usa i dati restituiti dal server invece di costruire manualmente
+            const newPlan = data.plannedTrip;
+            
+            // Aggiungi proprietà aggiuntive se non sono incluse nella risposta del server
+            if (!newPlan.checklist) newPlan.checklist = [];
+            
+            // Rimuovi dalla wishlist e aggiungi alla sezione pianificati
+            destinations.wishlist = destinations.wishlist.filter(dream => dream.id.toString() !== dreamId);
+            destinations.plannedTrips.push(newPlan);
+            
+            sincronizzaStatoApp();
+            document.getElementById('planning-tab')?.click();
+            showToast('Successo', 'Spostato in pianificazione!', 'success');
+        } else { 
+            showToast('Errore', data.message || 'Errore spostamento.', 'danger'); 
         }
+    })
+    .catch(error => { 
+        hideLoadingOverlay(); 
+        console.error('Errore spostamento:', error); 
+        showToast('Errore', 'Errore connessione.', 'danger'); 
+    });
+}
+
 
         function populateCountryInfo(countryName) {
             const currencyInfoEl = document.getElementById('currencyInfo');
