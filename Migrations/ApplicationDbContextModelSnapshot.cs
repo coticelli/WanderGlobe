@@ -15,7 +15,7 @@ namespace WanderGlobe.Migrations
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "6.0.35");
+            modelBuilder.HasAnnotation("ProductVersion", "8.0.4");
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
                 {
@@ -511,6 +511,96 @@ namespace WanderGlobe.Migrations
                         new
                         {
                             Id = 26,
+                            CountryId = 26,
+                            IsCapital = true,
+                            Latitude = 55.676099999999998,
+                            Longitude = 12.568300000000001,
+                            Name = "Copenhagen"
+                        },
+                        new
+                        {
+                            Id = 27,
+                            CountryId = 27,
+                            IsCapital = true,
+                            Latitude = 60.169899999999998,
+                            Longitude = 24.938400000000001,
+                            Name = "Helsinki"
+                        },
+                        new
+                        {
+                            Id = 28,
+                            CountryId = 28,
+                            IsCapital = true,
+                            Latitude = 53.349800000000002,
+                            Longitude = -6.2603,
+                            Name = "Dublino"
+                        },
+                        new
+                        {
+                            Id = 29,
+                            CountryId = 29,
+                            IsCapital = true,
+                            Latitude = -41.286499999999997,
+                            Longitude = 174.77619999999999,
+                            Name = "Wellington"
+                        },
+                        new
+                        {
+                            Id = 30,
+                            CountryId = 30,
+                            IsCapital = true,
+                            Latitude = 1.3521000000000001,
+                            Longitude = 103.8198,
+                            Name = "Singapore"
+                        },
+                        new
+                        {
+                            Id = 31,
+                            CountryId = 31,
+                            IsCapital = true,
+                            Latitude = 13.7563,
+                            Longitude = 100.5018,
+                            Name = "Bangkok"
+                        },
+                        new
+                        {
+                            Id = 32,
+                            CountryId = 32,
+                            IsCapital = true,
+                            Latitude = 21.027799999999999,
+                            Longitude = 105.8342,
+                            Name = "Hanoi"
+                        },
+                        new
+                        {
+                            Id = 33,
+                            CountryId = 33,
+                            IsCapital = true,
+                            Latitude = -6.2088000000000001,
+                            Longitude = 106.8456,
+                            Name = "Jakarta"
+                        },
+                        new
+                        {
+                            Id = 34,
+                            CountryId = 34,
+                            IsCapital = true,
+                            Latitude = 3.1389999999999998,
+                            Longitude = 101.68689999999999,
+                            Name = "Kuala Lumpur"
+                        },
+                        new
+                        {
+                            Id = 35,
+                            CountryId = 35,
+                            IsCapital = true,
+                            Latitude = 39.933399999999999,
+                            Longitude = 32.859699999999997,
+                            Name = "Ankara"
+                        },
+                        new
+                        {
+                            Id = 36,
                             CountryId = 1,
                             IsCapital = false,
                             Latitude = 45.464199999999998,
@@ -519,7 +609,7 @@ namespace WanderGlobe.Migrations
                         },
                         new
                         {
-                            Id = 27,
+                            Id = 37,
                             CountryId = 1,
                             IsCapital = false,
                             Latitude = 40.851799999999997,
@@ -528,7 +618,7 @@ namespace WanderGlobe.Migrations
                         },
                         new
                         {
-                            Id = 28,
+                            Id = 38,
                             CountryId = 1,
                             IsCapital = false,
                             Latitude = 43.769599999999997,
@@ -537,7 +627,7 @@ namespace WanderGlobe.Migrations
                         },
                         new
                         {
-                            Id = 29,
+                            Id = 39,
                             CountryId = 1,
                             IsCapital = false,
                             Latitude = 45.440800000000003,
@@ -546,7 +636,34 @@ namespace WanderGlobe.Migrations
                         },
                         new
                         {
-                            Id = 30,
+                            Id = 40,
+                            CountryId = 1,
+                            IsCapital = false,
+                            Latitude = 44.494900000000001,
+                            Longitude = 11.342599999999999,
+                            Name = "Bologna"
+                        },
+                        new
+                        {
+                            Id = 41,
+                            CountryId = 1,
+                            IsCapital = false,
+                            Latitude = 45.070300000000003,
+                            Longitude = 7.6868999999999996,
+                            Name = "Torino"
+                        },
+                        new
+                        {
+                            Id = 42,
+                            CountryId = 1,
+                            IsCapital = false,
+                            Latitude = 38.115699999999997,
+                            Longitude = 13.361499999999999,
+                            Name = "Palermo"
+                        },
+                        new
+                        {
+                            Id = 43,
                             CountryId = 2,
                             IsCapital = false,
                             Latitude = 43.296500000000002,
@@ -555,7 +672,7 @@ namespace WanderGlobe.Migrations
                         },
                         new
                         {
-                            Id = 31,
+                            Id = 44,
                             CountryId = 2,
                             IsCapital = false,
                             Latitude = 45.764000000000003,
@@ -564,7 +681,7 @@ namespace WanderGlobe.Migrations
                         },
                         new
                         {
-                            Id = 32,
+                            Id = 45,
                             CountryId = 2,
                             IsCapital = false,
                             Latitude = 43.7102,
@@ -573,7 +690,7 @@ namespace WanderGlobe.Migrations
                         },
                         new
                         {
-                            Id = 33,
+                            Id = 46,
                             CountryId = 2,
                             IsCapital = false,
                             Latitude = 44.837800000000001,
@@ -582,7 +699,25 @@ namespace WanderGlobe.Migrations
                         },
                         new
                         {
-                            Id = 34,
+                            Id = 47,
+                            CountryId = 2,
+                            IsCapital = false,
+                            Latitude = 43.604700000000001,
+                            Longitude = 1.4441999999999999,
+                            Name = "Tolosa"
+                        },
+                        new
+                        {
+                            Id = 48,
+                            CountryId = 2,
+                            IsCapital = false,
+                            Latitude = 48.573399999999999,
+                            Longitude = 7.7521000000000004,
+                            Name = "Strasburgo"
+                        },
+                        new
+                        {
+                            Id = 49,
                             CountryId = 3,
                             IsCapital = false,
                             Latitude = 40.712800000000001,
@@ -591,7 +726,7 @@ namespace WanderGlobe.Migrations
                         },
                         new
                         {
-                            Id = 35,
+                            Id = 50,
                             CountryId = 3,
                             IsCapital = false,
                             Latitude = 34.052199999999999,
@@ -600,7 +735,7 @@ namespace WanderGlobe.Migrations
                         },
                         new
                         {
-                            Id = 36,
+                            Id = 51,
                             CountryId = 3,
                             IsCapital = false,
                             Latitude = 41.878100000000003,
@@ -609,7 +744,16 @@ namespace WanderGlobe.Migrations
                         },
                         new
                         {
-                            Id = 37,
+                            Id = 52,
+                            CountryId = 3,
+                            IsCapital = false,
+                            Latitude = 25.761700000000001,
+                            Longitude = -80.191800000000001,
+                            Name = "Miami"
+                        },
+                        new
+                        {
+                            Id = 53,
                             CountryId = 3,
                             IsCapital = false,
                             Latitude = 37.774900000000002,
@@ -618,7 +762,25 @@ namespace WanderGlobe.Migrations
                         },
                         new
                         {
-                            Id = 38,
+                            Id = 54,
+                            CountryId = 3,
+                            IsCapital = false,
+                            Latitude = 36.169899999999998,
+                            Longitude = -115.13979999999999,
+                            Name = "Las Vegas"
+                        },
+                        new
+                        {
+                            Id = 55,
+                            CountryId = 3,
+                            IsCapital = false,
+                            Latitude = 42.360100000000003,
+                            Longitude = -71.058899999999994,
+                            Name = "Boston"
+                        },
+                        new
+                        {
+                            Id = 56,
                             CountryId = 4,
                             IsCapital = false,
                             Latitude = 48.135100000000001,
@@ -627,7 +789,7 @@ namespace WanderGlobe.Migrations
                         },
                         new
                         {
-                            Id = 39,
+                            Id = 57,
                             CountryId = 4,
                             IsCapital = false,
                             Latitude = 53.551099999999998,
@@ -636,7 +798,7 @@ namespace WanderGlobe.Migrations
                         },
                         new
                         {
-                            Id = 40,
+                            Id = 58,
                             CountryId = 4,
                             IsCapital = false,
                             Latitude = 50.110900000000001,
@@ -645,7 +807,7 @@ namespace WanderGlobe.Migrations
                         },
                         new
                         {
-                            Id = 41,
+                            Id = 59,
                             CountryId = 4,
                             IsCapital = false,
                             Latitude = 50.9375,
@@ -654,7 +816,16 @@ namespace WanderGlobe.Migrations
                         },
                         new
                         {
-                            Id = 42,
+                            Id = 60,
+                            CountryId = 4,
+                            IsCapital = false,
+                            Latitude = 51.227699999999999,
+                            Longitude = 6.7735000000000003,
+                            Name = "Düsseldorf"
+                        },
+                        new
+                        {
+                            Id = 61,
                             CountryId = 5,
                             IsCapital = false,
                             Latitude = 41.385100000000001,
@@ -663,7 +834,7 @@ namespace WanderGlobe.Migrations
                         },
                         new
                         {
-                            Id = 43,
+                            Id = 62,
                             CountryId = 5,
                             IsCapital = false,
                             Latitude = 39.469900000000003,
@@ -672,7 +843,7 @@ namespace WanderGlobe.Migrations
                         },
                         new
                         {
-                            Id = 44,
+                            Id = 63,
                             CountryId = 5,
                             IsCapital = false,
                             Latitude = 37.389099999999999,
@@ -681,7 +852,7 @@ namespace WanderGlobe.Migrations
                         },
                         new
                         {
-                            Id = 45,
+                            Id = 64,
                             CountryId = 5,
                             IsCapital = false,
                             Latitude = 43.262999999999998,
@@ -690,79 +861,16 @@ namespace WanderGlobe.Migrations
                         },
                         new
                         {
-                            Id = 46,
-                            CountryId = 6,
+                            Id = 65,
+                            CountryId = 5,
                             IsCapital = false,
-                            Latitude = 41.157899999999998,
-                            Longitude = -8.6290999999999993,
-                            Name = "Porto"
+                            Latitude = 36.721299999999999,
+                            Longitude = -4.4212999999999996,
+                            Name = "Malaga"
                         },
                         new
                         {
-                            Id = 47,
-                            CountryId = 6,
-                            IsCapital = false,
-                            Latitude = 37.019300000000001,
-                            Longitude = -7.9303999999999997,
-                            Name = "Faro"
-                        },
-                        new
-                        {
-                            Id = 48,
-                            CountryId = 6,
-                            IsCapital = false,
-                            Latitude = 40.203299999999999,
-                            Longitude = -8.4102999999999994,
-                            Name = "Coimbra"
-                        },
-                        new
-                        {
-                            Id = 49,
-                            CountryId = 6,
-                            IsCapital = false,
-                            Latitude = 41.545400000000001,
-                            Longitude = -8.4265000000000008,
-                            Name = "Braga"
-                        },
-                        new
-                        {
-                            Id = 50,
-                            CountryId = 7,
-                            IsCapital = false,
-                            Latitude = 47.376899999999999,
-                            Longitude = 8.5417000000000005,
-                            Name = "Zurigo"
-                        },
-                        new
-                        {
-                            Id = 51,
-                            CountryId = 7,
-                            IsCapital = false,
-                            Latitude = 46.2044,
-                            Longitude = 6.1432000000000002,
-                            Name = "Ginevra"
-                        },
-                        new
-                        {
-                            Id = 52,
-                            CountryId = 7,
-                            IsCapital = false,
-                            Latitude = 47.559600000000003,
-                            Longitude = 7.5885999999999996,
-                            Name = "Basilea"
-                        },
-                        new
-                        {
-                            Id = 53,
-                            CountryId = 7,
-                            IsCapital = false,
-                            Latitude = 46.5197,
-                            Longitude = 6.6322999999999999,
-                            Name = "Losanna"
-                        },
-                        new
-                        {
-                            Id = 54,
+                            Id = 66,
                             CountryId = 11,
                             IsCapital = false,
                             Latitude = 53.480800000000002,
@@ -771,7 +879,7 @@ namespace WanderGlobe.Migrations
                         },
                         new
                         {
-                            Id = 55,
+                            Id = 67,
                             CountryId = 11,
                             IsCapital = false,
                             Latitude = 52.486199999999997,
@@ -780,7 +888,16 @@ namespace WanderGlobe.Migrations
                         },
                         new
                         {
-                            Id = 56,
+                            Id = 68,
+                            CountryId = 11,
+                            IsCapital = false,
+                            Latitude = 55.864199999999997,
+                            Longitude = -4.2518000000000002,
+                            Name = "Glasgow"
+                        },
+                        new
+                        {
+                            Id = 69,
                             CountryId = 11,
                             IsCapital = false,
                             Latitude = 53.4084,
@@ -789,7 +906,7 @@ namespace WanderGlobe.Migrations
                         },
                         new
                         {
-                            Id = 57,
+                            Id = 70,
                             CountryId = 11,
                             IsCapital = false,
                             Latitude = 55.953299999999999,
@@ -798,7 +915,43 @@ namespace WanderGlobe.Migrations
                         },
                         new
                         {
-                            Id = 58,
+                            Id = 71,
+                            CountryId = 12,
+                            IsCapital = false,
+                            Latitude = 43.653199999999998,
+                            Longitude = -79.383200000000002,
+                            Name = "Toronto"
+                        },
+                        new
+                        {
+                            Id = 72,
+                            CountryId = 12,
+                            IsCapital = false,
+                            Latitude = 45.5017,
+                            Longitude = -73.567300000000003,
+                            Name = "Montreal"
+                        },
+                        new
+                        {
+                            Id = 73,
+                            CountryId = 12,
+                            IsCapital = false,
+                            Latitude = 49.282699999999998,
+                            Longitude = -123.1207,
+                            Name = "Vancouver"
+                        },
+                        new
+                        {
+                            Id = 74,
+                            CountryId = 12,
+                            IsCapital = false,
+                            Latitude = 51.044699999999999,
+                            Longitude = -114.0719,
+                            Name = "Calgary"
+                        },
+                        new
+                        {
+                            Id = 75,
                             CountryId = 13,
                             IsCapital = false,
                             Latitude = 34.6937,
@@ -807,7 +960,7 @@ namespace WanderGlobe.Migrations
                         },
                         new
                         {
-                            Id = 59,
+                            Id = 76,
                             CountryId = 13,
                             IsCapital = false,
                             Latitude = 35.011600000000001,
@@ -816,7 +969,7 @@ namespace WanderGlobe.Migrations
                         },
                         new
                         {
-                            Id = 60,
+                            Id = 77,
                             CountryId = 13,
                             IsCapital = false,
                             Latitude = 34.385300000000001,
@@ -825,12 +978,147 @@ namespace WanderGlobe.Migrations
                         },
                         new
                         {
-                            Id = 61,
+                            Id = 78,
                             CountryId = 13,
                             IsCapital = false,
-                            Latitude = 43.061799999999998,
-                            Longitude = 141.3545,
-                            Name = "Sapporo"
+                            Latitude = 35.1815,
+                            Longitude = 136.9066,
+                            Name = "Nagoya"
+                        },
+                        new
+                        {
+                            Id = 79,
+                            CountryId = 15,
+                            IsCapital = false,
+                            Latitude = -33.8688,
+                            Longitude = 151.20930000000001,
+                            Name = "Sydney"
+                        },
+                        new
+                        {
+                            Id = 80,
+                            CountryId = 15,
+                            IsCapital = false,
+                            Latitude = -37.813600000000001,
+                            Longitude = 144.9631,
+                            Name = "Melbourne"
+                        },
+                        new
+                        {
+                            Id = 81,
+                            CountryId = 15,
+                            IsCapital = false,
+                            Latitude = -27.469799999999999,
+                            Longitude = 153.02510000000001,
+                            Name = "Brisbane"
+                        },
+                        new
+                        {
+                            Id = 82,
+                            CountryId = 15,
+                            IsCapital = false,
+                            Latitude = -31.950500000000002,
+                            Longitude = 115.8605,
+                            Name = "Perth"
+                        },
+                        new
+                        {
+                            Id = 83,
+                            CountryId = 17,
+                            IsCapital = false,
+                            Latitude = -22.9068,
+                            Longitude = -43.172899999999998,
+                            Name = "Rio de Janeiro"
+                        },
+                        new
+                        {
+                            Id = 84,
+                            CountryId = 17,
+                            IsCapital = false,
+                            Latitude = -23.5505,
+                            Longitude = -46.633299999999998,
+                            Name = "São Paulo"
+                        },
+                        new
+                        {
+                            Id = 85,
+                            CountryId = 17,
+                            IsCapital = false,
+                            Latitude = -12.971399999999999,
+                            Longitude = -38.501399999999997,
+                            Name = "Salvador"
+                        },
+                        new
+                        {
+                            Id = 86,
+                            CountryId = 1,
+                            IsCapital = false,
+                            Latitude = 45.438400000000001,
+                            Longitude = 10.9916,
+                            Name = "Verona"
+                        },
+                        new
+                        {
+                            Id = 87,
+                            CountryId = 1,
+                            IsCapital = false,
+                            Latitude = 44.4056,
+                            Longitude = 8.9463000000000008,
+                            Name = "Genova"
+                        },
+                        new
+                        {
+                            Id = 88,
+                            CountryId = 35,
+                            IsCapital = false,
+                            Latitude = 41.008200000000002,
+                            Longitude = 28.978400000000001,
+                            Name = "Istanbul"
+                        },
+                        new
+                        {
+                            Id = 89,
+                            CountryId = 35,
+                            IsCapital = false,
+                            Latitude = 36.896900000000002,
+                            Longitude = 30.7133,
+                            Name = "Antalya"
+                        },
+                        new
+                        {
+                            Id = 90,
+                            CountryId = 35,
+                            IsCapital = false,
+                            Latitude = 38.423699999999997,
+                            Longitude = 27.142800000000001,
+                            Name = "Izmir"
+                        },
+                        new
+                        {
+                            Id = 91,
+                            CountryId = 31,
+                            IsCapital = false,
+                            Latitude = 7.9519000000000002,
+                            Longitude = 98.338099999999997,
+                            Name = "Phuket"
+                        },
+                        new
+                        {
+                            Id = 92,
+                            CountryId = 31,
+                            IsCapital = false,
+                            Latitude = 18.7883,
+                            Longitude = 98.985299999999995,
+                            Name = "Chiang Mai"
+                        },
+                        new
+                        {
+                            Id = 93,
+                            CountryId = 31,
+                            IsCapital = false,
+                            Latitude = 12.9236,
+                            Longitude = 100.8824,
+                            Name = "Pattaya"
                         });
                 });
 
@@ -1090,7 +1378,127 @@ namespace WanderGlobe.Migrations
                             Latitude = 59.913899999999998,
                             Longitude = 10.7522,
                             Name = "Norvegia"
+                        },
+                        new
+                        {
+                            Id = 26,
+                            Code = "DK",
+                            Continent = "Europa",
+                            Latitude = 55.676099999999998,
+                            Longitude = 12.568300000000001,
+                            Name = "Danimarca"
+                        },
+                        new
+                        {
+                            Id = 27,
+                            Code = "FI",
+                            Continent = "Europa",
+                            Latitude = 60.169899999999998,
+                            Longitude = 24.938400000000001,
+                            Name = "Finlandia"
+                        },
+                        new
+                        {
+                            Id = 28,
+                            Code = "IE",
+                            Continent = "Europa",
+                            Latitude = 53.349800000000002,
+                            Longitude = -6.2603,
+                            Name = "Irlanda"
+                        },
+                        new
+                        {
+                            Id = 29,
+                            Code = "NZ",
+                            Continent = "Oceania",
+                            Latitude = -41.286499999999997,
+                            Longitude = 174.77619999999999,
+                            Name = "Nuova Zelanda"
+                        },
+                        new
+                        {
+                            Id = 30,
+                            Code = "SG",
+                            Continent = "Asia",
+                            Latitude = 1.3521000000000001,
+                            Longitude = 103.8198,
+                            Name = "Singapore"
+                        },
+                        new
+                        {
+                            Id = 31,
+                            Code = "TH",
+                            Continent = "Asia",
+                            Latitude = 13.7563,
+                            Longitude = 100.5018,
+                            Name = "Thailandia"
+                        },
+                        new
+                        {
+                            Id = 32,
+                            Code = "VN",
+                            Continent = "Asia",
+                            Latitude = 21.027799999999999,
+                            Longitude = 105.8342,
+                            Name = "Vietnam"
+                        },
+                        new
+                        {
+                            Id = 33,
+                            Code = "ID",
+                            Continent = "Asia",
+                            Latitude = -6.2088000000000001,
+                            Longitude = 106.8456,
+                            Name = "Indonesia"
+                        },
+                        new
+                        {
+                            Id = 34,
+                            Code = "MY",
+                            Continent = "Asia",
+                            Latitude = 3.1389999999999998,
+                            Longitude = 101.68689999999999,
+                            Name = "Malesia"
+                        },
+                        new
+                        {
+                            Id = 35,
+                            Code = "TR",
+                            Continent = "Europa/Asia",
+                            Latitude = 39.933399999999999,
+                            Longitude = 32.859699999999997,
+                            Name = "Turchia"
                         });
+                });
+
+            modelBuilder.Entity("WanderGlobe.Models.Custom.ChecklistItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("DueDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsCompleted")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("PlannedTripId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PlannedTripId");
+
+                    b.ToTable("ChecklistItem");
                 });
 
             modelBuilder.Entity("WanderGlobe.Models.Custom.DreamDestination", b =>
@@ -1134,6 +1542,10 @@ namespace WanderGlobe.Migrations
                     b.Property<int>("Priority")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("Tags")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("UserId")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -1142,7 +1554,57 @@ namespace WanderGlobe.Migrations
 
                     b.HasIndex("ApplicationUserId");
 
-                    b.ToTable("DreamDestination");
+                    b.ToTable("DreamDestinations");
+                });
+
+            modelBuilder.Entity("WanderGlobe.Models.Custom.PlannedTrip", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("CityName")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("CompletionPercentage")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("CountryCode")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CountryName")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("EndDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ImageUrl")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<double>("Latitude")
+                        .HasColumnType("REAL");
+
+                    b.Property<double>("Longitude")
+                        .HasColumnType("REAL");
+
+                    b.Property<string>("Notes")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("PlannedTrips");
                 });
 
             modelBuilder.Entity("WanderGlobe.Models.Photo", b =>
@@ -1325,6 +1787,13 @@ namespace WanderGlobe.Migrations
                     b.Navigation("Country");
                 });
 
+            modelBuilder.Entity("WanderGlobe.Models.Custom.ChecklistItem", b =>
+                {
+                    b.HasOne("WanderGlobe.Models.Custom.PlannedTrip", null)
+                        .WithMany("Checklist")
+                        .HasForeignKey("PlannedTripId");
+                });
+
             modelBuilder.Entity("WanderGlobe.Models.Custom.DreamDestination", b =>
                 {
                     b.HasOne("WanderGlobe.Models.ApplicationUser", null)
@@ -1419,6 +1888,11 @@ namespace WanderGlobe.Migrations
                     b.Navigation("Cities");
 
                     b.Navigation("VisitedByUsers");
+                });
+
+            modelBuilder.Entity("WanderGlobe.Models.Custom.PlannedTrip", b =>
+                {
+                    b.Navigation("Checklist");
                 });
 
             modelBuilder.Entity("WanderGlobe.Models.TravelJournal", b =>
