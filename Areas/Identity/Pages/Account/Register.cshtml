@@ -4,64 +4,154 @@
     ViewData["Title"] = "Register";
 }
 
-<h1>@ViewData["Title"]</h1>
+<div class="container mt-5 animate__animated animate__fadeIn">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-lg border-0 rounded-lg">
+                <div class="card-header bg-gradient-primary text-white text-center p-4">
+                    <h2 class="my-2 animate__animated animate__fadeInDown">Create a new account</h2>
+                </div>
+                <div class="card-body p-5">
+                    <form id="registerForm" asp-route-returnUrl="@Model.ReturnUrl" method="post" class="animate__animated animate__fadeInUp animate__delay-1s">
+                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3 alert alert-danger py-2"></div>
 
-<div class="row">
-    <div class="col-md-4">
-        <form id="registerForm" asp-route-returnUrl="@Model.ReturnUrl" method="post">
-            <h2>Create a new account.</h2>
-            <hr />
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-            <div class="form-floating">
-                <input asp-for="Input.Email" class="form-control" autocomplete="username" aria-required="true" />
-                <label asp-for="Input.Email"></label>
-                <span asp-validation-for="Input.Email" class="text-danger"></span>
-            </div>
-            <div class="form-floating">
-                <input asp-for="Input.Password" class="form-control" autocomplete="new-password" aria-required="true" />
-                <label asp-for="Input.Password"></label>
-                <span asp-validation-for="Input.Password" class="text-danger"></span>
-            </div>
-            <div class="form-floating">
-                <input asp-for="Input.ConfirmPassword" class="form-control" autocomplete="new-password" aria-required="true" />
-                <label asp-for="Input.ConfirmPassword"></label>
-                <span asp-validation-for="Input.ConfirmPassword" class="text-danger"></span>
-            </div>
-            <button id="registerSubmit" type="submit" class="w-100 btn btn-lg btn-primary">Register</button>
-        </form>
-    </div>
-    <div class="col-md-6 col-md-offset-2">
-        <section>
-            <h3>Use another service to register.</h3>
-            <hr />
-            @{
-                if ((Model.ExternalLogins?.Count ?? 0) == 0)
-                {
-                    <div>
-                        <p>
-                            There are no external authentication services configured. See this <a href="https://go.microsoft.com/fwlink/?LinkID=532715">article
-                            about setting up this ASP.NET application to support logging in via external services</a>.
-                        </p>
-                    </div>
-                }
-                else
-                {
-                    <form id="external-account" asp-page="./ExternalLogin" asp-route-returnUrl="@Model.ReturnUrl" method="post" class="form-horizontal">
-                        <div>
-                            <p>
-                                @foreach (var provider in Model.ExternalLogins!)
-                                {
-                                    <button type="submit" class="btn btn-primary" name="provider" value="@provider.Name" title="Log in using your @provider.DisplayName account">@provider.DisplayName</button>
-                                }
-                            </p>
+                        <div class="form-floating mb-4 input-group-focus">
+                            <input asp-for="Input.Email" class="form-control form-control-lg input-animation" autocomplete="username" aria-required="true" />
+                            <label asp-for="Input.Email"></label>
+                            <span asp-validation-for="Input.Email" class="text-danger"></span>
+                        </div>
+
+                        <div class="form-floating mb-4 input-group-focus">
+                            <input asp-for="Input.Password" class="form-control form-control-lg input-animation" autocomplete="new-password" aria-required="true" />
+                            <label asp-for="Input.Password"></label>
+                            <span asp-validation-for="Input.Password" class="text-danger"></span>
+                        </div>
+
+                        <div class="form-floating mb-4 input-group-focus">
+                            <input asp-for="Input.ConfirmPassword" class="form-control form-control-lg input-animation" autocomplete="new-password" aria-required="true" />
+                            <label asp-for="Input.ConfirmPassword"></label>
+                            <span asp-validation-for="Input.ConfirmPassword" class="text-danger"></span>
+                        </div>
+
+                        <div class="d-grid gap-2 mb-4">
+                            <button id="registerSubmit" type="submit" class="btn btn-primary btn-lg btn-hover-effect">
+                                <span>Register</span>
+                                <i class="fas fa-user-plus ms-2"></i>
+                            </button>
+                        </div>
+
+                        <div class="text-center mt-4 animate__animated animate__fadeIn animate__delay-2s">
+                            <p class="mb-0">Already have an account? <a asp-page="./Login" class="link-effect">Log in</a></p>
                         </div>
                     </form>
-                }
-            }
-        </section>
+                </div>
+                <div class="card-footer bg-light text-center py-3">
+                    <p class="text-muted mb-0">© @DateTime.Now.Year - Welcome @User.Identity?.Name</p>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
-@section Scripts {
+@section Styles {
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
+    <style>
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+        }
+
+        .bg-gradient-primary {
+            background: linear-gradient(45deg, #4e73df 0%, #224abe 100%);
+            border-radius: 5px 5px 0 0;
+        }
+
+        .input-animation {
+            transition: all 0.3s ease;
+            border-left: 4px solid transparent;
+        }
+
+            .input-animation:focus {
+                border-left: 4px solid #4e73df;
+                box-shadow: 0 0 10px rgba(78, 115, 223, 0.25);
+                transform: translateX(5px);
+            }
+
+        .btn-hover-effect {
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            background: linear-gradient(45deg, #4e73df 0%, #224abe 100%);
+            border: none;
+        }
+
+            .btn-hover-effect:hover {
+                transform: translateY(-3px);
+                box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            }
+
+            .btn-hover-effect:active {
+                transform: translateY(0);
+            }
+
+        .link-effect {
+            color: #4e73df;
+            font-weight: 600;
+            position: relative;
+            text-decoration: none;
+        }
+
+            .link-effect:after {
+                content: '';
+                position: absolute;
+                width: 0;
+                height: 2px;
+                display: block;
+                margin-top: 2px;
+                right: 0;
+                background: #4e73df;
+                transition: width 0.3s ease;
+            }
+
+            .link-effect:hover:after {
+                width: 100%;
+                left: 0;
+            }
+
+        .card {
+            transition: all 0.3s ease;
+            transform-style: preserve-3d;
+        }
+
+            .card:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+            }
+    </style>
+}
+
+    @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        // Animazione degli input quando si passa da uno all'altro
+        document.querySelectorAll('.form-control').forEach(input => {
+            input.addEventListener('focus', function () {
+                this.parentElement.classList.add('focused');
+            });
+
+            input.addEventListener('blur', function () {
+                this.parentElement.classList.remove('focused');
+            });
+        });
+
+        // Animazione del pulsante al click
+        document.querySelector('.btn-hover-effect').addEventListener('mousedown', function () {
+            this.style.transform = 'scale(0.95)';
+        });
+
+        document.querySelector('.btn-hover-effect').addEventListener('mouseup', function () {
+            this.style.transform = 'scale(1)';
+        });
+    </script>
 }
