@@ -6,7 +6,9 @@
     // Calcoli preliminari per evitare chiamate ripetute e prevenire errori
     bool hasVisitedCountries = Model.VisitedCountries?.Any() == true;
     int visitedCount = Model.VisitedCountries?.Count ?? 0;
-    int distinctContinents = hasVisitedCountries ? Model.VisitedCountries.Select(c => c.Country?.Continent).Where(c => c != null).Distinct().Count() : 0;    // Funzione helper per ottenere la capitale di un paese
+    int distinctContinents = hasVisitedCountries ? Model.VisitedCountries.Select(c => c.Country?.Continent).Where(c => c != null).Distinct().Count() : 0;
+    
+    // Funzione helper per ottenere la capitale di un paese
     // Utilizziamo un dizionario locale perché è più veloce che fare una query al database per ogni paese
     string GetCapital(string countryCode)
     {
@@ -43,7 +45,7 @@
         return capitals.TryGetValue(countryCode, out string capital) ? capital : $"Capitale di {countryCode}";
     }
 
- DateTime? firstVisit = hasVisitedCountries 
+    DateTime? firstVisit = hasVisitedCountries 
         ? Model.VisitedCountries.Any() 
             ? Model.VisitedCountries.Min(c => c.VisitDate) 
             : (DateTime?)null
@@ -72,17 +74,17 @@
         <ul class="nav nav-tabs nav-fill" id="explorerTabs" role="tablist">
             <li class="nav-item" role="presentation">
                 <button class="nav-link active" id="stats-tab" data-bs-toggle="tab" data-bs-target="#stats" type="button" role="tab" aria-controls="stats" aria-selected="true">
-                    <i class="fas fa-chart-pie" aria-hidden="true"></i> Statistiche
+                    <i class="fas fa-chart-pie"></i> <span class="tab-text">Statistiche</span>
                 </button>
             </li>
             <li class="nav-item" role="presentation">
                 <button class="nav-link" id="cities-tab" data-bs-toggle="tab" data-bs-target="#cities" type="button" role="tab" aria-controls="cities" aria-selected="false">
-                    <i class="fas fa-city" aria-hidden="true"></i> Città
+                    <i class="fas fa-city"></i> <span class="tab-text">Città</span>
                 </button>
             </li>
             <li class="nav-item" role="presentation">
                 <button class="nav-link" id="add-tab" data-bs-toggle="tab" data-bs-target="#add" type="button" role="tab" aria-controls="add" aria-selected="false">
-                    <i class="fas fa-plus-circle" aria-hidden="true"></i> Aggiungi
+                    <i class="fas fa-plus-circle"></i> <span class="tab-text">Aggiungi</span>
                 </button>
             </li>
         </ul>
@@ -93,7 +95,7 @@
             <div class="tab-pane fade show active" id="stats" role="tabpanel" aria-labelledby="stats-tab">
                 <div class="stats-card">
                     <div class="stats-header">
-                        <h5><i class="fas fa-globe-europe" aria-hidden="true"></i> Il Tuo Mondo</h5>
+                        <h5><i class="fas fa-globe-europe"></i> Il Tuo Mondo</h5>
                     </div>
 
                     <div class="progress-container">
@@ -133,13 +135,13 @@
                         <h5 class="mb-3">Esplorazione Continenti</h5>
                         @{
                             var continents = new Dictionary<string, (string color, int count)> {
-                        { "Europa", ("#4374e0", Model.VisitedCountries?.Count(c => c.Country?.Continent == "Europa") ?? 0) },
-                        { "Nord America", ("#5cb85c", Model.VisitedCountries?.Count(c => c.Country?.Continent == "Nord America") ?? 0) },
-                        { "Sud America", ("#f0ad4e", Model.VisitedCountries?.Count(c => c.Country?.Continent == "Sud America") ?? 0) },
-                        { "Asia", ("#d9534f", Model.VisitedCountries?.Count(c => c.Country?.Continent == "Asia") ?? 0) },
-                        { "Africa", ("#b27efa", Model.VisitedCountries?.Count(c => c.Country?.Continent == "Africa") ?? 0) },
-                        { "Oceania", ("#5bc0de", Model.VisitedCountries?.Count(c => c.Country?.Continent == "Oceania") ?? 0) }
-                        };
+                                { "Europa", ("#4374e0", Model.VisitedCountries?.Count(c => c.Country?.Continent == "Europa") ?? 0) },
+                                { "Nord America", ("#5cb85c", Model.VisitedCountries?.Count(c => c.Country?.Continent == "Nord America") ?? 0) },
+                                { "Sud America", ("#f0ad4e", Model.VisitedCountries?.Count(c => c.Country?.Continent == "Sud America") ?? 0) },
+                                { "Asia", ("#d9534f", Model.VisitedCountries?.Count(c => c.Country?.Continent == "Asia") ?? 0) },
+                                { "Africa", ("#b27efa", Model.VisitedCountries?.Count(c => c.Country?.Continent == "Africa") ?? 0) },
+                                { "Oceania", ("#5bc0de", Model.VisitedCountries?.Count(c => c.Country?.Continent == "Oceania") ?? 0) }
+                            };
 
                             foreach (var continent in continents)
                             {
@@ -166,7 +168,7 @@
                         <h5 class="mb-3">Prossimi Traguardi</h5>
                         <div class="badge-progress mb-3">
                             <div class="badge-icon unlocked">
-                                <i class="fas fa-map-marker-alt" aria-hidden="true"></i>
+                                <i class="fas fa-map-marker-alt"></i>
                             </div>
                             <div class="badge-info">
                                 <span class="badge-name">Esploratore Principiante</span>
@@ -179,7 +181,7 @@
 
                         <div class="badge-progress mb-3">
                             <div class="badge-icon @(visitedCount >= 5 ? "unlocked" : "locked")">
-                                <i class="fas fa-passport" aria-hidden="true"></i>
+                                <i class="fas fa-passport"></i>
                             </div>
                             <div class="badge-info">
                                 <span class="badge-name">Viaggiatore Esperto</span>
@@ -195,7 +197,7 @@
 
                         <div class="badge-progress">
                             <div class="badge-icon @(visitedCount >= 10 ? "unlocked" : "locked")">
-                                <i class="fas fa-globe-americas" aria-hidden="true"></i>
+                                <i class="fas fa-globe-americas"></i>
                             </div>
                             <div class="badge-info">
                                 <span class="badge-name">Cittadino del Mondo</span>
@@ -215,11 +217,11 @@
             <!-- Scheda Città Visitate -->
             <div class="tab-pane fade" id="cities" role="tabpanel" aria-labelledby="cities-tab">
                 <div class="cities-header d-flex justify-content-between align-items-center">
-                    <h5><i class="fas fa-city" aria-hidden="true"></i> Le Tue Città</h5>
+                    <h5><i class="fas fa-city"></i> Le Tue Città</h5>
                     <div class="form-group mb-0">
                         <div class="input-group">
                             <input type="text" class="form-control" id="searchCity" placeholder="Cerca città..." aria-label="Cerca città">
-                            <span class="input-group-text"><i class="fas fa-search" aria-hidden="true"></i></span>
+                            <span class="input-group-text"><i class="fas fa-search"></i></span>
                         </div>
                     </div>
                 </div>
@@ -233,31 +235,31 @@
                                 <div class="city-card" data-name="@GetCapital(country.Country?.Code ?? "").ToLower()" data-country="@(country.Country?.Name?.ToLower() ?? "")">
                                     <div class="city-card-header">
                                         <img src="~/images/cities/@(country.Country?.Code?.ToLower() ?? "unknown")-city.jpg"
-                                     alt="Immagine di @GetCapital(country.Country?.Code ?? "")"
-                                     onerror="this.onerror=null; this.src='/images/city-placeholder.jpg';">
+                                             alt="Immagine di @GetCapital(country.Country?.Code ?? "")"
+                                             onerror="this.onerror=null; this.src='/images/city-placeholder.jpg';">
                                         <div class="city-flag">
                                             <img src="~/images/flags/@(country.Country?.Code?.ToLower() ?? "unknown").png"
-                                         alt="Bandiera di @(country.Country?.Name ?? "paese sconosciuto")"
-                                         onerror="this.onerror=null; this.src='/images/flags/unknown.png';">
+                                                 alt="Bandiera di @(country.Country?.Name ?? "paese sconosciuto")"
+                                                 onerror="this.onerror=null; this.src='/images/flags/unknown.png';">
                                         </div>
                                     </div>
                                     <div class="city-card-body">
                                         <h6 class="city-name">@GetCapital(country.Country?.Code ?? "")</h6>
                                         <p class="city-country">@country.Country?.Name</p>
                                         <div class="city-visit-date">
-                                            <i class="far fa-calendar-alt" aria-hidden="true"></i> @country.VisitDate.ToString("dd/MM/yyyy")
+                                            <i class="far fa-calendar-alt"></i> @country.VisitDate.ToString("dd/MM/yyyy")
                                         </div>
                                     </div>
                                     <div class="city-actions">
                                         <button type="button" class="btn btn-sm btn-outline-primary fly-to-btn"
-                                        data-lat="@country.Country?.Latitude" data-lng="@country.Country?.Longitude"
-                                        aria-label="Vola a @GetCapital(country.Country?.Code ?? "")">
-                                            <i class="fas fa-plane" aria-hidden="true"></i> Vola qui
+                                                data-lat="@country.Country?.Latitude" data-lng="@country.Country?.Longitude"
+                                                aria-label="Vola a @GetCapital(country.Country?.Code ?? "")">
+                                            <i class="fas fa-plane"></i> Vola qui
                                         </button>
                                         <form method="post" asp-page-handler="RemoveCountry" asp-route-countryId="@country.CountryId"
-                                      onsubmit="return confirm('Vuoi davvero rimuovere questa città?');">
+                                              onsubmit="return confirm('Vuoi davvero rimuovere questa città?');">
                                             <button type="submit" class="btn btn-sm btn-outline-danger" aria-label="Rimuovi @GetCapital(country.Country?.Code ?? "")">
-                                                <i class="fas fa-trash" aria-hidden="true"></i>
+                                                <i class="fas fa-trash"></i>
                                             </button>
                                         </form>
                                     </div>
@@ -268,10 +270,10 @@
                     else
                     {
                         <div class="no-cities-message text-center py-5">
-                            <i class="far fa-frown fa-4x mb-3 text-muted" aria-hidden="true"></i>
+                            <i class="far fa-frown fa-4x mb-3 text-muted"></i>
                             <p class="lead">Non hai ancora aggiunto città al tuo diario di viaggio</p>
                             <button class="btn btn-primary mt-3" onclick="document.getElementById('add-tab').click()" aria-label="Aggiungi la tua prima città">
-                                <i class="fas fa-plus-circle mr-2" aria-hidden="true"></i> Aggiungi la tua prima città
+                                <i class="fas fa-plus-circle mr-2"></i> Aggiungi la tua prima città
                             </button>
                         </div>
                     }
@@ -281,30 +283,32 @@
             <!-- Scheda Aggiungi Città -->
             <div class="tab-pane fade" id="add" role="tabpanel" aria-labelledby="add-tab">
                 <div class="add-city-card">
-                    <h5 class="mb-3"><i class="fas fa-plus-circle" aria-hidden="true"></i> Aggiungi Nuova Città</h5>
+                    <h5 class="mb-3"><i class="fas fa-plus-circle"></i> Aggiungi Nuova Città</h5>
 
-                    <form method="post" asp-page-handler="AddCountry" class="add-city-form">                        <div class="form-group mb-3">
+                    <form method="post" asp-page-handler="AddCountry" class="add-city-form">
+                        <div class="form-group mb-3">
                             <label for="countryId" class="form-label">Seleziona una città</label>
                             <select class="form-select" id="countryId" name="countryId" required aria-describedby="countryHelp">
                                 <option value="">-- Seleziona una città --</option>
                                 @{
                                     var availableCountries = Model.AllCountries?
-                                    .Where(c => !Model.VisitedCountries.Any(vc => vc.CountryId == c.Id))
-                                    .OrderBy(c => c.Name) ?? Enumerable.Empty<dynamic>();
+                                        .Where(c => !Model.VisitedCountries.Any(vc => vc.CountryId == c.Id))
+                                        .OrderBy(c => c.Name) ?? Enumerable.Empty<dynamic>();
 
                                     var continentGroups = availableCountries
-                                    .GroupBy(c => c.Continent ?? "Altro")
-                                    .OrderBy(g => g.Key == "Europa" ? 0 :
-                                    g.Key == "Nord America" ? 1 :
-                                    g.Key == "Sud America" ? 2 :
-                                    g.Key == "Asia" ? 3 :
-                                    g.Key == "Africa" ? 4 :
-                                    g.Key == "Oceania" ? 5 : 6);
+                                        .GroupBy(c => c.Continent ?? "Altro")
+                                        .OrderBy(g => g.Key == "Europa" ? 0 :
+                                                     g.Key == "Nord America" ? 1 :
+                                                     g.Key == "Sud America" ? 2 :
+                                                     g.Key == "Asia" ? 3 :
+                                                     g.Key == "Africa" ? 4 :
+                                                     g.Key == "Oceania" ? 5 : 6);
                                 }
 
                                 @foreach (var continent in continentGroups)
                                 {
-                                    <optgroup label="@continent.Key">                                        @foreach (var country in continent)
+                                    <optgroup label="@continent.Key">
+                                        @foreach (var country in continent)
                                         {
                                             var capitalName = GetCapital(country.Code);
                                             <option value="@country.Id">@capitalName (@country.Name)</option>
@@ -330,7 +334,7 @@
                         <div class="form-group mb-3">
                             <label for="visitDate" class="form-label">Data della visita</label>
                             <div class="input-group">
-                                <span class="input-group-text"><i class="far fa-calendar-alt" aria-hidden="true"></i></span>
+                                <span class="input-group-text"><i class="far fa-calendar-alt"></i></span>
                                 <input type="date" class="form-control" id="visitDate" name="visitDate"
                                        max="@DateTime.Now.ToString("yyyy-MM-dd")" required aria-describedby="visitDateHelp">
                             </div>
@@ -345,7 +349,7 @@
                         </div>
 
                         <button type="submit" class="btn btn-primary w-100">
-                            <i class="fas fa-plus-circle me-2" aria-hidden="true"></i> Aggiungi al Diario
+                            <i class="fas fa-plus-circle me-2"></i> Aggiungi al Diario
                         </button>
                     </form>
                 </div>
@@ -357,13 +361,13 @@
     <div id="globe-container" class="main-globe-container" aria-label="Mappamondo interattivo">
         <div class="globe-controls" role="toolbar" aria-label="Controlli del globo">
             <button class="globe-control-btn" id="zoomInBtn" aria-label="Ingrandisci">
-                <i class="fas fa-plus" aria-hidden="true"></i>
+                <i class="fas fa-plus"></i>
             </button>
             <button class="globe-control-btn" id="zoomOutBtn" aria-label="Riduci">
-                <i class="fas fa-minus" aria-hidden="true"></i>
+                <i class="fas fa-minus"></i>
             </button>
             <button class="globe-control-btn" id="resetViewBtn" aria-label="Reimposta visualizzazione">
-                <i class="fas fa-sync" aria-hidden="true"></i>
+                <i class="fas fa-sync"></i>
             </button>
         </div>
 
@@ -379,7 +383,6 @@
         </div>
     </div>
 </div>
-
 
 @functions {
     public string GetCapital(string countryCode)
@@ -468,6 +471,34 @@
             height: calc(100vh - 56px);
             overflow: hidden;
         }
+
+        .sidebar {
+    width: 280px;
+    height: calc(100vh - 64px);
+    overflow-y: auto;
+}
+
+.sidebar-heading {
+    font-size: 0.95rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.sidebar .progress {
+    border-radius: 10px;
+    background-color: #e9ecef;
+}
+
+.sidebar .progress-bar {
+    border-radius: 10px;
+}
+
+/* Assicurati che le intestazioni siano sempre visibili */
+.sidebar-heading {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
         
         /* Sidebar Explorer */
         .explorer-sidebar {
@@ -942,6 +973,51 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/controls/OrbitControls.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.4/gsap.min.js"></script>
         <script>
+
+            // Assicurati che le etichette delle schede siano sempre visibili
+        document.addEventListener('DOMContentLoaded', function() {
+            // Funzione per filtrare città in base alla ricerca
+            document.getElementById('searchCity').addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase();
+                const cityCards = document.querySelectorAll('#citiesList .city-card');
+                
+                cityCards.forEach(card => {
+                    const cityName = card.dataset.name;
+                    const countryName = card.dataset.country;
+                    
+                    if (cityName.includes(searchTerm) || countryName.includes(searchTerm)) {
+                        card.style.display = '';
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+            });
+            
+            // Preview della città selezionata
+            document.getElementById('countryId').addEventListener('change', function() {
+                const cityPreview = document.getElementById('cityPreview');
+                const selectedOption = this.options[this.selectedIndex];
+                
+                if (this.value) {
+                    const countryId = this.value;
+                    const cityInfo = selectedOption.text.split('(');
+                    const cityName = cityInfo[0].trim();
+                    const countryName = cityInfo[1].replace(')', '').trim();
+                    
+                    document.getElementById('previewCityName').textContent = cityName;
+                    document.getElementById('previewCountryName').textContent = countryName;
+                    
+                    // Prova a caricare l'immagine della città
+                    const countryCode = selectedOption.getAttribute('data-code') || 'unknown';
+                    document.getElementById('cityImage').src = `/images/cities/${countryCode.toLowerCase()}-city.jpg`;
+                    
+                    cityPreview.style.display = 'flex';
+                } else {
+                    cityPreview.style.display = 'none';
+                }
+            });
+        });
+        
         // Funzione per filtrare le città visitate
         function filterCities() {
             const searchTerm = document.getElementById('searchCity').value.toLowerCase();
