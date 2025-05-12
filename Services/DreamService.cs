@@ -15,7 +15,8 @@ namespace WanderGlobe.Services
         public DreamService(ApplicationDbContext context)
         {
             _context = context;
-        }        public async Task<List<DreamDestination>> GetUserWishlistAsync(string userId)
+        }
+        public async Task<List<DreamDestination>> GetUserWishlistAsync(string userId)
         {
             // Recupera la wishlist dal database
             return await _context.DreamDestinations
@@ -23,13 +24,20 @@ namespace WanderGlobe.Services
                 .ToListAsync();
         }
 
-        public async Task<List<PlannedTrip>> GetUserPlannedTripsAsync(string userId)
+  public async Task<List<PlannedTrip>> GetUserPlannedTripsAsync(string userId)
         {
             // Recupera i viaggi pianificati dal database
-            return await _context.PlannedTrips
+            // *** MODIFICA QUI: Aggiungi Include per la Checklist ***
+            System.Diagnostics.Debug.WriteLine($"[DreamService.GetUserPlannedTripsAsync] Recupero PlannedTrips per UserId: {userId} CON Inclusione Checklist.");
+            var plannedTrips = await _context.PlannedTrips
+                .Include(p => p.Checklist) // <= AGGIUNGI QUESTO!
                 .Where(p => p.UserId == userId)
                 .ToListAsync();
-        }        public Task<List<RecommendedDestination>> GetRecommendationsAsync(string userId)
+            System.Diagnostics.Debug.WriteLine($"[DreamService.GetUserPlannedTripsAsync] Trovati {plannedTrips.Count} piani. Il primo piano ha {plannedTrips.FirstOrDefault()?.Checklist?.Count ?? 0} item nella checklist.");
+            return plannedTrips;
+        }
+        
+        public Task<List<RecommendedDestination>> GetRecommendationsAsync(string userId)
         {
             // Per le raccomandazioni, potremmo implementare una logica più complessa in futuro
             // Per ora, restituisci una lista vuota per non mostrare località non richieste
@@ -43,21 +51,21 @@ namespace WanderGlobe.Services
             return destination;
         }
 
-        public async Task<bool> RemoveFromWishlistAsync(int destinationId, string userId)
+        public async Task<bool> RemoveFromWishlistAsync(int dreamId, string userId)
         {
             try
             {
                 // Trova la destinazione nella wishlist dell'utente
                 var destination = await _context.DreamDestinations
-                    .FirstOrDefaultAsync(d => d.Id == destinationId && d.UserId == userId);
-                
+                    .FirstOrDefaultAsync(d => d.Id == dreamId && d.UserId == userId);
+
                 if (destination != null)
                 {
                     _context.DreamDestinations.Remove(destination);
                     await _context.SaveChangesAsync();
                     return true;
                 }
-                
+
                 return false;
             }
             catch (Exception ex)
@@ -65,7 +73,10 @@ namespace WanderGlobe.Services
                 System.Diagnostics.Debug.WriteLine($"Errore in RemoveFromWishlistAsync: {ex.Message}");
                 return false;
             }
-        }        public async Task<PlannedTrip> CreatePlannedTripAsync(PlannedTrip trip)
+        }
+
+
+        public async Task<PlannedTrip> CreatePlannedTripAsync(PlannedTrip trip)
         {
             // Aggiunge un nuovo viaggio pianificato al database
             _context.PlannedTrips.Add(trip);
@@ -88,20 +99,20 @@ namespace WanderGlobe.Services
             }
         }
 
-        public async Task<bool> DeletePlannedTripAsync(int tripId, string userId)
+        public async Task<bool> DeletePlannedTripAsync(string tripId, string userId)
         {
             try
             {
                 var trip = await _context.PlannedTrips
                     .FirstOrDefaultAsync(t => t.Id == tripId && t.UserId == userId);
-                
+
                 if (trip != null)
                 {
                     _context.PlannedTrips.Remove(trip);
                     await _context.SaveChangesAsync();
                     return true;
                 }
-                
+
                 return false;
             }
             catch (Exception ex)
@@ -109,13 +120,15 @@ namespace WanderGlobe.Services
                 System.Diagnostics.Debug.WriteLine($"Errore in DeletePlannedTripAsync: {ex.Message}");
                 return false;
             }
-        }        public async Task<bool> MarkTripAsVisitedAsync(int tripId, string userId)
+        }
+
+
+
+
+        public async Task<bool> MarkTripAsVisitedAsync(string tripId, string userId)
         {
             try
             {
-                // In una implementazione completa, potremmo trasformare un viaggio pianificato
-                // in un viaggio visitato, oppure creare un record nella tabella apposita
-                // Per ora, semplicemente eliminiamo il viaggio pianificato
                 return await DeletePlannedTripAsync(tripId, userId);
             }
             catch (Exception ex)
@@ -124,7 +137,6 @@ namespace WanderGlobe.Services
                 return false;
             }
         }
-
         public async Task<bool> IsCityInUserWishlistAsync(int cityId, string userId)
         {
             try
@@ -133,10 +145,10 @@ namespace WanderGlobe.Services
                 var city = await _context.Cities.FindAsync(cityId);
                 if (city == null)
                     return false;
-                
+
                 // Controlla se la città è nella wishlist dell'utente
                 return await _context.DreamDestinations
-                    .AnyAsync(d => d.UserId == userId && 
+                    .AnyAsync(d => d.UserId == userId &&
                              d.CityName.Equals(city.Name, StringComparison.OrdinalIgnoreCase));
             }
             catch (Exception ex)

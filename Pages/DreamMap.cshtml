@@ -2187,73 +2187,126 @@
                 });
         }
 
-        function showPlanDetails(planId) {
-            try {
-                console.log('Mostra dettagli piano:', planId);
-                if (!planId) { console.error('ID piano non valido'); showToast('Errore', 'ID piano non valido', 'danger'); return; }
+               
+         function showPlanDetails(planId) {
+        console.log('[showPlanDetails] Tentativo di mostrare dettagli per PlanId:', planId, '(Tipo:', typeof planId, ')');
+        try {
+            if (!planId || String(planId).trim() === '') {
+                console.error('[showPlanDetails] ERRORE: ID piano nullo, vuoto o non valido fornito.');
+                showToast('Errore', 'ID piano non valido o mancante per visualizzare i dettagli.', 'danger');
+                return;
+            }
 
-                let planData = destinations.plannedTrips.find(p => p.id && p.id.toString() === planId.toString());
-                if (!planData) { // Fallback se non trovato nei dati principali
-                    const element = document.querySelector(`.plan-item[data-id="${planId}"]`);
-                    if (element) {
-                        planData = {
-                            id: planId, cityName: element.querySelector('.plan-name')?.textContent || 'N/A', countryName: element.querySelector('.plan-country')?.textContent || 'N/A',
-                            imageUrl: element.querySelector('img')?.src || '/images/placeholder-city.jpg', startDate: new Date(), endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-                            completionPercentage: 0, notes: '', latitude: parseFloat(element.getAttribute('data-lat')), longitude: parseFloat(element.getAttribute('data-lng')), checklist: []
-                        };
-                        // Aggiungi ai dati principali se era solo nel DOM (per consistenza)
-                        if (!destinations.plannedTrips.find(p => p.id.toString() === planId.toString())) {
-                            destinations.plannedTrips.push(planData);
-                        }
-                    } else { showToast('Errore', 'Dati piano non trovati.', 'danger'); return; }
+            const planIdStr = String(planId).trim(); // Normalizza a stringa
+            console.log('[showPlanDetails] PlanId normalizzato a stringa:', planIdStr);
+
+            let planData = destinations.plannedTrips.find(p => p && p.id && String(p.id).trim() === planIdStr);
+            console.log('[showPlanDetails] Piano trovato nei dati locali (destinations.plannedTrips):', planData ? 'Sì' : 'No', planData);
+
+            if (!planData) {
+                const element = document.querySelector(`.plan-item[data-id="${planIdStr}"]`);
+                if (element) {
+                    console.warn('[showPlanDetails] Piano non trovato in destinations.plannedTrips. Tento fallback al DOM.');
+                    planData = {
+                        id: planIdStr,
+                        cityName: element.querySelector('.plan-name')?.textContent || 'N/A (da DOM)',
+                        countryName: element.querySelector('.plan-country')?.textContent || 'N/A (da DOM)',
+                        imageUrl: element.querySelector('.plan-item-image img')?.src || '/images/placeholder-city.jpg',
+                        startDate: new Date(), // Valore di fallback
+                        endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // Fallback
+                        completionPercentage: parseInt(element.querySelector('.plan-progress-text')?.textContent) || 0,
+                        notes: 'Note non caricate (fallback DOM)',
+                        latitude: parseFloat(element.getAttribute('data-lat')) || 0,
+                        longitude: parseFloat(element.getAttribute('data-lng')) || 0,
+                        checklist: [] // Fallback checklist vuota
+                    };
+                    // Aggiungi questo fallback ai dati locali per coerenza temporanea
+                    if (!destinations.plannedTrips.find(p => p && p.id && String(p.id).trim() === planIdStr)) {
+                        destinations.plannedTrips.push(planData);
+                         console.log('[showPlanDetails] Dati di fallback aggiunti a destinations.plannedTrips.');
+                    }
+                } else {
+                    console.error(`[showPlanDetails] ERRORE CRITICO: Impossibile trovare dati per PlanId '${planIdStr}' né in destinations.plannedTrips né nel DOM.`);
+                    showToast('Errore Dati', `Dati piano per ID '${planIdStr}' non trovati.`, 'danger');
+                    return;
                 }
-                planData.checklist = planData.checklist || []; // Assicura che checklist sia sempre un array
+            }
 
-                console.log(`Dati piano trovati:`, planData);
-                const modal = document.getElementById('planDetailsModal');
-                modal.setAttribute('data-plan-id', planId);
+            planData.checklist = planData.checklist || []; // Assicura che checklist sia un array
+            console.log('[showPlanDetails] Dati piano finali da usare:', JSON.parse(JSON.stringify(planData))); // Log profondo dei dati
 
-                document.getElementById('planCityName').textContent = planData.cityName;
-                document.getElementById('planCountryName').textContent = planData.countryName;
-                const bannerImg = document.getElementById('planBannerImg');
+            const modal = document.getElementById('planDetailsModal');
+            if (!modal) {
+                console.error("[showPlanDetails] ERRORE CRITICO: Elemento modal 'planDetailsModal' non trovato nel DOM.");
+                return;
+            }
+            modal.setAttribute('data-plan-id', planData.id); // Usa l'ID dai dati (che è stato normalizzato)
+            console.log('[showPlanDetails] Attributo data-plan-id del modal impostato a:', modal.getAttribute('data-plan-id'));
+
+            // Popolamento del modal (assicurati che gli ID degli elementi siano corretti)
+            document.getElementById('planCityName').textContent = planData.cityName;
+            document.getElementById('planCountryName').textContent = planData.countryName;
+
+            const bannerImg = document.getElementById('planBannerImg');
+            if (bannerImg) {
                 bannerImg.onerror = function () { this.src = '/images/placeholder-city.jpg'; };
-                bannerImg.src = planData.imageUrl;
+                bannerImg.src = planData.imageUrl || '/images/placeholder-city.jpg';
+            }
 
-                const startDate = planData.startDate ? new Date(planData.startDate) : new Date();
-                const endDate = planData.endDate ? new Date(planData.endDate) : new Date(new Date(startDate).setDate(startDate.getDate() + 7));
+            const startDate = planData.startDate ? new Date(planData.startDate) : new Date();
+            const endDate = planData.endDate ? new Date(planData.endDate) : new Date(new Date(startDate).setDate(startDate.getDate() + 7));
 
-                const planDateRangeDisplay = document.getElementById('planDateRange').querySelector('span');
-                if (planDateRangeDisplay) planDateRangeDisplay.textContent = `${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}`;
+            const planDateRangeDisplaySpan = document.getElementById('planDateRange')?.querySelector('span');
+            if (planDateRangeDisplaySpan) {
+                planDateRangeDisplaySpan.textContent = `${startDate.toLocaleDateString("it-IT")} - ${endDate.toLocaleDateString("it-IT")}`;
+            }
 
-                document.getElementById('planStartDateInput').value = formatDateForInput(startDate);
-                document.getElementById('planEndDateInput').value = formatDateForInput(endDate);
-                document.getElementById('planNotes').value = planData.notes || '';
+            document.getElementById('planStartDateInput').value = formatDateForInput(startDate);
+            document.getElementById('planEndDateInput').value = formatDateForInput(endDate);
+            document.getElementById('planNotes').value = planData.notes || '';
 
-                renderChecklistInModal(planId);
-                updateCompletionPercentage(planId);
+            renderChecklistInModal(planData.id); // Usa l'ID normalizzato
+            updateCompletionPercentage(planData.id); // Usa l'ID normalizzato
 
-                const addChecklistItemBtnInModal = document.getElementById('addChecklistItem');
+            // Configura pulsante aggiungi item checklist
+            const addChecklistItemBtnInModal = document.getElementById('addChecklistItem');
+            if (addChecklistItemBtnInModal) {
                 const newAddBtn = addChecklistItemBtnInModal.cloneNode(true);
                 addChecklistItemBtnInModal.parentNode.replaceChild(newAddBtn, addChecklistItemBtnInModal);
                 newAddBtn.onclick = () => {
                     const addModalEl = document.getElementById('addChecklistItemModal');
-                    addModalEl.setAttribute('data-current-plan-id', planId);
-                    document.getElementById('checklistItemTitle').value = '';
-                    document.getElementById('checklistItemCategory').value = 'travel';
-                    document.getElementById('checklistItemDueDate').value = '';
-                    new bootstrap.Modal(addModalEl).show();
+                    if(addModalEl) {
+                        addModalEl.setAttribute('data-current-plan-id', planData.id); // Imposta l'ID del piano corrente
+                        document.getElementById('checklistItemTitle').value = '';
+                        document.getElementById('checklistItemCategory').value = 'travel';
+                        document.getElementById('checklistItemDueDate').value = '';
+                        new bootstrap.Modal(addModalEl).show();
+                    } else {
+                        console.error("[showPlanDetails] Modal 'addChecklistItemModal' non trovato.");
+                    }
                 };
-
-                populateCountryInfo(planData.countryName);
-                setupExternalLinks(planData.cityName, planData.countryName);
-                if (isValidLatitude(planData.latitude) && isValidLongitude(planData.longitude)) flyToDestination(planData.latitude, planData.longitude);
-
-                new bootstrap.Modal(modal).show();
-            } catch (error) {
-                console.error('Errore in showPlanDetails:', error);
-                showToast('Errore', 'Caricamento dettagli piano fallito.', 'danger');
             }
+
+            populateCountryInfo(planData.countryName); // Assicurati che questa funzione esista e funzioni
+            setupExternalLinks(planData.cityName, planData.countryName); // Assicurati che questa esista
+
+            configuraPulsantiModal(); // Chiamata FONDAMENTALE dopo aver popolato e PRIMA di mostrare il modal
+
+            if (isValidLatitude(planData.latitude) && isValidLongitude(planData.longitude)) {
+                flyToDestination(planData.latitude, planData.longitude);
+            }
+
+            console.log('[showPlanDetails] Apertura modal planDetailsModal...');
+            new bootstrap.Modal(modal).show();
+            console.log('[showPlanDetails] Modal planDetailsModal dovrebbe essere visibile.');
+
+        } catch (error) {
+            console.error('[showPlanDetails] Eccezione CRITICA:', error);
+            showToast('Errore JavaScript', `Errore imprevisto in showPlanDetails: ${error.message}`, 'danger');
         }
+    }
+
+
 
         function renderChecklistInModal(planId) {
             const planIndex = destinations.plannedTrips.findIndex(p => p.id && p.id.toString() === planId);
@@ -2325,65 +2378,130 @@
             }
         }
 
-        function configuraPulsantiModal() {
-            console.log("Configurazione pulsanti modal...");
-            const removePlanBtn = document.getElementById('removePlanBtn');
-            const updatePlanBtn = document.getElementById('updatePlanBtn');
-            const markVisitedBtn = document.getElementById('markVisitedBtn');
-            const planDetailsModalEl = document.getElementById('planDetailsModal'); // Per ottenere planId
+ function configuraPulsantiModal() {
+        console.log("[configuraPulsantiModal] Inizio configurazione pulsanti modal dei dettagli del piano.");
+        const planDetailsModalEl = document.getElementById('planDetailsModal');
+        const updatePlanBtn = document.getElementById('updatePlanBtn');
+        const removePlanBtn = document.getElementById('removePlanBtn');
+        const markVisitedBtn = document.getElementById('markVisitedBtn');
+        const saveNotesBtn = document.getElementById('saveNotesBtn'); // Anche se chiama updatePlanDetails
 
-            if (removePlanBtn) {
-                removePlanBtn.onclick = function () {
-                    const planId = planDetailsModalEl.getAttribute('data-plan-id');
-                    if (planId) removePlan(planId); else console.error("removePlanBtn: planId non trovato nel modal.");
-                };
-            }
-            if (updatePlanBtn) {
-                updatePlanBtn.onclick = function () {
-                    const planId = planDetailsModalEl.getAttribute('data-plan-id');
-                    console.log("Pulsante Salva Modifiche cliccato, planId:", planId); // Log cruciale
-                    if (planId) updatePlanDetails(planId); else console.error("updatePlanBtn: planId non trovato nel modal.");
-                };
-            }
-            if (markVisitedBtn) {
-                markVisitedBtn.onclick = function () {
-                    const planId = planDetailsModalEl.getAttribute('data-plan-id');
-                    if (planId) markAsVisited(planId); else console.error("markVisitedBtn: planId non trovato nel modal.");
-                };
-            }
-
-            const planTripBtn = document.getElementById('planTripBtn');
-            const dreamDetailsModalEl = document.getElementById('dreamDetailsModal'); // Per ottenere dreamId
-            if (planTripBtn) {
-                planTripBtn.onclick = function () {
-                    const dreamId = dreamDetailsModalEl.getAttribute('data-dream-id');
-                    if (dreamId) moveToPlanningPhase(dreamId); else console.error("planTripBtn: dreamId non trovato nel modal.");
-                };
-            }
+        if (!planDetailsModalEl) {
+            console.error("[configuraPulsantiModal] ERRORE CRITICO: Elemento modal 'planDetailsModal' non trovato nel DOM.");
+            return;
         }
 
-        // UNICA DEFINIZIONE CORRETTA
+        // Configura pulsante "Salva Modifiche" (updatePlanBtn)
+        if (updatePlanBtn) {
+            const newUpdateBtn = updatePlanBtn.cloneNode(true); // Clona per rimuovere vecchi listener
+            updatePlanBtn.parentNode.replaceChild(newUpdateBtn, updatePlanBtn);
+            newUpdateBtn.onclick = function() {
+                const planId = planDetailsModalEl.getAttribute('data-plan-id');
+                console.log("[configuraPulsantiModal] Pulsante 'Salva Modifiche' (updatePlanBtn) cliccato. PlanId recuperato dal modal:", planId);
+                if (planId && String(planId).trim() !== '') {
+                    updatePlanDetails(planId); // Chiama la funzione principale di aggiornamento
+                } else {
+                    console.error("[configuraPulsantiModal] ERRORE: planId non valido o mancante su 'updatePlanBtn'. Impossibile aggiornare.");
+                    showToast('Errore Interno', 'ID Piano non valido nel modal. Riprova.', 'danger');
+                }
+            };
+            console.log("[configuraPulsantiModal] Listener 'onclick' per 'updatePlanBtn' impostato.");
+        } else {
+            console.warn("[configuraPulsantiModal] AVVISO: Pulsante 'updatePlanBtn' non trovato nel DOM.");
+        }
+
+        // Configura pulsante "Salva Note" (saveNotesBtn) - di solito chiama la stessa logica di updatePlanDetails
+        if (saveNotesBtn) {
+            const newSaveNotesBtn = saveNotesBtn.cloneNode(true);
+            saveNotesBtn.parentNode.replaceChild(newSaveNotesBtn, saveNotesBtn);
+            newSaveNotesBtn.onclick = function() {
+                const planId = planDetailsModalEl.getAttribute('data-plan-id');
+                console.log("[configuraPulsantiModal] Pulsante 'Salva Note' (saveNotesBtn) cliccato. PlanId recuperato:", planId);
+                if (planId && String(planId).trim() !== '') {
+                    updatePlanDetails(planId); // Chiama la stessa funzione di aggiornamento
+                } else {
+                    console.error("[configuraPulsantiModal] ERRORE: planId non valido o mancante su 'saveNotesBtn'. Impossibile salvare note.");
+                    showToast('Errore Interno', 'ID Piano non valido nel modal per salvare le note. Riprova.', 'danger');
+                }
+            };
+            console.log("[configuraPulsantiModal] Listener 'onclick' per 'saveNotesBtn' impostato.");
+        } else {
+            console.warn("[configuraPulsantiModal] AVVISO: Pulsante 'saveNotesBtn' non trovato nel DOM.");
+        }
+
+        // Configura pulsante "Elimina Piano" (removePlanBtn)
+        if (removePlanBtn) {
+            const newRemoveBtn = removePlanBtn.cloneNode(true);
+            removePlanBtn.parentNode.replaceChild(newRemoveBtn, removePlanBtn);
+            newRemoveBtn.onclick = function() {
+                const planId = planDetailsModalEl.getAttribute('data-plan-id');
+                console.log("[configuraPulsantiModal] Pulsante 'Elimina Piano' (removePlanBtn) cliccato. PlanId recuperato:", planId);
+                if (planId && String(planId).trim() !== '') {
+                    removePlan(planId); // Chiama la funzione di rimozione
+                } else {
+                    console.error("[configuraPulsantiModal] ERRORE: planId non valido o mancante su 'removePlanBtn'. Impossibile eliminare.");
+                    showToast('Errore Interno', 'ID Piano non valido nel modal per eliminare. Riprova.', 'danger');
+                }
+            };
+            console.log("[configuraPulsantiModal] Listener 'onclick' per 'removePlanBtn' impostato.");
+        } else {
+            console.warn("[configuraPulsantiModal] AVVISO: Pulsante 'removePlanBtn' non trovato nel DOM.");
+        }
+
+        // Configura pulsante "Segna come Visitato" (markVisitedBtn)
+        if (markVisitedBtn) {
+            const newMarkVisitedBtn = markVisitedBtn.cloneNode(true);
+            markVisitedBtn.parentNode.replaceChild(newMarkVisitedBtn, markVisitedBtn);
+            newMarkVisitedBtn.onclick = function() {
+                const planId = planDetailsModalEl.getAttribute('data-plan-id');
+                console.log("[configuraPulsantiModal] Pulsante 'Segna come Visitato' (markVisitedBtn) cliccato. PlanId recuperato:", planId);
+                if (planId && String(planId).trim() !== '') {
+                    markAsVisited(planId); // Chiama la funzione per marcare come visitato
+                } else {
+                    console.error("[configuraPulsantiModal] ERRORE: planId non valido o mancante su 'markVisitedBtn'.");
+                    showToast('Errore Interno', 'ID Piano non valido nel modal. Riprova.', 'danger');
+                }
+            };
+            console.log("[configuraPulsantiModal] Listener 'onclick' per 'markVisitedBtn' impostato.");
+        } else {
+            console.warn("[configuraPulsantiModal] AVVISO: Pulsante 'markVisitedBtn' non trovato nel DOM.");
+        }
+        console.log("[configuraPulsantiModal] Fine configurazione pulsanti modal.");
+    }
+
+
         function getCountryCode(countryName) {
             const countryMap = { 'Italia': 'it', 'Francia': 'fr', 'Germania': 'de', 'Spagna': 'es', 'Regno Unito': 'gb', 'Stati Uniti': 'us', 'Giappone': 'jp' };
             return countryMap[countryName] || 'unknown';
         }
 
-        function setupExternalLinks(cityName, countryName) {
-            if (!cityName || !countryName) { console.error('Nome città o paese mancante per link esterni'); return; }
-            const encodedQuery = encodeURIComponent(`${cityName}, ${countryName}`);
-            const setupLink = (id, urlPattern) => {
-                const btn = document.getElementById(id);
-                if (btn) {
-                    const finalUrl = urlPattern.replace('{QUERY}', encodedQuery);
-                    btn.href = finalUrl; // Imposta href per accessibilità e fallback
-                    btn.onclick = (e) => { e.preventDefault(); window.open(finalUrl, '_blank'); return false; };
+                                function setupExternalLinks(cityName, countryName) {
+                    if (!cityName || !countryName) { 
+                        console.error('Nome città o paese mancante per link esterni'); 
+                        return; 
+                    }
+                    
+                    const encodedQuery = encodeURIComponent(`${cityName}, ${countryName}`);
+                    
+                    const setupLink = (id, urlPattern) => {
+                        const btn = document.getElementById(id);
+                        if (btn) {
+                            const finalUrl = urlPattern.replace('{QUERY}', encodedQuery);
+                            btn.href = finalUrl; // Imposta href per accessibilità e fallback
+                            
+                            // Use a regular function (not arrow function) for proper 'return' statement
+                            btn.onclick = function(e) { 
+                                e.preventDefault(); 
+                                window.open(finalUrl, '_blank'); 
+                                return false; 
+                            };
+                        }
+                    };
+                    
+                    setupLink('googleMapsBtn', 'https://www.google.com/maps/search/{QUERY}');
+                    setupLink('bookingBtn', 'https://www.booking.com/searchresults.html?ss={QUERY}');
+                    setupLink('tripAdvisorBtn', 'https://www.tripadvisor.com/Search?q={QUERY}');
                 }
-            };
-            setupLink('googleMapsBtn', 'https://www.google.com/maps/search/{QUERY}');
-            setupLink('bookingBtn', 'https://www.booking.com/searchresults.html?ss={QUERY}');
-            setupLink('tripAdvisorBtn', 'https://www.tripadvisor.com/Search?q={QUERY}');
-        }
-
         function showVisitDetails(visitId) { alert("Funzionalità Ricordi per ID: " + visitId + " in sviluppo."); }
 
         function removePlan(planId) {
@@ -2433,56 +2551,349 @@
                 .catch(error => { hideLoadingOverlay(); console.error('Errore spostamento:', error); showToast('Errore', 'Errore connessione.', 'danger'); });
         }
 
-        function updatePlanDetails(planId) {
-            console.log('Attempting to update plan with ID:', planId);
-            if (!planId) { showToast('Errore', 'ID piano non valido.', 'danger'); console.error("updatePlanDetails: ID non valido"); return; }
+        
+        function updatePlanDetails(planId) { // planId dovrebbe essere già una stringa normalizzata da chi la chiama
+    console.log('--- [JS updatePlanDetails] FUNZIONE CHIAMATA ---');
+    console.log('[JS updatePlanDetails] ID Piano ricevuto:', planId, '(Tipo:', typeof planId, ')');
 
-            const planIndex = destinations.plannedTrips.findIndex(p => p.id && p.id.toString() === planId.toString());
-            if (planIndex === -1) { showToast('Errore', 'Piano non trovato.', 'danger'); console.error("updatePlanDetails: Piano non trovato per ID", planId); return; }
-            const plan = destinations.plannedTrips[planIndex];
+    if (!planId || String(planId).trim() === '') {
+        console.error("[JS updatePlanDetails] ERRORE: ID piano nullo, vuoto o non valido all'inizio della funzione.");
+        showToast('Errore Critico JS', 'ID Piano non valido per l\'aggiornamento.', 'danger');
+        return;
+    }
 
-            const startDateInput = document.getElementById('planStartDateInput');
-            const endDateInput = document.getElementById('planEndDateInput');
-            const notesInput = document.getElementById('planNotes');
+    const planIdStr = String(planId).trim();
+    console.log('[JS updatePlanDetails] ID Piano normalizzato (o riconfermato) a stringa:', planIdStr);
 
-            if (!startDateInput || !endDateInput) { console.error("Campi data mancanti nel DOM."); showToast('Errore Modulo', 'Campi data mancanti.', 'danger'); return; }
+    try {
+        // Trova l'INDICE del piano nei dati locali 'destinations.plannedTrips'
+        // È importante lavorare con l'oggetto NELL'ARRAY destinations per mantenere la reattività
+        const planIndex = destinations.plannedTrips.findIndex(p => p && p.id && String(p.id).trim() === planIdStr);
 
-            const startDate = startDateInput.value;
-            const endDate = endDateInput.value;
-            const notes = notesInput ? notesInput.value : (plan.notes || '');
-
-            if (!startDate || !endDate) { showToast('Errore', 'Date obbligatorie.', 'danger'); return; }
-            if (new Date(startDate) > new Date(endDate)) { showToast('Errore', 'Data inizio successiva a data fine.', 'danger'); return; }
-
-            const updateData = { planId, startDate, endDate, notes, checklist: plan.checklist, completionPercentage: plan.completionPercentage };
-            console.log("Dati inviati al server per updatePlanDetails:", JSON.stringify(updateData));
-
-            showLoadingOverlay('Salvataggio...');
-            fetch('/DreamMap?handler=UpdatePlanDetails', {
-                method: 'POST', headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': getAntiForgeryToken() }, body: JSON.stringify(updateData)
-            })
-                .then(response => {
-                    if (!response.ok) return response.text().then(text => { throw new Error(JSON.parse(text).message || `Errore HTTP: ${response.status}`); });
-                    return response.json();
-                })
-                .then(data => {
-                    hideLoadingOverlay();
-                    if (data.success) {
-                        plan.startDate = new Date(startDate);
-                        plan.endDate = new Date(endDate);
-                        plan.notes = notes;
-                        if (data.updatedPlan) { // Se il backend restituisce il piano aggiornato (es. con ID checklist)
-                            plan.checklist = data.updatedPlan.checklist || plan.checklist;
-                            plan.completionPercentage = data.updatedPlan.completionPercentage !== undefined ? data.updatedPlan.completionPercentage : plan.completionPercentage;
-                        }
-                        sincronizzaStatoApp();
-                        const planDateRangeDisplay = document.getElementById('planDateRange')?.querySelector('span');
-                        if (planDateRangeDisplay) planDateRangeDisplay.textContent = `${new Date(startDate).toLocaleDateString()} - ${new Date(endDate).toLocaleDateString()}`;
-                        showToast('Successo', 'Modifiche salvate!', 'success');
-                    } else { showToast('Errore', data.message || 'Salvataggio fallito.', 'danger'); }
-                })
-                .catch(error => { hideLoadingOverlay(); console.error('Errore aggiornamento:', error); showToast('Errore', `Errore connessione: ${error.message}`, 'danger'); });
+        if (planIndex === -1) {
+            console.error(`[JS updatePlanDetails] ERRORE: Piano con ID "${planIdStr}" non trovato in destinations.plannedTrips.`);
+            console.log("[JS updatePlanDetails] Contenuto di destinations.plannedTrips:", JSON.parse(JSON.stringify(destinations.plannedTrips)));
+            showToast('Errore Dati Client', `Piano ID="${planIdStr}" non trovato nei dati client. Ricarica la pagina o riprova.`, 'danger');
+            return;
         }
+
+        // Ottieni il riferimento all'oggetto piano nell'array destinations
+        const planObjectFromState = destinations.plannedTrips[planIndex];
+        console.log("[JS updatePlanDetails] Oggetto piano recuperato da destinations.plannedTrips (prima delle modifiche dal form):", JSON.parse(JSON.stringify(planObjectFromState)));
+
+        // --- RECUPERO DATI DAL FORM DEL MODAL ---
+        const startDateInputEl = document.getElementById('planStartDateInput');
+        const endDateInputEl = document.getElementById('planEndDateInput');
+        const notesInputEl = document.getElementById('planNotes');
+
+        if (!startDateInputEl || !endDateInputEl || !notesInputEl) {
+            console.error("[JS updatePlanDetails] ERRORE: Uno o più elementi del form (planStartDateInput, planEndDateInput, planNotes) non trovati nel DOM.");
+            showToast('Errore Modulo', 'Campi del form mancanti. Impossibile salvare.', 'danger');
+            return;
+        }
+
+        // Leggi i valori CORRENTI dagli elementi del form
+        const startDateFromForm = startDateInputEl.value; // Formato YYYY-MM-DD
+        const endDateFromForm = endDateInputEl.value;     // Formato YYYY-MM-DD
+        const notesFromForm = notesInputEl.value;
+
+        console.log("[JS updatePlanDetails] Valori LETTI DIRETTAMENTE DAL FORM:");
+        console.log("  - StartDate (dal form):", startDateFromForm);
+        console.log("  - EndDate (dal form):", endDateFromForm);
+        console.log("  - Notes (dal form):", notesFromForm);
+
+        // Validazione date
+        if (!startDateFromForm || !endDateFromForm) {
+            console.error("[JS updatePlanDetails] ERRORE: Date di inizio o fine mancanti nel form.");
+            showToast('Errore Input', 'Inserisci sia la data di inizio che quella di fine.', 'danger');
+            return;
+        }
+        // Non è necessario creare oggetti Date qui se il backend si aspetta stringhe YYYY-MM-DD
+        // Ma la validazione che startDate non sia dopo endDate è utile:
+        if (new Date(startDateFromForm) > new Date(endDateFromForm)) {
+            console.error("[JS updatePlanDetails] ERRORE: Data di inizio successiva a data di fine.");
+            showToast('Errore Input', 'La data di inizio non può essere successiva alla data di fine.', 'danger');
+            return;
+        }
+
+        // Prepara l'oggetto checklist da inviare
+        // Questa si basa sullo stato corrente di `planObjectFromState.checklist`
+        const checklistToSend = (planObjectFromState.checklist || []).map(item => ({
+            id: String(item.id),
+            title: item.title,
+            category: item.category,
+            dueDate: item.dueDate ? formatDateForInput(new Date(item.dueDate)) : null,
+            isCompleted: item.isCompleted
+        }));
+        console.log("[JS updatePlanDetails] Checklist attuale (dall'oggetto 'planObjectFromState' in memoria) preparata per l'invio:", JSON.parse(JSON.stringify(checklistToSend)));
+
+
+        // --- Prepara l'oggetto dati da inviare al server ---
+        // USA I VALORI LETTI DIRETTAMENTE DAL FORM per date e note
+        const updateData = {
+            planId: planObjectFromState.id,      // ID originale del piano (stringa)
+            startDate: startDateFromForm,        // Data letta dal form (stringa YYYY-MM-DD)
+            endDate: endDateFromForm,          // Data letta dal form (stringa YYYY-MM-DD)
+            notes: notesFromForm,              // Note lette dal form
+            checklist: checklistToSend           // Checklist basata sullo stato client-side
+        };
+
+        console.log("[JS updatePlanDetails] Dati FINALI pronti per invio al server (con valori dal form):", JSON.stringify(updateData, null, 2));
+
+        if (!updateData.planId || String(updateData.planId).trim() === '') {
+            console.error("[JS updatePlanDetails] ERRORE CRITICO: planId in updateData è nullo o vuoto PRIMA della chiamata fetch!");
+            showToast('Errore Critico JS', 'ID Piano nullo o vuoto prima dell\'invio (JS). Controlla console.', 'danger');
+            return;
+        }
+
+        showLoadingOverlay('Salvataggio modifiche in corso...');
+
+        fetch('/DreamMap?handler=UpdatePlanDetails', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'RequestVerificationToken': getAntiForgeryToken()
+            },
+            body: JSON.stringify(updateData)
+        })
+        .then(response => {
+            console.log("[JS updatePlanDetails] Risposta Fetch ricevuta - Status:", response.status, response.statusText);
+            if (!response.ok) {
+                return response.text().then(text => {
+                    console.error("[JS updatePlanDetails] Errore HTTP dal server:", response.status, text);
+                    throw new Error(`Errore server (${response.status}): ${text.substring(0, 250)}...`);
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            hideLoadingOverlay();
+            console.log("[JS updatePlanDetails] Risposta JSON dal server:", JSON.parse(JSON.stringify(data)));
+            if (data.success) {
+                console.log("[JS updatePlanDetails] Aggiornamento riuscito secondo il server. Messaggio:", data.message);
+                if (data.updatedPlan) {
+                    const serverPlan = data.updatedPlan;
+                    // Aggiorna l'oggetto planObjectFromState NELL'ARRAY destinations con i dati dal server
+                    planObjectFromState.startDate = new Date(serverPlan.startDate);
+                    planObjectFromState.endDate = new Date(serverPlan.endDate);
+                    planObjectFromState.notes = serverPlan.notes;
+                    planObjectFromState.completionPercentage = serverPlan.completionPercentage;
+                    planObjectFromState.checklist = (serverPlan.checklist || []).map(serverItem => ({
+                        id: serverItem.id,
+                        title: serverItem.title,
+                        category: serverItem.category,
+                        dueDate: serverItem.dueDate ? new Date(serverItem.dueDate) : null,
+                        isCompleted: serverItem.isCompleted
+                    }));
+                    console.log("[JS updatePlanDetails] Dati piano NELL'ARRAY 'destinations' aggiornati con risposta server.");
+                } else {
+                    console.warn("[JS updatePlanDetails] AVVISO: Risposta server success=true ma 'updatedPlan' mancante. L'aggiornamento locale potrebbe essere incompleto.");
+                    // Aggiornamento parziale con dati inviati, se 'updatedPlan' non è presente
+                    planObjectFromState.startDate = new Date(startDateFromForm);
+                    planObjectFromState.endDate = new Date(endDateFromForm);
+                    planObjectFromState.notes = notesFromForm;
+                    // La checklist è già lo stato client corrente, ma gli ID potrebbero non essere aggiornati se nuovi.
+                    updateCompletionPercentage(planObjectFromState.id); // Ricalcola % basata su questa checklist
+                }
+
+                sincronizzaStatoApp();
+
+                const planDateRangeDisplaySpan = document.getElementById('planDateRange')?.querySelector('span');
+                if (planDateRangeDisplaySpan) {
+                    planDateRangeDisplaySpan.textContent = `${planObjectFromState.startDate.toLocaleDateString("it-IT")} - ${planObjectFromState.endDate.toLocaleDateString("it-IT")}`;
+                }
+                renderChecklistInModal(planObjectFromState.id);
+                showToast('Successo', data.message || 'Modifiche salvate!', 'success');
+            } else {
+                console.error("[JS updatePlanDetails] Errore logico restituito dal server:", data.message);
+                showToast('Errore Salvataggio', data.message || 'Salvataggio modifiche fallito.', 'danger');
+            }
+        })
+        .catch(error => {
+            hideLoadingOverlay();
+            console.error('[JS updatePlanDetails] Errore CRITICO durante fetch o elaborazione risposta:', error);
+            showToast('Errore Connessione', `Impossibile salvare: ${error.message}`, 'danger');
+        });
+
+    } catch (error) {
+        console.error("[JS updatePlanDetails] Eccezione FATALE nel blocco try principale della funzione:", error);
+        hideLoadingOverlay();
+        showToast('Errore Critico JS', `Errore imprevisto nel JavaScript: ${error.message}`, 'danger');
+    }
+}
+
+
+function updatePlanDetails(planId) { // planId dovrebbe essere già una stringa normalizzata da chi la chiama
+    console.log('--- [JS updatePlanDetails] FUNZIONE CHIAMATA ---');
+    console.log('[JS updatePlanDetails] ID Piano ricevuto:', planId, '(Tipo:', typeof planId, ')');
+
+    if (!planId || String(planId).trim() === '') {
+        console.error("[JS updatePlanDetails] ERRORE: ID piano nullo, vuoto o non valido all'inizio della funzione.");
+        showToast('Errore Critico JS', 'ID Piano non valido per l\'aggiornamento.', 'danger');
+        return;
+    }
+
+    const planIdStr = String(planId).trim();
+    console.log('[JS updatePlanDetails] ID Piano normalizzato (o riconfermato) a stringa:', planIdStr);
+
+    try {
+        // Trova l'INDICE del piano nei dati locali 'destinations.plannedTrips'
+        // È importante lavorare con l'oggetto NELL'ARRAY destinations per mantenere la reattività
+        const planIndex = destinations.plannedTrips.findIndex(p => p && p.id && String(p.id).trim() === planIdStr);
+
+        if (planIndex === -1) {
+            console.error(`[JS updatePlanDetails] ERRORE: Piano con ID "${planIdStr}" non trovato in destinations.plannedTrips.`);
+            console.log("[JS updatePlanDetails] Contenuto di destinations.plannedTrips:", JSON.parse(JSON.stringify(destinations.plannedTrips)));
+            showToast('Errore Dati Client', `Piano ID="${planIdStr}" non trovato nei dati client. Ricarica la pagina o riprova.`, 'danger');
+            return;
+        }
+
+        // Ottieni il riferimento all'oggetto piano nell'array destinations
+        const planObjectFromState = destinations.plannedTrips[planIndex];
+        console.log("[JS updatePlanDetails] Oggetto piano recuperato da destinations.plannedTrips (prima delle modifiche dal form):", JSON.parse(JSON.stringify(planObjectFromState)));
+
+        // --- RECUPERO DATI DAL FORM DEL MODAL ---
+        const startDateInputEl = document.getElementById('planStartDateInput');
+        const endDateInputEl = document.getElementById('planEndDateInput');
+        const notesInputEl = document.getElementById('planNotes');
+
+        if (!startDateInputEl || !endDateInputEl || !notesInputEl) {
+            console.error("[JS updatePlanDetails] ERRORE: Uno o più elementi del form (planStartDateInput, planEndDateInput, planNotes) non trovati nel DOM.");
+            showToast('Errore Modulo', 'Campi del form mancanti. Impossibile salvare.', 'danger');
+            return;
+        }
+
+        // Leggi i valori CORRENTI dagli elementi del form
+        const startDateFromForm = startDateInputEl.value; // Formato YYYY-MM-DD
+        const endDateFromForm = endDateInputEl.value;     // Formato YYYY-MM-DD
+        const notesFromForm = notesInputEl.value;
+
+        console.log("[JS updatePlanDetails] Valori LETTI DIRETTAMENTE DAL FORM:");
+        console.log("  - StartDate (dal form):", startDateFromForm);
+        console.log("  - EndDate (dal form):", endDateFromForm);
+        console.log("  - Notes (dal form):", notesFromForm);
+
+        // Validazione date
+        if (!startDateFromForm || !endDateFromForm) {
+            console.error("[JS updatePlanDetails] ERRORE: Date di inizio o fine mancanti nel form.");
+            showToast('Errore Input', 'Inserisci sia la data di inizio che quella di fine.', 'danger');
+            return;
+        }
+        // Non è necessario creare oggetti Date qui se il backend si aspetta stringhe YYYY-MM-DD
+        // Ma la validazione che startDate non sia dopo endDate è utile:
+        if (new Date(startDateFromForm) > new Date(endDateFromForm)) {
+            console.error("[JS updatePlanDetails] ERRORE: Data di inizio successiva a data di fine.");
+            showToast('Errore Input', 'La data di inizio non può essere successiva alla data di fine.', 'danger');
+            return;
+        }
+
+        // Prepara l'oggetto checklist da inviare
+        // Questa si basa sullo stato corrente di `planObjectFromState.checklist`
+        const checklistToSend = (planObjectFromState.checklist || []).map(item => ({
+            id: String(item.id),
+            title: item.title,
+            category: item.category,
+            dueDate: item.dueDate ? formatDateForInput(new Date(item.dueDate)) : null,
+            isCompleted: item.isCompleted
+        }));
+        console.log("[JS updatePlanDetails] Checklist attuale (dall'oggetto 'planObjectFromState' in memoria) preparata per l'invio:", JSON.parse(JSON.stringify(checklistToSend)));
+
+
+        // --- Prepara l'oggetto dati da inviare al server ---
+        // USA I VALORI LETTI DIRETTAMENTE DAL FORM per date e note
+        const updateData = {
+            planId: planObjectFromState.id,      // ID originale del piano (stringa)
+            startDate: startDateFromForm,        // Data letta dal form (stringa YYYY-MM-DD)
+            endDate: endDateFromForm,          // Data letta dal form (stringa YYYY-MM-DD)
+            notes: notesFromForm,              // Note lette dal form
+            checklist: checklistToSend           // Checklist basata sullo stato client-side
+        };
+
+        console.log("[JS updatePlanDetails] Dati FINALI pronti per invio al server (con valori dal form):", JSON.stringify(updateData, null, 2));
+
+        if (!updateData.planId || String(updateData.planId).trim() === '') {
+            console.error("[JS updatePlanDetails] ERRORE CRITICO: planId in updateData è nullo o vuoto PRIMA della chiamata fetch!");
+            showToast('Errore Critico JS', 'ID Piano nullo o vuoto prima dell\'invio (JS). Controlla console.', 'danger');
+            return;
+        }
+
+        showLoadingOverlay('Salvataggio modifiche in corso...');
+
+        fetch('/DreamMap?handler=UpdatePlanDetails', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'RequestVerificationToken': getAntiForgeryToken()
+            },
+            body: JSON.stringify(updateData)
+        })
+        .then(response => {
+            console.log("[JS updatePlanDetails] Risposta Fetch ricevuta - Status:", response.status, response.statusText);
+            if (!response.ok) {
+                return response.text().then(text => {
+                    console.error("[JS updatePlanDetails] Errore HTTP dal server:", response.status, text);
+                    throw new Error(`Errore server (${response.status}): ${text.substring(0, 250)}...`);
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            hideLoadingOverlay();
+            console.log("[JS updatePlanDetails] Risposta JSON dal server:", JSON.parse(JSON.stringify(data)));
+            if (data.success) {
+                console.log("[JS updatePlanDetails] Aggiornamento riuscito secondo il server. Messaggio:", data.message);
+                if (data.updatedPlan) {
+                    const serverPlan = data.updatedPlan;
+                    // Aggiorna l'oggetto planObjectFromState NELL'ARRAY destinations con i dati dal server
+                    planObjectFromState.startDate = new Date(serverPlan.startDate);
+                    planObjectFromState.endDate = new Date(serverPlan.endDate);
+                    planObjectFromState.notes = serverPlan.notes;
+                    planObjectFromState.completionPercentage = serverPlan.completionPercentage;
+                    planObjectFromState.checklist = (serverPlan.checklist || []).map(serverItem => ({
+                        id: serverItem.id,
+                        title: serverItem.title,
+                        category: serverItem.category,
+                        dueDate: serverItem.dueDate ? new Date(serverItem.dueDate) : null,
+                        isCompleted: serverItem.isCompleted
+                    }));
+                    console.log("[JS updatePlanDetails] Dati piano NELL'ARRAY 'destinations' aggiornati con risposta server.");
+                } else {
+                    console.warn("[JS updatePlanDetails] AVVISO: Risposta server success=true ma 'updatedPlan' mancante. L'aggiornamento locale potrebbe essere incompleto.");
+                    // Aggiornamento parziale con dati inviati, se 'updatedPlan' non è presente
+                    planObjectFromState.startDate = new Date(startDateFromForm);
+                    planObjectFromState.endDate = new Date(endDateFromForm);
+                    planObjectFromState.notes = notesFromForm;
+                    // La checklist è già lo stato client corrente, ma gli ID potrebbero non essere aggiornati se nuovi.
+                    updateCompletionPercentage(planObjectFromState.id); // Ricalcola % basata su questa checklist
+                }
+
+                sincronizzaStatoApp();
+
+                const planDateRangeDisplaySpan = document.getElementById('planDateRange')?.querySelector('span');
+                if (planDateRangeDisplaySpan) {
+                    planDateRangeDisplaySpan.textContent = `${planObjectFromState.startDate.toLocaleDateString("it-IT")} - ${planObjectFromState.endDate.toLocaleDateString("it-IT")}`;
+                }
+                renderChecklistInModal(planObjectFromState.id);
+                showToast('Successo', data.message || 'Modifiche salvate!', 'success');
+            } else {
+                console.error("[JS updatePlanDetails] Errore logico restituito dal server:", data.message);
+                showToast('Errore Salvataggio', data.message || 'Salvataggio modifiche fallito.', 'danger');
+            }
+        })
+        .catch(error => {
+            hideLoadingOverlay();
+            console.error('[JS updatePlanDetails] Errore CRITICO durante fetch o elaborazione risposta:', error);
+            showToast('Errore Connessione', `Impossibile salvare: ${error.message}`, 'danger');
+        });
+
+    } catch (error) {
+        console.error("[JS updatePlanDetails] Eccezione FATALE nel blocco try principale della funzione:", error);
+        hideLoadingOverlay();
+        showToast('Errore Critico JS', `Errore imprevisto nel JavaScript: ${error.message}`, 'danger');
+    }
+}
+
+
 
         function removeChecklistItem(planId, itemId) {
             if (!confirm('Rimuovere elemento checklist?')) return;
@@ -2593,50 +3004,120 @@
             if (sidebarProgressText) sidebarProgressText.textContent = `${percentage}% completato`;
         }
 
-function moveToPlanningPhase(dreamId) {
-    console.log('Sposta alla pianificazione:', dreamId);
-    const dreamToMove = destinations.wishlist.find(dream => dream.id.toString() === dreamId);
-    if (!dreamToMove) { showToast('Errore', 'Sogno non trovato.', 'danger'); return; }
+        function moveToPlanningPhase(dreamId) {
+            // *** LOG DETTAGLIATO ALL'INGRESSO ***
+            console.log('[moveToPlanningPhase] Tentativo di spostamento. ID ricevuto:', dreamId, '(Tipo:', typeof dreamId, ')');
 
-    showLoadingOverlay('Spostamento...');
-    fetch('/DreamMap?handler=MoveToPlanning', {
-        method: 'POST', 
-        headers: { 
-            'Content-Type': 'application/json', 
-            'RequestVerificationToken': getAntiForgeryToken() 
-        }, 
-        body: JSON.stringify({ dreamId })
-    })
-    .then(response => response.json())
-    .then(data => {
-        hideLoadingOverlay();
-        if (data.success) {
-            bootstrap.Modal.getInstance(document.getElementById('dreamDetailsModal'))?.hide();
-            
-            // Usa i dati restituiti dal server invece di costruire manualmente
-            const newPlan = data.plannedTrip;
-            
-            // Aggiungi proprietà aggiuntive se non sono incluse nella risposta del server
-            if (!newPlan.checklist) newPlan.checklist = [];
-            
-            // Rimuovi dalla wishlist e aggiungi alla sezione pianificati
-            destinations.wishlist = destinations.wishlist.filter(dream => dream.id.toString() !== dreamId);
-            destinations.plannedTrips.push(newPlan);
-            
-            sincronizzaStatoApp();
-            document.getElementById('planning-tab')?.click();
-            showToast('Successo', 'Spostato in pianificazione!', 'success');
-        } else { 
-            showToast('Errore', data.message || 'Errore spostamento.', 'danger'); 
+            // Verifica robusta dell'ID
+            if (!dreamId || String(dreamId).trim() === '') {
+                console.error('[moveToPlanningPhase] Errore: ID nullo, vuoto o non valido ricevuto.');
+                showToast('Errore Interno', 'ID Destinazione non valido per lo spostamento.', 'danger');
+                return;
+            }
+
+            // Normalizza l'ID a stringa per coerenza
+            const dreamIdStr = String(dreamId).trim();
+            console.log('[moveToPlanningPhase] ID normalizzato a stringa:', dreamIdStr);
+
+            // Verifica opzionale nei dati locali (destinations.wishlist)
+            const dreamToMoveLocal = destinations.wishlist.find(dream => dream && dream.id && String(dream.id).trim() === dreamIdStr);
+            if (!dreamToMoveLocal) {
+                console.warn(`[moveToPlanningPhase] ATTENZIONE: Sogno con ID ${dreamIdStr} non trovato nei dati LOCALI (destinations.wishlist). Ciò potrebbe indicare un problema di sincronizzazione o un ID errato nel DOM.`);
+                // Non blocchiamo l'operazione, ma logghiamo l'avviso. Il server ha l'autorità finale.
+            } else {
+                console.log('[moveToPlanningPhase] Sogno corrispondente trovato nei dati locali:', dreamToMoveLocal);
+            }
+
+            showLoadingOverlay('Spostamento in pianificazione...');
+
+            fetch('/DreamMap?handler=MoveToPlanning', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': getAntiForgeryToken() // Assicurati che getAntiForgeryToken() funzioni
+                },
+                // Invia l'ID normalizzato come stringa nel corpo JSON
+                body: JSON.stringify({ dreamId: dreamIdStr })
+            })
+            .then(response => {
+                console.log('[moveToPlanningPhase] Risposta Fetch - Status:', response.status, response.statusText);
+                if (!response.ok) {
+                    // Se la risposta non è OK (es. 400, 404, 500), leggi il corpo come testo
+                    return response.text().then(text => {
+                        console.error('[moveToPlanningPhase] Errore HTTP:', response.status, text);
+                        // Crea un errore più descrittivo per il blocco catch
+                        throw new Error(`Errore server (${response.status}): ${text.substring(0, 150)}...`);
+                    });
+                }
+                // Se la risposta è OK (es. 200), procedi a leggerla come JSON
+                return response.json();
+            })
+            .then(data => {
+                hideLoadingOverlay();
+                console.log('[moveToPlanningPhase] Risposta JSON dal server:', data);
+
+                if (data.success) {
+                    console.log('[moveToPlanningPhase] Spostamento riuscito secondo il server.');
+
+                    // Chiudi il modal dei dettagli se era aperto
+                    const dreamDetailsModalEl = document.getElementById('dreamDetailsModal');
+                    if (dreamDetailsModalEl) {
+                         const dreamDetailsModal = bootstrap.Modal.getInstance(dreamDetailsModalEl);
+                         if (dreamDetailsModal) {
+                              dreamDetailsModal.hide();
+                              // Rimuovi il backdrop manualmente se necessario dopo la chiusura forzata
+                              const backdrop = document.querySelector('.modal-backdrop');
+                              if (backdrop) backdrop.remove();
+                         }
+                    }
+
+
+                    // Rimuovi l'elemento dalla wishlist locale
+                    const initialWishlistLength = destinations.wishlist.length;
+                    destinations.wishlist = destinations.wishlist.filter(dream => dream && dream.id && String(dream.id).trim() !== dreamIdStr);
+                    console.log(`[moveToPlanningPhase] Wishlist locale aggiornata. Rimossi ${initialWishlistLength - destinations.wishlist.length} elementi.`);
+
+                    // Aggiungi alla pianificazione locale usando i dati *restituiti dal server*
+                    const newPlan = data.plannedTrip;
+                    if (newPlan && newPlan.id) { // Verifica che il nuovo piano e il suo ID esistano
+                        // Assicura che la checklist sia un array nel nuovo oggetto
+                        newPlan.checklist = newPlan.checklist || [];
+                        // Assicurati che le date siano oggetti Date se necessario (dipende da come le usi dopo)
+                        // newPlan.startDate = new Date(newPlan.startDate);
+                        // newPlan.endDate = new Date(newPlan.endDate);
+
+                        // Controlla se il piano esiste già (improbabile ma sicuro)
+                        const planExists = destinations.plannedTrips.some(p => p && p.id && String(p.id).trim() === String(newPlan.id).trim());
+                        if (!planExists) {
+                            destinations.plannedTrips.push(newPlan);
+                            console.log('[moveToPlanningPhase] Nuovo piano aggiunto ai dati locali:', newPlan);
+                        } else {
+                             console.warn(`[moveToPlanningPhase] Il piano con ID ${newPlan.id} esisteva già nei dati locali. Non aggiunto di nuovo.`);
+                        }
+
+                    } else {
+                        console.error('[moveToPlanningPhase] Errore: Spostamento riuscito secondo il server, ma i dati del nuovo piano sono mancanti o incompleti nella risposta!', data);
+                        showToast('Errore Dati', 'Errore nel ricevere i dati del nuovo piano.', 'danger');
+                         // Nonostante l'errore dati, procedi con la sincronizzazione parziale
+                    }
+
+                    sincronizzaStatoApp(); // Aggiorna l'interfaccia utente (sidebar e mappa)
+                    document.getElementById('planning-tab')?.click(); // Vai alla tab pianificazione
+                    showToast('Successo', `${newPlan?.cityName || 'Destinazione'} spostata in pianificazione!`, 'success');
+
+                } else {
+                    // Mostra il messaggio di errore specifico restituito dal server
+                    console.error('[moveToPlanningPhase] Errore logico restituito dal server:', data.message);
+                    showToast('Errore Spostamento', data.message || 'Impossibile spostare la destinazione.', 'danger');
+                }
+            })
+            .catch(error => {
+                hideLoadingOverlay();
+                console.error('[moveToPlanningPhase] Errore durante la chiamata Fetch o elaborazione:', error);
+                // Mostra un messaggio generico o quello dall'errore lanciato nel blocco .then
+                showToast('Errore Connessione', `Impossibile completare lo spostamento: ${error.message}`, 'danger');
+            });
         }
-    })
-    .catch(error => { 
-        hideLoadingOverlay(); 
-        console.error('Errore spostamento:', error); 
-        showToast('Errore', 'Errore connessione.', 'danger'); 
-    });
-}
-
 
         function populateCountryInfo(countryName) {
             const currencyInfoEl = document.getElementById('currencyInfo');

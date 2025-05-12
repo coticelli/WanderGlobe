@@ -11,7 +11,7 @@ using WanderGlobe.Data;
 namespace WanderGlobe.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250511221341_InitialCreate")]
+    [Migration("20250512084954_InitialCreate")]
     partial class InitialCreate
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -1489,8 +1489,10 @@ namespace WanderGlobe.Migrations
                     b.Property<bool>("IsCompleted")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("PlannedTripId")
-                        .HasColumnType("INTEGER");
+                    b.Property<string>("PlannedTripId")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("Title")
                         .IsRequired()
@@ -1557,9 +1559,9 @@ namespace WanderGlobe.Migrations
 
             modelBuilder.Entity("WanderGlobe.Models.Custom.PlannedTrip", b =>
                 {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
+                    b.Property<string>("Id")
+                        .HasMaxLength(50)
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("CityName")
                         .IsRequired()
@@ -1626,54 +1628,47 @@ namespace WanderGlobe.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<int>("TravelJournalCountryId")
+                        .HasColumnType("INTEGER");
+
                     b.Property<int>("TravelJournalId")
                         .HasColumnType("INTEGER");
+
+                    b.Property<string>("TravelJournalUserId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
 
                     b.Property<DateTime>("UploadedAt")
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("TravelJournalId");
+                    b.HasIndex("TravelJournalUserId", "TravelJournalCountryId");
 
                     b.ToTable("Photos");
                 });
 
             modelBuilder.Entity("WanderGlobe.Models.TravelJournal", b =>
                 {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("Content")
-                        .IsRequired()
+                    b.Property<string>("UserId")
                         .HasColumnType("TEXT");
 
                     b.Property<int>("CountryId")
                         .HasColumnType("INTEGER");
 
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Title")
+                    b.Property<string>("Notes")
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
+                    b.Property<int>("Rating")
+                        .HasColumnType("INTEGER");
 
                     b.Property<DateTime>("VisitDate")
                         .HasColumnType("TEXT");
 
-                    b.HasKey("Id");
+                    b.HasKey("UserId", "CountryId");
 
                     b.HasIndex("CountryId");
-
-                    b.HasIndex("UserId");
 
                     b.ToTable("TravelJournals");
                 });
@@ -1790,13 +1785,11 @@ namespace WanderGlobe.Migrations
 
             modelBuilder.Entity("WanderGlobe.Models.Custom.ChecklistItem", b =>
                 {
-                    b.HasOne("WanderGlobe.Models.Custom.PlannedTrip", "PlannedTrip")
+                    b.HasOne("WanderGlobe.Models.Custom.PlannedTrip", null)
                         .WithMany("Checklist")
                         .HasForeignKey("PlannedTripId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("PlannedTrip");
                 });
 
             modelBuilder.Entity("WanderGlobe.Models.Custom.DreamDestination", b =>
@@ -1809,8 +1802,8 @@ namespace WanderGlobe.Migrations
             modelBuilder.Entity("WanderGlobe.Models.Photo", b =>
                 {
                     b.HasOne("WanderGlobe.Models.TravelJournal", "TravelJournal")
-                        .WithMany("Photos")
-                        .HasForeignKey("TravelJournalId")
+                        .WithMany()
+                        .HasForeignKey("TravelJournalUserId", "TravelJournalCountryId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -1820,13 +1813,13 @@ namespace WanderGlobe.Migrations
             modelBuilder.Entity("WanderGlobe.Models.TravelJournal", b =>
                 {
                     b.HasOne("WanderGlobe.Models.Country", "Country")
-                        .WithMany()
+                        .WithMany("TravelJournals")
                         .HasForeignKey("CountryId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("WanderGlobe.Models.ApplicationUser", "User")
-                        .WithMany()
+                        .WithMany("TravelJournals")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -1880,6 +1873,8 @@ namespace WanderGlobe.Migrations
 
                     b.Navigation("DreamDestinations");
 
+                    b.Navigation("TravelJournals");
+
                     b.Navigation("VisitedCountries");
                 });
 
@@ -1892,17 +1887,14 @@ namespace WanderGlobe.Migrations
                 {
                     b.Navigation("Cities");
 
+                    b.Navigation("TravelJournals");
+
                     b.Navigation("VisitedByUsers");
                 });
 
             modelBuilder.Entity("WanderGlobe.Models.Custom.PlannedTrip", b =>
                 {
                     b.Navigation("Checklist");
-                });
-
-            modelBuilder.Entity("WanderGlobe.Models.TravelJournal", b =>
-                {
-                    b.Navigation("Photos");
                 });
 #pragma warning restore 612, 618
         }

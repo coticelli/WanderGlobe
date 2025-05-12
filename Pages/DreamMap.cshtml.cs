@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using WanderGlobe.Models;
-using WanderGlobe.Models.Custom;
+using WanderGlobe.Models.Custom; // Assicurati che questo using ci sia
 using WanderGlobe.Services;
 using System;
 using System.Collections.Generic;
@@ -16,14 +16,16 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.AspNetCore.Http;
 using System.IO;
 using System.ComponentModel.DataAnnotations;
-using Microsoft.EntityFrameworkCore;
-using WanderGlobe.Data;
+using Microsoft.EntityFrameworkCore; // Necessario per Entity Framework Core
+using WanderGlobe.Data; // Necessario per ApplicationDbContext
 
 namespace WanderGlobe.Pages
 {
     [Authorize]
     public class DreamMapModel : PageModel
-    {        private readonly UserManager<ApplicationUser> _userManager;
+    {
+        // ... (proprietà esistenti: _userManager, _countryService, etc.) ...
+        private readonly UserManager<ApplicationUser> _userManager;
         private readonly ICountryService _countryService;
         private readonly IDreamService _dreamService;
         private readonly IHttpClientFactory _clientFactory;
@@ -39,7 +41,9 @@ namespace WanderGlobe.Pages
         public MapDestinationsViewModel AllDestinations { get; set; } = new MapDestinationsViewModel();
 
         [BindProperty]
-        public WishlistItemViewModel WishlistForm { get; set; } = new WishlistItemViewModel();        // Costruttore aggiornato con ICityService
+        public WishlistItemViewModel WishlistForm { get; set; } = new WishlistItemViewModel();
+
+        // --- COSTRUTTORE (invariato) ---
         public DreamMapModel(
             UserManager<ApplicationUser> userManager,
             ICountryService countryService,
@@ -58,26 +62,15 @@ namespace WanderGlobe.Pages
             _webHostEnvironment = webHostEnvironment;
             _dbContext = dbContext;
             _cityService = cityService;
-
-            // Debug della chiave API
-            System.Diagnostics.Debug.WriteLine($"GeminiApiKey: {(_geminiApiKey != null ? "PRESENTE" : "MANCANTE")}");
-            if (_geminiApiKey != null && _geminiApiKey.Length > 5)
-            {
-                System.Diagnostics.Debug.WriteLine($"Primi 5 caratteri della chiave: {_geminiApiKey.Substring(0, 5)}");
-            }
+            // ... (eventuali altri log nel costruttore) ...
         }
 
-        // Test API semplice
-        [IgnoreAntiforgeryToken]
-        public JsonResult OnGetSimpletest()
-        {
-            return new JsonResult(new { success = true, message = "Test riuscito!" });
-        }        // Caricamento iniziale della pagina
+        // --- OnGetAsync e altri metodi GET (probabilmente invariati) ---
         public async Task OnGetAsync()
         {
             // Verifica se le immagini richieste esistono
             VerifyRequiredImages();
-            
+
             try
             {
                 var user = await _userManager.GetUserAsync(User);
@@ -87,10 +80,10 @@ namespace WanderGlobe.Pages
                     // Recupera i paesi disponibili
                     Countries = await _countryService.GetAllCountriesAsync();
 
-                    // Recupera le destinazioni dei sogni dell'utente
+                    // Recupera le destinazioni dei sogni dell'utente (DreamDestination.Id è int)
                     Wishlist = await _dreamService.GetUserWishlistAsync(user.Id);
 
-                    // Recupera i viaggi pianificati dell'utente
+                    // Recupera i viaggi pianificati dell'utente (PlannedTrip.Id è string)
                     PlannedTrips = await _dreamService.GetUserPlannedTripsAsync(user.Id);
 
                     // Recupera i suggerimenti personalizzati
@@ -103,16 +96,21 @@ namespace WanderGlobe.Pages
                     var visitedCitiesItems = new List<MapDestinationItem>();
                     foreach (var v in visitedCountries)
                     {
-                        string capitalName = await GetCapitalAsync(v.Country.Code);
-                        visitedCitiesItems.Add(new MapDestinationItem
+                        // Assumendo che GetCapitalAsync restituisca un oggetto City o null
+                        var capital = await _cityService.GetCapitalCityByCountryIdAsync(v.CountryId);
+                        if (capital != null)
                         {
-                            Id = NormalizeNameToId(capitalName, v.Country.Code),
-                            CityName = capitalName,
-                            CountryName = v.Country.Name,
-                            CountryCode = v.Country.Code,
-                            Latitude = v.Country.Latitude,
-                            Longitude = v.Country.Longitude
-                        });
+                            visitedCitiesItems.Add(new MapDestinationItem
+                            {
+                                // Visited ID potrebbe essere basato sulla città o sul paese
+                                Id = $"visited_city_{capital.Id}", // Esempio ID
+                                CityName = capital.Name,
+                                CountryName = v.Country.Name,
+                                CountryCode = v.Country.Code,
+                                Latitude = capital.Latitude ?? v.Country.Latitude, // Usa lat/lon città se disponibili
+                                Longitude = capital.Longitude ?? v.Country.Longitude
+                            });
+                        }
                     }
 
                     // Popola il modello con tutti i dati per la mappa
@@ -120,7 +118,7 @@ namespace WanderGlobe.Pages
                     {
                         Wishlist = Wishlist.Select(d => new MapDestinationItem
                         {
-                            Id = NormalizeNameToId(d.CityName, d.CountryCode),
+                            Id = d.Id.ToString(), // Converti l'ID int a string per MapDestinationItem
                             CityName = d.CityName,
                             CountryName = d.CountryName,
                             CountryCode = d.CountryCode,
@@ -131,7 +129,7 @@ namespace WanderGlobe.Pages
 
                         PlannedTrips = PlannedTrips.Select(p => new MapDestinationItem
                         {
-                            Id = NormalizeNameToId(p.CityName, p.CountryCode),
+                            Id = p.Id, // L'ID di PlannedTrip è già string
                             CityName = p.CityName,
                             CountryName = p.CountryName,
                             CountryCode = p.CountryCode,
@@ -146,7 +144,7 @@ namespace WanderGlobe.Pages
                     // Inizializza il form per l'aggiunta alla wishlist con le città disponibili
                     WishlistForm = new WishlistItemViewModel
                     {
-                        AvailableCities = await GetAvailableCapitalsAsync()
+                        AvailableCities = await GetAvailableCapitalsAsync() // Assumi che questo funzioni
                     };
                 }
             }
@@ -158,7 +156,8 @@ namespace WanderGlobe.Pages
             }
         }
 
-               [HttpPost]
+        // --- OnPostSaveToWishlistAsync (Aggiornato per gestire meglio ID e coordinate) ---
+        [HttpPost]
         [IgnoreAntiforgeryToken]
         public async Task<IActionResult> OnPostSaveToWishlistAsync()
         {
@@ -166,822 +165,802 @@ namespace WanderGlobe.Pages
             {
                 if (WishlistForm == null)
                 {
-                    return new JsonResult(new { success = false, message = "Model binding failed (model is null)." });
+                    return new JsonResult(new { success = false, message = "Dati del form non ricevuti." });
                 }
-        
-                // Correct key for the City property in ModelState
-                string cityFieldKeyInModelState = $"{nameof(this.WishlistForm)}.{nameof(WishlistItemViewModel.City)}";
-        
-                // Log ModelState before processing
-                System.Diagnostics.Debug.WriteLine("--- ModelState Before Processing ---");
-                foreach (var state in ModelState)
-                {
-                    System.Diagnostics.Debug.WriteLine($"Key: {state.Key}, Errors: {state.Value.Errors.Count}");
-                    foreach (var error in state.Value.Errors) 
-                        System.Diagnostics.Debug.WriteLine($"  Error: {error.ErrorMessage}");
-                }
-        
-                // Clear any existing errors on City field to prevent validation issues
-                ModelState.Remove(cityFieldKeyInModelState);
-        
-                // Validate model manually
-                if (string.IsNullOrEmpty(WishlistForm.City))
+
+                if (string.IsNullOrWhiteSpace(WishlistForm.City))
                 {
                     return new JsonResult(new { success = false, message = "Seleziona una città valida." });
                 }
-        
+
                 var user = await _userManager.GetUserAsync(User);
                 if (user == null)
                 {
                     return new JsonResult(new { success = false, message = "Utente non autenticato" });
                 }
-        
-                // Get city information from available cities
-                var cityInfo = (await GetAvailableCapitalsAsync()).FirstOrDefault(c => c.Name == WishlistForm.City);
-                
-                // Debug for city info
-                System.Diagnostics.Debug.WriteLine($"CityInfo found: {(cityInfo != null ? "Yes" : "No")} for city: {WishlistForm.City}");
-                
-                // Make sure we have country information
-                if (cityInfo == null)
+
+                // Ottieni informazioni sulla città selezionata (DAL DATABASE)
+                var cityFromDb = await _dbContext.Cities
+                    .Include(c => c.Country) // Include il paese per avere tutte le info
+                    .FirstOrDefaultAsync(c => c.Name == WishlistForm.City && c.Country.Name == WishlistForm.Country); // Assicurati che WishlistForm.Country sia popolato correttamente dal dropdown
+
+                if (cityFromDb == null)
                 {
-                    System.Diagnostics.Debug.WriteLine($"CityInfo not found for selected city: {WishlistForm.City}");
-                    
-                    // Create default city info if not found
-                    cityInfo = new CityInfo
+                    // Potrebbe essere una città non ancora nel DB o un problema nel form
+                    // Prova a cercare solo per nome città se il paese non era nel form
+                    if (string.IsNullOrWhiteSpace(WishlistForm.Country))
                     {
-                        Name = WishlistForm.City,
-                        Country = WishlistForm.Country ?? "Paese sconosciuto",
-                        CountryCode = WishlistForm.CountryCode ?? "XX"
-                    };
+                        cityFromDb = await _dbContext.Cities.Include(c => c.Country).FirstOrDefaultAsync(c => c.Name == WishlistForm.City);
+                    }
+
+                    if (cityFromDb == null)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"WARN: Città '{WishlistForm.City}' (Paese: '{WishlistForm.Country}') non trovata nel DB.");
+                        // Potresti decidere di non permettere l'aggiunta o usare valori di default
+                        // Per ora, usiamo valori di default se non trovata
+                        WishlistForm.Country = WishlistForm.Country ?? "Sconosciuto";
+                        WishlistForm.CountryCode = WishlistForm.CountryCode ?? "XX"; // Assicurati che il code arrivi dal form o dalla logica del dropdown
+                    }
                 }
-                else
-                {
-                    // Ensure the model has country data from cityInfo
-                    WishlistForm.Country = cityInfo.Country;
-                    WishlistForm.CountryCode = cityInfo.CountryCode;
-                }
-                
-                // Debug country data
-                System.Diagnostics.Debug.WriteLine($"Country data: {WishlistForm.Country}, Code: {WishlistForm.CountryCode}");
-        
-                // Ensure we have non-null values for required fields
-                WishlistForm.Tags = WishlistForm.Tags ?? "";
-                WishlistForm.Notes = WishlistForm.Notes ?? "";
-                WishlistForm.Priority = WishlistForm.Priority ?? "Media";
-        
+
+                // Se la città è stata trovata nel DB, usa i suoi dati
+                string countryName = cityFromDb?.Country?.Name ?? WishlistForm.Country ?? "Sconosciuto";
+                string countryCode = cityFromDb?.Country?.Code ?? WishlistForm.CountryCode ?? "XX";
+                double latitude = cityFromDb?.Latitude ?? 0.0; // Usa Lat/Lon dal DB se disponibili
+                double longitude = cityFromDb?.Longitude ?? 0.0;
+
+
                 // Parse priority enum
-                DreamPriority priority;
-                if (!Enum.TryParse(WishlistForm.Priority, true, out priority))
+                if (!Enum.TryParse<DreamPriority>(WishlistForm.Priority, true, out var priority))
                 {
-                    priority = DreamPriority.Medium;
+                    priority = DreamPriority.Medium; // Default
                 }
-        
+
                 // Process image if available
-                string imageUrl = null;
+                string? imageUrl = null;
                 if (WishlistForm.ImageFile != null && WishlistForm.ImageFile.Length > 0)
                 {
-                    imageUrl = await SaveWishlistImageAsync(WishlistForm.ImageFile);
+                    imageUrl = await SaveWishlistImageAsync(WishlistForm.ImageFile); // Assumi che questa funzione esista e funzioni
                 }
-        
-                // Process tags
-                List<string> tagList = new List<string>();
-                if (!string.IsNullOrEmpty(WishlistForm.Tags))
+                else // Fallback image
                 {
-                    tagList = WishlistForm.Tags.Split(',')
+                    // Potresti avere immagini di default per paese o città
+                    imageUrl = $"/images/cities/{countryCode.ToLower()}-city.jpg"; // Esempio
+                                                                                   // Verifica se esiste, altrimenti usa un placeholder generico
+                    if (!System.IO.File.Exists(Path.Combine(_webHostEnvironment.WebRootPath, imageUrl.TrimStart('/'))))
+                    {
+                        imageUrl = "/images/placeholder-destination.jpg";
+                    }
+                }
+
+
+                // Process tags
+                List<string> tagList = string.IsNullOrWhiteSpace(WishlistForm.Tags)
+                    ? new List<string>()
+                    : WishlistForm.Tags.Split(',')
                         .Select(t => t.Trim())
                         .Where(t => !string.IsNullOrEmpty(t))
                         .ToList();
-                }
-        
-                // Set default latitude/longitude if not available
-                double latitude = 0, longitude = 0;
-                
-                // Find the city in database to get proper coordinates
-                var cityFromDb = await _dbContext.Cities
-                    .Include(c => c.Country)
-                    .FirstOrDefaultAsync(c => 
-                        c.Name.ToLower() == WishlistForm.City.ToLower() && 
-                        c.Country.Name.ToLower() == WishlistForm.Country.ToLower());
-                if (cityFromDb != null)
-                {
-                    latitude = cityFromDb.Latitude  ?? 0.0;
-                    longitude = cityFromDb.Longitude  ?? 0.0;
-                    System.Diagnostics.Debug.WriteLine($"Found city in DB: {cityFromDb.Name}, Lat: {latitude}, Lon: {longitude}");
-                }
-                else
-                {
-                    // Use default coordinates - better than zeros
-                    System.Diagnostics.Debug.WriteLine($"City not found in DB, using default lat/long");
-                    latitude = 45.0; // Default latitude
-                    longitude = 9.0; // Default longitude
-                }
-        
-                // Create new dream destination with all fields properly set
+
+                // Crea nuova DreamDestination (Id è int, sarà generato dal DB)
                 var newDream = new DreamDestination
                 {
+                    // Id sarà generato da EF Core
                     UserId = user.Id,
-                    CityName = WishlistForm.City ?? "Città sconosciuta",
-                    CountryName = WishlistForm.Country ?? "Paese non specificato",
-                    CountryCode = WishlistForm.CountryCode ?? "XX",
-                    Note = WishlistForm.Notes,
+                    CityName = WishlistForm.City,
+                    CountryName = countryName,
+                    CountryCode = countryCode,
+                    Note = WishlistForm.Notes ?? "", // Assicura non sia null
                     Tags = tagList,
                     Priority = priority,
                     Latitude = latitude,
                     Longitude = longitude,
-                    ImageUrl = imageUrl ?? $"/images/cities/{(WishlistForm.CountryCode ?? "default").ToLower()}-city.jpg",
+                    ImageUrl = imageUrl,
                     CreatedAt = DateTime.UtcNow
                 };
-        
-                // Extra debug logging before save
-                System.Diagnostics.Debug.WriteLine($"About to save new dream: City={newDream.CityName}, Country={newDream.CountryName}, Code={newDream.CountryCode}");
-        
-                try
+
+                System.Diagnostics.Debug.WriteLine($"Tentativo salvataggio Wishlist: City={newDream.CityName}, Country={newDream.CountryName}, Lat={newDream.Latitude}, Lon={newDream.Longitude}");
+
+                var savedDream = await _dreamService.AddToWishlistAsync(newDream); // Assumi che il servizio funzioni
+
+                if (savedDream != null && savedDream.Id > 0) // Controlla che l'ID sia stato generato
                 {
-                    var savedDream = await _dreamService.AddToWishlistAsync(newDream);
-        
-                    if (savedDream != null)
-                    {
-                        return new JsonResult(new
-                        {
-                            success = true,
-                            message = $"{WishlistForm.City} aggiunta alla tua wishlist!",
-                            newItem = savedDream
-                        });
-                    }
-                    else
-                    {
-                        return new JsonResult(new
-                        {
-                            success = false,
-                            message = "Errore nel salvataggio della destinazione."
-                        });
-                    }
-                }
-                catch (DbUpdateException dbEx)
-                {
-                    // Log the detailed inner exception for debugging
-                    var innerMsg = dbEx.InnerException?.Message ?? "No inner exception";
-                    System.Diagnostics.Debug.WriteLine($"Database error: {dbEx.Message}. Inner: {innerMsg}");
-                    
+                    System.Diagnostics.Debug.WriteLine($"Salvataggio Wishlist riuscito. Nuovo ID: {savedDream.Id}");
+                    // Restituisci l'oggetto salvato, assicurandoti che l'ID sia stringa per il JS
                     return new JsonResult(new
                     {
-                        success = false,
-                        message = $"Errore database: {dbEx.Message}. Dettagli: {innerMsg}"
+                        success = true,
+                        message = $"{WishlistForm.City} aggiunta alla tua wishlist!",
+                        newItem = new // Crea un DTO per la risposta
+                        {
+                            id = savedDream.Id.ToString(), // Converti int ID a stringa
+                            userId = savedDream.UserId,
+                            cityName = savedDream.CityName,
+                            countryName = savedDream.CountryName,
+                            countryCode = savedDream.CountryCode,
+                            latitude = savedDream.Latitude,
+                            longitude = savedDream.Longitude,
+                            priority = (int)savedDream.Priority, // Invia come int
+                            imageUrl = savedDream.ImageUrl,
+                            note = savedDream.Note,
+                            createdAt = savedDream.CreatedAt,
+                            tags = savedDream.Tags
+                        }
                     });
+                }
+                else
+                {
+                    System.Diagnostics.Debug.WriteLine("Errore nel salvataggio della destinazione tramite DreamService.");
+                    return new JsonResult(new { success = false, message = "Errore nel salvataggio della destinazione." });
                 }
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Exception in OnPostSaveToWishlistAsync: {ex.Message}\nStackTrace: {ex.StackTrace}");
-                
-                // Include inner exception details if available
-                var innerMsg = ex.InnerException?.Message ?? "Nessun dettaglio aggiuntivo";
-                
-                return new JsonResult(new
-                {
-                    success = false,
-                    message = $"Errore server: {ex.Message}. Dettagli: {innerMsg}"
-                });
+                return new JsonResult(new { success = false, message = $"Errore server: {ex.Message}" });
             }
         }
 
-        [HttpGet]
+        // --- OnPostMoveToPlanningAsync (Aggiornato per ID int di DreamDestination) ---
+        [HttpPost]
         [IgnoreAntiforgeryToken]
-        public async Task<IActionResult> OnGetCityinfoAsync(string city)
+        public async Task<IActionResult> OnPostMoveToPlanningAsync([FromBody] MoveToPlanning request)
         {
-            var cityInfo = (await GetAvailableCapitalsAsync()).FirstOrDefault(c => c.Name == city);
+            System.Diagnostics.Debug.WriteLine($"--- [OnPostMoveToPlanningAsync] INIZIO ---");
+            System.Diagnostics.Debug.WriteLine($"Richiesta ricevuta. DreamId: '{request?.DreamId ?? "NULL"}'");
 
-            if (cityInfo == null)
+            if (request == null || string.IsNullOrWhiteSpace(request.DreamId))
             {
-                return new JsonResult(new { success = false });
+                System.Diagnostics.Debug.WriteLine("[OnPostMoveToPlanningAsync] ERRORE: Richiesta o DreamId nullo/vuoto.");
+                return new JsonResult(new { success = false, message = "ID destinazione non valido o mancante." });
             }
 
-            return new JsonResult(new
+            var requestedDreamIdStr = request.DreamId.Trim();
+            System.Diagnostics.Debug.WriteLine($"DreamId normalizzato: '{requestedDreamIdStr}'");
+
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
             {
-                success = true,
-                city = cityInfo.Name,
-                country = cityInfo.Country,
-                countryCode = cityInfo.CountryCode
-            });
-        }
+                System.Diagnostics.Debug.WriteLine("[OnPostMoveToPlanningAsync] ERRORE: Utente non autenticato.");
+                return new JsonResult(new { success = false, message = "Utente non autenticato" });
+            }
+            System.Diagnostics.Debug.WriteLine($"Utente autenticato: Id='{user.Id}', UserName='{user.UserName}'");
 
-        // Metodo ausiliario per salvare l'immagine della wishlist
-        private async Task<string> SaveWishlistImageAsync(IFormFile image)
-        {
-            if (image == null || image.Length == 0)
-                return null;
-
+            DreamDestination? dreamItem = null;
             try
             {
-                string uploadsFolder = Path.Combine(_webHostEnvironment.WebRootPath, "images", "wishlist");
+                System.Diagnostics.Debug.WriteLine($"Tentativo di trovare DreamDestination (Id = int) per UserId='{user.Id}'...");
 
-                // Crea la directory se non esiste
-                if (!Directory.Exists(uploadsFolder))
+                // CORREZIONE: Usa int.TryParse perché DreamDestination.Id è INT
+                if (int.TryParse(requestedDreamIdStr, out int dreamIdAsInt))
                 {
-                    Directory.CreateDirectory(uploadsFolder);
-                }
+                    System.Diagnostics.Debug.WriteLine($"ID interpretato come INT: {dreamIdAsInt}. Esecuzione query con confronto INT...");
+                    dreamItem = await _dbContext.DreamDestinations
+                        .FirstOrDefaultAsync(d => d.UserId == user.Id && d.Id == dreamIdAsInt); // Confronto INT
 
-                // Genera un nome file univoco
-                string fileName = $"{Guid.NewGuid()}{Path.GetExtension(image.FileName)}";
-                string filePath = Path.Combine(uploadsFolder, fileName);
-
-                // Salva il file
-                using (var fileStream = new FileStream(filePath, FileMode.Create))
-                {
-                    await image.CopyToAsync(fileStream);
-                }
-
-                // Restituisci il percorso relativo
-                return $"/images/wishlist/{fileName}";
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Errore nel salvataggio dell'immagine: {ex.Message}");
-                return null;
-            }
-        }
-
-        // Helper per normalizzare nomi di città in ID
-        private string NormalizeNameToId(string cityName, string countryCode)
-        {
-            if (string.IsNullOrEmpty(cityName))
-                return "unknown";
-
-            // Rimuovi spazi e caratteri speciali, converti in minuscolo
-            string normalizedName = cityName.ToLower()
-                .Replace(" ", "")
-                .Replace("-", "")
-                .Replace(".", "")
-                .Replace(",", "")
-                .Replace("'", "");
-
-            // Aggiungi il codice paese per unicità (in minuscolo)
-            if (!string.IsNullOrEmpty(countryCode))
-                return normalizedName + "_" + countryCode.ToLower();
-
-            return normalizedName;
-        }
-
-        [HttpGet]
-        public IActionResult OnGetApiTest()
-        {
-            return new JsonResult(new { success = true, message = "API funzionante" });
-        }
-
-        [HttpGet]
-        [IgnoreAntiforgeryToken]
-        public async Task<IActionResult> OnGetTravelsuggestionsAsync(string cityName, string suggestionType)
-        {
-            try
-            {
-                System.Diagnostics.Debug.WriteLine($"Handler chiamato - Città: {cityName}, Tipo: {suggestionType}");
-
-                var client = _clientFactory.CreateClient();
-
-                if (string.IsNullOrEmpty(_geminiApiKey))
-                {
-                    System.Diagnostics.Debug.WriteLine("Errore: Chiave API Gemini mancante");
-                    return new JsonResult(new { error = "Chiave API Gemini non configurata" });
-                }
-
-                string prompt = BuildPrompt(cityName, suggestionType);
-
-                var requestData = new
-                {
-                    contents = new[]
+                    if (dreamItem != null)
                     {
-                        new
-                        {
-                            parts = new[]
-                            {
-                                new { text = prompt }
-                            }
-                        }
+                        System.Diagnostics.Debug.WriteLine($"Trovato (come INT)! ID DB: {dreamItem.Id}, Città: {dreamItem.CityName}");
                     }
-                };
-
-                // Usa il modello gemini-2.0-flash, che dovrebbe essere disponibile con una API key gratuita
-                string apiUrl = $"https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent?key={_geminiApiKey}";
-
-                System.Diagnostics.Debug.WriteLine($"URL API: {apiUrl.Substring(0, apiUrl.IndexOf('?'))}?key=XXXXX");
-
-                var content = new StringContent(
-                    JsonConvert.SerializeObject(requestData),
-                    Encoding.UTF8,
-                    "application/json");
-
-                client.Timeout = TimeSpan.FromSeconds(30);
-
-                // Log della richiesta JSON per debug
-                System.Diagnostics.Debug.WriteLine($"Richiesta JSON: {JsonConvert.SerializeObject(requestData)}");
-
-                var response = await client.PostAsync(apiUrl, content);
-
-                string responseContent = await response.Content.ReadAsStringAsync();
-                System.Diagnostics.Debug.WriteLine($"Risposta HTTP: {response.StatusCode}");
-                System.Diagnostics.Debug.WriteLine($"Contenuto risposta: {responseContent.Substring(0, Math.Min(500, responseContent.Length))}...");
-
-                if (response.IsSuccessStatusCode)
-                {
-                    try
+                    else
                     {
-                        dynamic parsedResponse = JsonConvert.DeserializeObject(responseContent);
-
-                        if (parsedResponse?.candidates != null &&
-                            parsedResponse.candidates.Count > 0 &&
-                            parsedResponse.candidates[0].content != null &&
-                            parsedResponse.candidates[0].content.parts != null &&
-                            parsedResponse.candidates[0].content.parts.Count > 0)
-                        {
-                            string htmlContent = parsedResponse.candidates[0].content.parts[0].text;
-
-                            // Pulizia dei delimitatori markdown
-                            htmlContent = CleanupMarkdownCodeDelimiters(htmlContent);
-
-                            return new JsonResult(new
-                            {
-                                success = true,
-                                html = htmlContent
-                            });
-                        }
-                        else
-                        {
-                            System.Diagnostics.Debug.WriteLine("Risposta API valida ma struttura non corretta");
-                            return new JsonResult(new
-                            {
-                                error = "Risposta API valida ma struttura non corretta",
-                                debug = responseContent
-                            });
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        System.Diagnostics.Debug.WriteLine($"Errore parsing JSON: {ex.Message}");
-                        return new JsonResult(new
-                        {
-                            error = $"Errore nel parsing della risposta: {ex.Message}",
-                            debug = responseContent
-                        });
+                        System.Diagnostics.Debug.WriteLine($"Non trovato (come INT).");
                     }
                 }
                 else
                 {
-                    System.Diagnostics.Debug.WriteLine($"Errore API: {response.StatusCode} - {responseContent}");                    // Se il modello non è disponibile, prova con modelli alternativi
-                    if (apiUrl.Contains("gemini-2.0-flash") && (response.StatusCode == System.Net.HttpStatusCode.NotFound || responseContent.Contains("not found")))
-                    {
-                        // Prova con gemini-1.5-flash
-                        System.Diagnostics.Debug.WriteLine("Modello non trovato, tentativo con modello alternativo: gemini-1.5-flash");
-                        string alternativeUrl = $"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={_geminiApiKey}";                        var alternativeResponse = await client.PostAsync(alternativeUrl, content);
-                        if (alternativeResponse.IsSuccessStatusCode)
-                        {
-                            string altContent = await alternativeResponse.Content.ReadAsStringAsync();
-                            dynamic? altParsed = JsonConvert.DeserializeObject(altContent);                            if (altParsed?.candidates != null &&
-                                altParsed.candidates.Count > 0 &&
-                                altParsed.candidates[0]?.content != null &&
-                                altParsed.candidates[0].content?.parts != null &&
-                                altParsed.candidates[0].content.parts.Count > 0 &&
-                                altParsed.candidates[0].content.parts[0]?.text != null)
-                            {
-                                string htmlContent = altParsed.candidates[0].content.parts[0]?.text;
-                                if (htmlContent != null)
-                                {                                    htmlContent = CleanupMarkdownCodeDelimiters(htmlContent);
-
-                                    return new JsonResult(new
-                                    {
-                                        success = true,
-                                        html = htmlContent,
-                                        note = "Utilizzato modello alternativo"
-                                    });
-                                }
-                            }
-                        }
-                    }
-
-                    return new JsonResult(new
-                    {
-                        error = $"Errore API Gemini: {response.StatusCode}",
-                        debug = responseContent
-                    });
+                    System.Diagnostics.Debug.WriteLine($"[OnPostMoveToPlanningAsync] ERRORE: ID '{requestedDreamIdStr}' non è un INT valido come richiesto da DreamDestination.Id.");
+                    return new JsonResult(new { success = false, message = "Formato ID destinazione non valido." });
                 }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Eccezione: {ex.Message}");
-                return new JsonResult(new { error = $"Errore: {ex.Message}" });
-            }
-        }
 
-        // Metodo helper per pulire i delimitatori Markdown dalla risposta
-        private string CleanupMarkdownCodeDelimiters(string content)
-        {
-            if (string.IsNullOrEmpty(content))
-                return content;
-
-            // Rimuovi ```html o ```HTML all'inizio (case insensitive)
-            content = System.Text.RegularExpressions.Regex.Replace(
-                content,
-                @"^\s*```(?:html|HTML)?\s*\n?",
-                "",
-                System.Text.RegularExpressions.RegexOptions.Singleline
-            );
-
-            // Rimuovi ``` alla fine
-            content = System.Text.RegularExpressions.Regex.Replace(
-                content,
-                @"\s*```\s*$",
-                "",
-                System.Text.RegularExpressions.RegexOptions.Singleline
-            );
-
-            // Rimuovi anche eventuali <pre> e </pre> inseriti erroneamente
-            content = System.Text.RegularExpressions.Regex.Replace(
-                content,
-                @"^\s*<pre>\s*|\s*</pre>\s*$",
-                "",
-                System.Text.RegularExpressions.RegexOptions.Singleline
-            );            return content.Trim();
-        }          // Metodo per ottenere tutte le città disponibili dal database
-        private async Task<List<CityInfo>> GetAvailableCapitalsAsync()
-        {
-            try
-            {
-                var userId = _userManager.GetUserId(User);
-                
-                // Utilizziamo un approccio diretto con Entity Framework
-                var allCities = await _dbContext.Cities
-                    .Include(c => c.Country)
-                    .Where(c => c.Country != null)
-                    .ToListAsync();
-                
-                // Debug - quante città abbiamo trovato nel database?
-                System.Diagnostics.Debug.WriteLine($"Trovate {allCities.Count} città totali nel database");
-                
-                var availableCities = allCities
-                    .Select(city => new CityInfo
-                    {
-                        Name = city.Name,
-                        Country = city.Country.Name,
-                        CountryCode = city.Country.Code
-                    })
-                    .ToList();
-                
-                // Debug output
-                System.Diagnostics.Debug.WriteLine($"Totale città disponibili per il dropdown: {availableCities.Count}");
-                
-                return availableCities.OrderBy(c => c.Country).ThenBy(c => c.Name).ToList();
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Errore in GetAvailableCapitalsAsync: {ex.Message}");
-                return new List<CityInfo>();
-            }
-        }
-        
-        // Metodo per ottenere il nome della capitale dal database tramite ICityService
-        private async Task<string> GetCapitalAsync(string countryCode)
-        {
-            try
-            {
-                if (string.IsNullOrEmpty(countryCode))
-                    return "Capitale sconosciuta";
-
-                var country = await _dbContext.Countries
-                    .FirstOrDefaultAsync(c => c.Code.Equals(countryCode, StringComparison.OrdinalIgnoreCase));
-
-                if (country == null)
-                    return $"Capitale di {countryCode}";
-
-                var capital = await _cityService.GetCapitalCityByCountryIdAsync(country.Id);
-                
-                return capital?.Name ?? $"Capitale di {country.Name}";
-            }            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Errore nel recupero della capitale per {countryCode}: {ex.Message}");
-                return $"Capitale di {countryCode}";
-            }
-        }
-
-        // Metodo helper per costruire i prompt
-        private string BuildPrompt(string cityName, string suggestionType)
-        {
-            switch (suggestionType)
-            {
-                case "attractions":
-                    return $"Sei un esperto di viaggi. Fornisci 5 attrazioni turistiche principali da visitare a {cityName}. " +
-                           $"Per ciascuna attrazione, indica il nome e una breve descrizione di 10-15 parole. " +
-                           $"Formatta la risposta come lista HTML con tag <ul> e <li>. Per ogni attrazione, metti il nome in un tag <strong>. " +
-                           $"La risposta deve contenere SOLO codice HTML, senza delimitatori di codice come ```html o ```. " +
-                           $"Non inserire commenti, prefazioni o conclusioni. Inizia direttamente con i tag HTML.";
-
-                case "gastronomy":
-                    return $"Sei un esperto gastronomico. Descrivi 5 piatti o esperienze gastronomiche da provare a {cityName}. " +
-                           $"Per ciascun piatto, indica il nome e una breve descrizione di 10-15 parole. " +
-                           $"Inizia con un breve paragrafo introduttivo sulla cucina locale di {cityName}. " +
-                           $"Formatta la risposta come HTML con un tag <p> per l'introduzione e una lista <ul> per i piatti. " +
-                           $"Per ogni piatto, metti il nome in un tag <strong>. " +
-                           $"La risposta deve contenere SOLO codice HTML, senza delimitatori di codice come ```html o ```. " +
-                           $"Non inserire commenti, prefazioni o conclusioni. Inizia direttamente con i tag HTML.";
-
-                case "history":
-                    return $"Sei uno storico. Descrivi 6 eventi storici significativi di {cityName} in ordine cronologico. " +
-                           $"Per ciascun evento, indica l'anno o periodo e un fatto interessante in 10-15 parole. " +
-                           $"Inizia con un breve paragrafo introduttivo sulla storia generale di {cityName}. " +
-                           $"Formatta la risposta come HTML con un tag <p> per l'introduzione e una lista <ul> per gli eventi storici. " +
-                           $"La risposta deve contenere SOLO codice HTML, senza delimitatori di codice come ```html o ```. " +
-                           $"Non inserire commenti, prefazioni o conclusioni. Inizia direttamente con i tag HTML.";
-
-                case "tips":
-                    return $"Sei un consulente di viaggi. Fornisci 6 consigli pratici per i turisti che visitano {cityName}. " +
-                           $"Includi suggerimenti su trasporti, sicurezza, risparmio, cultura locale, periodo migliore per visitare e comunicazione. " +
-                           $"Formatta la risposta come HTML con un paragrafo introduttivo <p> seguito da una lista <ul>. " +
-                           $"Per ogni consiglio, metti il titolo (es. 'Trasporti', 'Sicurezza') in un tag <strong>. " +
-                           $"La risposta deve contenere SOLO codice HTML, senza delimitatori di codice come ```html o ```. " +
-                           $"Non inserire commenti, prefazioni o conclusioni. Inizia direttamente con i tag HTML.";
-
-                default:
-                    return $"Sei un esperto di viaggi. Fornisci informazioni generali su {cityName} come meta turistica. " +
-                           $"Formatta la risposta come paragrafi HTML con tag <p>. " +
-                           $"La risposta deve contenere SOLO codice HTML, senza delimitatori di codice come ```html o ```. " +
-                           $"Non inserire commenti, prefazioni o conclusioni. Inizia direttamente con i tag HTML.";
-            }
-        }
-
-        [HttpGet]
-        [IgnoreAntiforgeryToken]
-        public IActionResult OnGetDebug()
-        {
-            var headers = Request.Headers.ToDictionary(h => h.Key, h => h.Value.ToString());
-            var queryParams = Request.Query.ToDictionary(q => q.Key, q => q.Value.ToString());
-            var path = Request.Path.ToString();
-            var method = Request.Method;
-
-            return new JsonResult(new
-            {
-                message = "Debug info",
-                path = path,
-                method = method,
-                headers = headers,
-                queryParams = queryParams,
-                hasGeminiKey = !string.IsNullOrEmpty(_geminiApiKey),
-                geminiKeyFirstChars = !string.IsNullOrEmpty(_geminiApiKey) ? _geminiApiKey.Substring(0, 5) + "..." : null
-            });
-        }
-
-        [IgnoreAntiforgeryToken]
-        public IActionResult OnGetTest()
-        {
-            return new JsonResult(new { status = "ok", message = "Test riuscito!" });
-        }
-
-        // HANDLERS PER LE OPERAZIONI AJAX
-                [HttpPost]
-                [IgnoreAntiforgeryToken]
-                public async Task<IActionResult> OnPostMoveToPlanningAsync([FromBody] MoveToPlanning request)
+                if (dreamItem == null)
                 {
-                    if (string.IsNullOrEmpty(request?.DreamId))
+                    System.Diagnostics.Debug.WriteLine($"[OnPostMoveToPlanningAsync] ERRORE FINALE: Destinazione con ID (INT) '{dreamIdAsInt}' non trovata per l'utente '{user.Id}'.");
+                    var existingDreamIds = await _dbContext.DreamDestinations
+                                               .Where(d => d.UserId == user.Id)
+                                               .Select(d => d.Id) // Seleziona gli ID int
+                                               .ToListAsync();
+                    System.Diagnostics.Debug.WriteLine($"ID DreamDestination (int) esistenti per l'utente: [{string.Join(", ", existingDreamIds)}]");
+                    return new JsonResult(new { success = false, message = "Destinazione non trovata nella tua wishlist." });
+                }
+
+                System.Diagnostics.Debug.WriteLine($"Destinazione trovata nel DB. ID: {dreamItem.Id}, Città: {dreamItem.CityName}. Procedo con lo spostamento...");
+
+                // Creazione PlannedTrip (PlannedTrip.Id è string)
+                var plannedTrip = new PlannedTrip
+                {
+                    Id = Guid.NewGuid().ToString(), // Genera un ID stringa univoco
+                    UserId = user.Id,
+                    CityName = dreamItem.CityName,
+                    CountryName = dreamItem.CountryName,
+                    CountryCode = dreamItem.CountryCode,
+                    Notes = dreamItem.Note,
+                    Latitude = dreamItem.Latitude,
+                    Longitude = dreamItem.Longitude,
+                    ImageUrl = dreamItem.ImageUrl,
+                    StartDate = DateTime.UtcNow.Date.AddDays(30),
+                    EndDate = DateTime.UtcNow.Date.AddDays(37),
+                    CompletionPercentage = 0,
+                    CreatedAt = DateTime.UtcNow,
+                    Checklist = new List<ChecklistItem>()
+                };
+                System.Diagnostics.Debug.WriteLine($"Nuovo PlannedTrip creato. ID (string): {plannedTrip.Id}, Città: {plannedTrip.CityName}");
+
+                _dbContext.PlannedTrips.Add(plannedTrip);
+                System.Diagnostics.Debug.WriteLine("PlannedTrip aggiunto al DbContext.");
+
+                _dbContext.DreamDestinations.Remove(dreamItem);
+                System.Diagnostics.Debug.WriteLine("DreamDestination rimosso dal DbContext.");
+
+                int changes = await _dbContext.SaveChangesAsync();
+                System.Diagnostics.Debug.WriteLine($"SaveChangesAsync completato. Righe modificate: {changes}");
+
+                // Preparazione Risposta DTO
+                var plannedTripDto = new
+                {
+                    id = plannedTrip.Id, // Già stringa
+                    cityName = plannedTrip.CityName,
+                    countryName = plannedTrip.CountryName,
+                    countryCode = plannedTrip.CountryCode,
+                    startDate = plannedTrip.StartDate.ToString("yyyy-MM-dd"),
+                    endDate = plannedTrip.EndDate.ToString("yyyy-MM-dd"),
+                    completionPercentage = plannedTrip.CompletionPercentage,
+                    notes = plannedTrip.Notes,
+                    latitude = plannedTrip.Latitude,
+                    longitude = plannedTrip.Longitude,
+                    imageUrl = plannedTrip.ImageUrl,
+                    checklist = new List<object>() // Checklist è vuota all'inizio
+                };
+
+                System.Diagnostics.Debug.WriteLine($"Spostamento completato. Invio risposta di successo.");
+                System.Diagnostics.Debug.WriteLine($"--- [OnPostMoveToPlanningAsync] FINE ---");
+                return new JsonResult(new
+                {
+                    success = true,
+                    message = $"{plannedTrip.CityName} spostata correttamente in pianificazione.",
+                    plannedTrip = plannedTripDto
+                });
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[OnPostMoveToPlanningAsync] ECCEZIONE NON GESTITA: {ex.GetType().Name}: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"StackTrace: {ex.StackTrace}");
+                System.Diagnostics.Debug.WriteLine($"--- [OnPostMoveToPlanningAsync] FINE CON ERRORE ---");
+                return new JsonResult(new { success = false, message = "Si è verificato un errore interno durante lo spostamento." });
+            }
+        }
+
+
+        [HttpPost]
+        [IgnoreAntiforgeryToken]
+        public async Task<IActionResult> OnPostUpdatePlanDetailsAsync([FromBody] UpdatePlan request)
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine($"--- [OnPostUpdatePlanDetailsAsync] INIZIO ---");
+                System.Diagnostics.Debug.WriteLine($"Richiesta ricevuta. PlanId: '{request?.PlanId ?? "NULL"}', StartDate: '{request?.StartDate ?? "NULL"}', EndDate: '{request?.EndDate ?? "NULL"}', Notes: '{request?.Notes ?? "NULL"}', Checklist DTO Count: {request?.Checklist?.Count ?? 0}");
+
+                if (request == null || string.IsNullOrWhiteSpace(request.PlanId))
+                {
+                    System.Diagnostics.Debug.WriteLine("[OnPostUpdatePlanDetailsAsync] ERRORE: Richiesta o PlanId nullo/vuoto.");
+                    return new JsonResult(new { success = false, message = "ID piano non valido o mancante." });
+                }
+
+                var user = await _userManager.GetUserAsync(User);
+                if (user == null)
+                {
+                    System.Diagnostics.Debug.WriteLine("[OnPostUpdatePlanDetailsAsync] ERRORE: Utente non autenticato.");
+                    return new JsonResult(new { success = false, message = "Utente non autenticato." });
+                }
+                System.Diagnostics.Debug.WriteLine($"Utente autenticato: Id='{user.Id}', UserName='{user.UserName}'");
+
+                var requestedPlanId = request.PlanId.Trim();
+                System.Diagnostics.Debug.WriteLine($"Tentativo ricerca piano (Id = string) con ID: '{requestedPlanId}' per UserId: '{user.Id}'");
+
+                var plan = await _dbContext.PlannedTrips
+                    .Include(p => p.Checklist)
+                    .FirstOrDefaultAsync(p => p.Id == requestedPlanId && p.UserId == user.Id);
+
+                if (plan == null)
+                {
+                    var userPlans = await _dbContext.PlannedTrips.Where(p => p.UserId == user.Id).Select(p => p.Id).ToListAsync();
+                    System.Diagnostics.Debug.WriteLine($"[OnPostUpdatePlanDetailsAsync] ERRORE: Piano con ID '{requestedPlanId}' non trovato per l'utente '{user.Id}'. Piani (string ID) esistenti: [{string.Join(", ", userPlans)}]");
+                    return new JsonResult(new { success = false, message = $"Piano non trovato (ID: {requestedPlanId})" });
+                }
+
+                System.Diagnostics.Debug.WriteLine($"Piano trovato (ID string: {plan.Id}). Original StartDate: {plan.StartDate:O}, Original EndDate: {plan.EndDate:O}, Original Notes: '{plan.Notes}', Original Completion%: {plan.CompletionPercentage}, Stato EF Iniziale: {_dbContext.Entry(plan).State}. Checklist caricate: {plan.Checklist.Count}");
+
+                bool planModified = false; // Flag per tracciare modifiche dirette al piano
+                DateTime parsedStartDate, parsedEndDate;
+
+                // Confronta e aggiorna StartDate
+                if (DateTime.TryParse(request.StartDate, out parsedStartDate))
+                {
+                    if (plan.StartDate.Date != parsedStartDate.Date)
                     {
-                        return new JsonResult(new { success = false, message = "ID destinazione non valido" });
+                        plan.StartDate = parsedStartDate.Date; // Assegna solo la parte Date
+                        planModified = true;
+                        System.Diagnostics.Debug.WriteLine($"[Modifica Plan] StartDate AGGIORNATA a: {plan.StartDate:yyyy-MM-dd}");
                     }
-                
+                    else
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[Modifica Plan] StartDate (request: {request.StartDate}, parsata: {parsedStartDate.Date:yyyy-MM-dd}) NON DIVERSA da plan.StartDate ({plan.StartDate.Date:yyyy-MM-dd}). Nessun aggiornamento per StartDate.");
+                    }
+                }
+                else if (!string.IsNullOrEmpty(request.StartDate)) { System.Diagnostics.Debug.WriteLine($"[Modifica Plan] StartDate fornita ('{request.StartDate}') non è una data valida. Non aggiornata."); }
+
+
+                // Confronta e aggiorna EndDate
+                if (DateTime.TryParse(request.EndDate, out parsedEndDate))
+                {
+                    if (plan.EndDate.Date != parsedEndDate.Date)
+                    {
+                        plan.EndDate = parsedEndDate.Date; // Assegna solo la parte Date
+                        planModified = true;
+                        System.Diagnostics.Debug.WriteLine($"[Modifica Plan] EndDate AGGIORNATA a: {plan.EndDate:yyyy-MM-dd}");
+                    }
+                    else
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[Modifica Plan] EndDate (request: {request.EndDate}, parsata: {parsedEndDate.Date:yyyy-MM-dd}) NON DIVERSA da plan.EndDate ({plan.EndDate.Date:yyyy-MM-dd}). Nessun aggiornamento per EndDate.");
+                    }
+                }
+                else if (!string.IsNullOrEmpty(request.EndDate)) { System.Diagnostics.Debug.WriteLine($"[Modifica Plan] EndDate fornita ('{request.EndDate}') non è una data valida. Non aggiornata."); }
+
+
+                // Confronta e aggiorna Notes
+                string newNotes = request.Notes ?? ""; // Se request.Notes è null, confronta con stringa vuota
+                if (plan.Notes != newNotes)
+                {
+                    plan.Notes = newNotes;
+                    planModified = true;
+                    System.Diagnostics.Debug.WriteLine($"[Modifica Plan] Notes AGGIORNATE. Nuove Notes: '{plan.Notes}'");
+                } else { System.Diagnostics.Debug.WriteLine($"[Modifica Plan] Notes NON DIVERSE. Request Notes: '{newNotes}', Plan Notes Correnti: '{plan.Notes}'"); }
+
+                // Gestione Checklist
+                List<ChecklistItem> itemsToRemove = new List<ChecklistItem>(plan.Checklist);
+                List<ChecklistItem> itemsToAdd = new List<ChecklistItem>();
+                List<ChecklistItemDto> validDtosForPercentage = new List<ChecklistItemDto>();
+
+                if (request.Checklist != null)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[Modifica Checklist] Checklist fornita nel DTO ({request.Checklist.Count} elementi).");
+                    foreach (var itemDto in request.Checklist)
+                    {
+                        if (!string.IsNullOrWhiteSpace(itemDto.Title))
+                        {
+                            var newItem = new ChecklistItem { PlannedTripId = plan.Id, Title = itemDto.Title, Category = itemDto.Category ?? "other", DueDate = itemDto.DueDate, IsCompleted = itemDto.IsCompleted };
+                            itemsToAdd.Add(newItem);
+                            validDtosForPercentage.Add(itemDto);
+                        } else { System.Diagnostics.Debug.WriteLine("[Modifica Checklist] Saltato DTO checklist con titolo vuoto."); }
+                    }
+                    if (itemsToRemove.Any()) { _dbContext.ChecklistItems.RemoveRange(itemsToRemove); System.Diagnostics.Debug.WriteLine($"[Modifica Checklist] Marcati {itemsToRemove.Count} checklist items ESISTENTI per RIMOZIONE."); }
+                    else { System.Diagnostics.Debug.WriteLine("[Modifica Checklist] Nessun checklist item esistente da rimuovere."); }
+                    if (itemsToAdd.Any()) { _dbContext.ChecklistItems.AddRange(itemsToAdd); System.Diagnostics.Debug.WriteLine($"[Modifica Checklist] Marcati {itemsToAdd.Count} checklist items NUOVI per AGGIUNTA."); }
+                    else { System.Diagnostics.Debug.WriteLine("[Modifica Checklist] Nessun checklist item nuovo valido da aggiungere."); }
+                }
+                else
+                {
+                    System.Diagnostics.Debug.WriteLine("[Modifica Checklist] Checklist NON fornita nella richiesta (null). Rimuovo solo gli esistenti.");
+                    if (itemsToRemove.Any()) { _dbContext.ChecklistItems.RemoveRange(itemsToRemove); System.Diagnostics.Debug.WriteLine($"[Modifica Checklist] Marcati {itemsToRemove.Count} checklist items ESISTENTI per RIMOZIONE."); }
+                    else { System.Diagnostics.Debug.WriteLine("[Modifica Checklist] Nessun checklist item esistente da rimuovere."); }
+                    validDtosForPercentage.Clear();
+                }
+
+                int newPercentage = validDtosForPercentage.Any() ? (int)Math.Round((double)validDtosForPercentage.Count(dto => dto.IsCompleted) * 100 / validDtosForPercentage.Count) : 0;
+                if (plan.CompletionPercentage != newPercentage)
+                {
+                    plan.CompletionPercentage = newPercentage;
+                    planModified = true; // Il piano è stato modificato anche per la percentuale
+                    System.Diagnostics.Debug.WriteLine($"[Modifica Plan] CompletionPercentage AGGIORNATA a: {plan.CompletionPercentage}%");
+                } else { System.Diagnostics.Debug.WriteLine($"[Modifica Plan] CompletionPercentage non cambiata ({plan.CompletionPercentage}%).");}
+
+
+                System.Diagnostics.Debug.WriteLine($"--- [UpdatePlanDetails] VERIFICA PRIMA DI SAVE ---");
+                System.Diagnostics.Debug.WriteLine($"Flag 'planModified': {planModified}");
+                var planEntryState = _dbContext.Entry(plan).State;
+                System.Diagnostics.Debug.WriteLine($"Stato entità Plan ('{plan.Id}'): {planEntryState}");
+
+                // Forza lo stato a Modified se il nostro flag planModified è true ma EF non l'ha rilevato
+                // (potrebbe succedere se l'unica modifica fosse alla CompletionPercentage e EF non la tracciasse come modifica all'entità Plan)
+                if (planModified && planEntryState == EntityState.Unchanged) {
+                     _dbContext.Entry(plan).State = EntityState.Modified;
+                     planEntryState = _dbContext.Entry(plan).State; // Rileggi lo stato
+                     System.Diagnostics.Debug.WriteLine($"Stato entità Plan FORZATO a Modified. Nuovo stato: {planEntryState}");
+                }
+
+
+                var trackedChecklistItems = _dbContext.ChangeTracker.Entries<ChecklistItem>().Where(e => e.Entity.PlannedTripId == plan.Id).ToList();
+                System.Diagnostics.Debug.WriteLine($"Elementi Checklist tracciati da EF ({trackedChecklistItems.Count}) per Plan ID '{plan.Id}':");
+                bool checklistChangesDetectedInTracker = false;
+                foreach(var entry in trackedChecklistItems) {
+                    System.Diagnostics.Debug.WriteLine($"  - '{entry.Entity.Title}' (ID DB: {entry.Entity.Id}) -> Stato EF: {entry.State}");
+                    if (entry.State == EntityState.Added || entry.State == EntityState.Deleted || entry.State == EntityState.Modified) {
+                        checklistChangesDetectedInTracker = true;
+                    }
+                }
+
+                bool hasPendingChanges = _dbContext.ChangeTracker.HasChanges();
+                System.Diagnostics.Debug.WriteLine($"DbContext.ChangeTracker.HasChanges(): {hasPendingChanges}");
+
+                if (!hasPendingChanges && (planModified || checklistChangesDetectedInTracker)) {
+                     System.Diagnostics.Debug.WriteLine("WARN: Modifiche rilevate manualmente (planModified o checklistChangesDetectedInTracker) ma HasChanges() è false! Questo non dovrebbe accadere se lo stato del piano è Modified.");
+                }
+
+
+                int changes = 0;
+                if (hasPendingChanges)
+                {
                     try
                     {
-                        var user = await _userManager.GetUserAsync(User);
-                        if (user == null)
-                        {
-                            return new JsonResult(new { success = false, message = "Utente non autenticato" });
-                        }
-                
-                        // Converti l'ID da string a int se necessario
-                        if (!int.TryParse(request.DreamId, out int dreamId))
-                        {
-                            return new JsonResult(new { success = false, message = "Formato ID non valido" });
-                        }
-                
-                        // Ottieni la destinazione wishlist
-                        var dreamItem = await _dbContext.DreamDestinations
-                            .FirstOrDefaultAsync(d => d.Id == dreamId && d.UserId == user.Id);
-                
-                        if (dreamItem == null)
-                        {
-                            return new JsonResult(new { success = false, message = "Destinazione non trovata" });
-                        }
-                
-                        // Crea una nuova entità per il viaggio pianificato
-                        var plannedTrip = new PlannedTrip
-                        {
-                            UserId = user.Id,
-                            CityName = dreamItem.CityName,
-                            CountryName = dreamItem.CountryName,
-                            CountryCode = dreamItem.CountryCode,
-                            Notes = dreamItem.Note,
-                            Latitude = dreamItem.Latitude,
-                            Longitude = dreamItem.Longitude,
-                            ImageUrl = dreamItem.ImageUrl,
-                            StartDate = DateTime.UtcNow.AddDays(30), // Default a 30 giorni da oggi
-                            EndDate = DateTime.UtcNow.AddDays(37),   // Default a 37 giorni da oggi
-                            CompletionPercentage = 0,
-                            CreatedAt = DateTime.UtcNow
-                        };
-                
-                        // Salva nel database
-                        _dbContext.PlannedTrips.Add(plannedTrip);
-                        _dbContext.DreamDestinations.Remove(dreamItem);
-                        await _dbContext.SaveChangesAsync();
-                
-                        return new JsonResult(new { 
-                            success = true,
-                            plannedTrip = new {
-                                id = plannedTrip.Id,
-                                cityName = plannedTrip.CityName,
-                                countryName = plannedTrip.CountryName,
-                                countryCode = plannedTrip.CountryCode,
-                                startDate = plannedTrip.StartDate,
-                                endDate = plannedTrip.EndDate,
-                                completionPercentage = plannedTrip.CompletionPercentage,
-                                notes = plannedTrip.Notes,
-                                latitude = plannedTrip.Latitude,
-                                longitude = plannedTrip.Longitude,
-                                imageUrl = plannedTrip.ImageUrl
-                            }
-                        });
-                    }
-                    catch (Exception ex)
-                    {
-                        System.Diagnostics.Debug.WriteLine($"Eccezione in MoveToPlanningAsync: {ex.Message}");
-                        return new JsonResult(new { success = false, message = ex.Message });
-                    }
-                }  
-                
-                [HttpPost]
-            [IgnoreAntiforgeryToken]
-            public async Task<IActionResult> OnPostUpdatePlanDetailsAsync([FromBody] UpdatePlan request)
-            {
-                try
-                {
-                    if (string.IsNullOrEmpty(request?.PlanId))
-                    {
-                        return new JsonResult(new { success = false, message = "ID piano non valido" });
-                    }
-            
-                    var user = await _userManager.GetUserAsync(User);
-                    if (user == null)
-                    {
-                        return new JsonResult(new { success = false, message = "Utente non autenticato" });
-                    }
-            
-                    // Converti l'ID da string a int se necessario
-                    if (!int.TryParse(request.PlanId, out int planId))
-                    {
-                        return new JsonResult(new { success = false, message = "Formato ID non valido" });
-                    }
-            
-                    // Trova il viaggio pianificato nel database
-                    var plan = await _dbContext.PlannedTrips
-                        .FirstOrDefaultAsync(p => p.Id == planId && p.UserId == user.Id);
-            
-                    if (plan == null)
-                    {
-                        return new JsonResult(new { success = false, message = "Piano non trovato" });
-                    }
-            
-                    // Aggiorna i campi
-                    if (!string.IsNullOrEmpty(request.StartDate) && DateTime.TryParse(request.StartDate, out DateTime startDate))
-                    {
-                        plan.StartDate = startDate;
-                    }
-            
-                    if (!string.IsNullOrEmpty(request.EndDate) && DateTime.TryParse(request.EndDate, out DateTime endDate))
-                    {
-                        plan.EndDate = endDate;
-                    }
-            
-                    plan.Notes = request.Notes ?? plan.Notes;
-            
-                    // Se hai una tabella specifica per la checklist
-                    if (request.Checklist != null)
-                    {
-                        // Aggiorna la percentuale di completamento
-                        plan.CompletionPercentage = request.CompletionPercentage ?? plan.CompletionPercentage;
+                        System.Diagnostics.Debug.WriteLine("Tentativo di eseguire SaveChangesAsync...");
+                        changes = await _dbContext.SaveChangesAsync();
+                        System.Diagnostics.Debug.WriteLine($"SaveChangesAsync ESEGUITO. Righe modificate nel DB: {changes}");
                         
-                        // In una implementazione completa, qui dovresti aggiornare anche gli elementi della checklist
-                        // ad esempio:
-                        // await UpdateChecklistItems(planId, request.Checklist);
-                    }
-            
-                    // Salva le modifiche
-                    await _dbContext.SaveChangesAsync();
-            
-                    return new JsonResult(new { 
-                        success = true,
-                        updatedPlan = new {
-                            id = plan.Id,
-                            startDate = plan.StartDate,
-                            endDate = plan.EndDate,
-                            notes = plan.Notes,
-                            completionPercentage = plan.CompletionPercentage
-                            // Includi altri campi se necessario
+                        var postSaveState = _dbContext.Entry(plan).State;
+                        System.Diagnostics.Debug.WriteLine($"Stato entità Plan DOPO SaveChanges: {postSaveState}");
+                        if (postSaveState != EntityState.Unchanged && changes > 0) System.Diagnostics.Debug.WriteLine("WARN: Stato Plan non è Unchanged dopo un salvataggio che ha affetto righe!");
+                        
+                        var postSaveChecklistEntries = _dbContext.ChangeTracker.Entries<ChecklistItem>()
+                                                        .Where(e => e.Entity.PlannedTripId == plan.Id && e.State != EntityState.Detached)
+                                                        .ToList();
+                        System.Diagnostics.Debug.WriteLine($"Numero ChecklistItems tracciati DOPO SaveChanges: {postSaveChecklistEntries.Count}");
+                        foreach(var entry in postSaveChecklistEntries) {
+                            System.Diagnostics.Debug.WriteLine($"  - ChecklistItem ID {entry.Entity.Id} (titolo: '{entry.Entity.Title}') -> Stato EF: {entry.State}");
                         }
-                    });
+                    }
+                    catch (DbUpdateException dbEx) { /* ... gestione errore ... */ return new JsonResult(new { success = false, message = "Errore database." }); }
+                    catch (Exception saveEx) { /* ... gestione errore ... */ return new JsonResult(new { success = false, message = "Errore salvataggio." }); }
                 }
-                catch (Exception ex)
+                else
                 {
-                    System.Diagnostics.Debug.WriteLine($"Eccezione in UpdatePlanDetailsAsync: {ex.Message}");
-                    return new JsonResult(new { success = false, message = ex.Message });
+                    System.Diagnostics.Debug.WriteLine("Nessuna modifica rilevata dal Change Tracker, SaveChangesAsync NON eseguito.");
+                    changes = 0;
                 }
-            }
-        
-        [HttpPost]
-        [IgnoreAntiforgeryToken]
-        public IActionResult OnPostRemovePlanAsync([FromBody] RemovePlan request)
-        {
-            try
-            {
-                // In un'implementazione reale, qui rimuoveresti l'elemento dal database
-                return new JsonResult(new { success = true });
+
+                System.Diagnostics.Debug.WriteLine($"[Risposta] Tentativo di rileggere finalPlanState con ID: {requestedPlanId}");
+                var finalPlanState = await _dbContext.PlannedTrips
+                   .Include(p => p.Checklist)
+                   .AsNoTracking()
+                   .FirstOrDefaultAsync(p => p.Id == requestedPlanId);
+
+                if (finalPlanState == null) { /* ... errore ... */ return new JsonResult(new { success = false, message = "Errore recupero stato finale." }); }
+                System.Diagnostics.Debug.WriteLine($"[Risposta] finalPlanState recuperato. Notes: '{finalPlanState.Notes}', Checklist è null? {finalPlanState.Checklist == null}");
+
+                List<ChecklistItemDto> finalChecklistDto = new List<ChecklistItemDto>();
+                if (finalPlanState.Checklist != null)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[Risposta] finalPlanState.Checklist NON è null. Elementi: {finalPlanState.Checklist.Count}");
+                    try {
+                        finalChecklistDto = finalPlanState.Checklist.OrderBy(c => c.Id)
+                            .Select(c => new ChecklistItemDto { Id = c.Id.ToString(), Title = c.Title, Category = c.Category, DueDate = c.DueDate, IsCompleted = c.IsCompleted }).ToList();
+                        System.Diagnostics.Debug.WriteLine($"[Risposta] finalChecklistDto mappata: {finalChecklistDto.Count} elementi.");
+                    } catch (Exception linqEx) { System.Diagnostics.Debug.WriteLine($"[Risposta] ECCEZIONE LINQ: {linqEx.Message}"); }
+                } else { System.Diagnostics.Debug.WriteLine($"[Risposta] ATTENZIONE: finalPlanState.Checklist è NULL."); }
+
+                System.Diagnostics.Debug.WriteLine($"Invio risposta. Modifiche DB: {changes > 0}.");
+                System.Diagnostics.Debug.WriteLine($"--- [OnPostUpdatePlanDetailsAsync] FINE ---");
+
+                return new JsonResult(new
+                {
+                    success = true,
+                    message = changes > 0 ? "Modifiche salvate." : "Nessuna modifica da salvare.",
+                    updatedPlan = new { id = finalPlanState.Id, startDate = finalPlanState.StartDate.ToString("yyyy-MM-dd"), endDate = finalPlanState.EndDate.ToString("yyyy-MM-dd"), notes = finalPlanState.Notes, completionPercentage = finalPlanState.CompletionPercentage, checklist = finalChecklistDto }
+                });
             }
             catch (Exception ex)
             {
-                return new JsonResult(new { success = false, message = ex.Message });
+                System.Diagnostics.Debug.WriteLine($"ECCEZIONE BLOCCO PRINCIPALE: {ex.Message}\n{ex.StackTrace}");
+                return new JsonResult(new { success = false, message = "Errore server." });
             }
         }
 
         [HttpPost]
         [IgnoreAntiforgeryToken]
-        public IActionResult OnPostRemoveDreamAsync([FromBody] RemovePlan request)
+        public async Task<IActionResult> OnPostRemovePlanAsync([FromBody] RemovePlan request) // Usa il modello corretto
         {
             try
             {
-                // In un'implementazione reale, qui rimuoveresti l'elemento dal database
-                return new JsonResult(new { success = true });
-            }
-            catch (Exception ex)
-            {
-                return new JsonResult(new { success = false, message = ex.Message });
-            }
-        }
-
-        [HttpPost]
-        [IgnoreAntiforgeryToken]
-        public async Task<IActionResult> OnPostMarkAsVisitedAsync([FromBody] MarkAsVisited request)
-        {
-            try
-            {
-                System.Diagnostics.Debug.WriteLine($"MarkAsVisitedAsync chiamato con planId: {request?.PlanId}");
-
-                if (string.IsNullOrEmpty(request?.PlanId))
+                System.Diagnostics.Debug.WriteLine($"OnPostRemovePlanAsync chiamato con PlanId (string): {request?.PlanId}");
+                if (string.IsNullOrWhiteSpace(request?.PlanId))
                 {
+                    System.Diagnostics.Debug.WriteLine("ERRORE: ID piano non valido.");
                     return new JsonResult(new { success = false, message = "ID piano non valido" });
                 }
 
                 var user = await _userManager.GetUserAsync(User);
                 if (user == null)
                 {
+                    System.Diagnostics.Debug.WriteLine("ERRORE: Utente non autenticato.");
                     return new JsonResult(new { success = false, message = "Utente non autenticato" });
                 }
 
-                // Simulazione: indicare che l'operazione è stata completata con successo
-                // In un'implementazione reale, qui chiameresti i metodi appropriati di _dreamService e _countryService
-                System.Diagnostics.Debug.WriteLine($"Simulazione: Viaggio {request.PlanId} contrassegnato come visitato");
+                var planIdToRemove = request.PlanId.Trim(); // ID string
 
-                // Ritorna una risposta di successo simulata
+                // Trova il piano (confronto string)
+                var plan = await _dbContext.PlannedTrips
+                    .FirstOrDefaultAsync(p => p.Id == planIdToRemove && p.UserId == user.Id); // Confronto string
+
+                if (plan == null)
+                {
+                    System.Diagnostics.Debug.WriteLine($"ERRORE: Piano con ID '{planIdToRemove}' non trovato.");
+                    return new JsonResult(new { success = false, message = "Piano non trovato" });
+                }
+                System.Diagnostics.Debug.WriteLine($"Piano trovato (ID: {plan.Id}). Procedo con rimozione.");
+
+                // Rimuovi gli elementi della checklist associati (ChecklistItem.PlannedTripId è string)
+                var checklistItems = await _dbContext.ChecklistItems
+                    .Where(c => c.PlannedTripId == plan.Id) // Filtra per ID string del piano
+                    .ToListAsync();
+
+                if (checklistItems.Any())
+                {
+                    _dbContext.ChecklistItems.RemoveRange(checklistItems);
+                    System.Diagnostics.Debug.WriteLine($"Rimossi {checklistItems.Count} elementi checklist associati.");
+                }
+
+                // Rimuovi il piano
+                _dbContext.PlannedTrips.Remove(plan);
+                System.Diagnostics.Debug.WriteLine($"Piano (ID: {plan.Id}) rimosso dal DbContext.");
+
+                await _dbContext.SaveChangesAsync();
+                System.Diagnostics.Debug.WriteLine($"Rimozione piano completata.");
+
+                return new JsonResult(new { success = true, message = "Piano eliminato con successo." });
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Eccezione in RemovePlanAsync: {ex.Message}");
+                return new JsonResult(new { success = false, message = "Errore durante l'eliminazione del piano." });
+            }
+        }
+
+        // --- OnPostRemoveDreamAsync (Aggiornato per ID int di DreamDestination) ---
+        [HttpPost]
+        [IgnoreAntiforgeryToken]
+        public async Task<IActionResult> OnPostRemoveDreamAsync([FromBody] RemoveDreamRequest request) // Usa il modello corretto
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine($"OnPostRemoveDreamAsync chiamato con DreamId (string from JS): {request?.DreamId}");
+                if (string.IsNullOrWhiteSpace(request?.DreamId))
+                {
+                    System.Diagnostics.Debug.WriteLine("ERRORE: ID destinazione non valido.");
+                    return new JsonResult(new { success = false, message = "ID destinazione non valido" });
+                }
+
+                var user = await _userManager.GetUserAsync(User);
+                if (user == null)
+                {
+                    System.Diagnostics.Debug.WriteLine("ERRORE: Utente non autenticato.");
+                    return new JsonResult(new { success = false, message = "Utente non autenticato" });
+                }
+
+                // CORREZIONE: Converti ID stringa in INT per la query
+                if (!int.TryParse(request.DreamId.Trim(), out int dreamIdAsInt))
+                {
+                    System.Diagnostics.Debug.WriteLine($"ERRORE: Formato ID destinazione non valido ('{request.DreamId}').");
+                    return new JsonResult(new { success = false, message = "Formato ID destinazione non valido." });
+                }
+                System.Diagnostics.Debug.WriteLine($"Tentativo rimozione DreamDestination (ID int: {dreamIdAsInt})");
+
+                // Trova il sogno (confronto int)
+                var dream = await _dbContext.DreamDestinations
+                    .FirstOrDefaultAsync(d => d.Id == dreamIdAsInt && d.UserId == user.Id); // Confronto int
+
+                if (dream == null)
+                {
+                    System.Diagnostics.Debug.WriteLine($"ERRORE: Destinazione con ID (int) {dreamIdAsInt} non trovata.");
+                    return new JsonResult(new { success = false, message = "Destinazione non trovata" });
+                }
+                System.Diagnostics.Debug.WriteLine($"Destinazione trovata (ID: {dream.Id}). Procedo con rimozione.");
+
+                // Rimuovi la destinazione dalla wishlist
+                _dbContext.DreamDestinations.Remove(dream);
+                System.Diagnostics.Debug.WriteLine($"Destinazione (ID: {dream.Id}) rimossa dal DbContext.");
+
+                await _dbContext.SaveChangesAsync();
+                System.Diagnostics.Debug.WriteLine($"Rimozione destinazione completata.");
+
+                return new JsonResult(new { success = true, message = "Destinazione rimossa con successo." });
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Eccezione in RemoveDreamAsync: {ex.Message}");
+                return new JsonResult(new { success = false, message = "Errore durante la rimozione della destinazione." });
+            }
+        }
+
+        // --- OnPostMarkAsVisitedAsync (Aggiornato per ID string di PlannedTrip) ---
+        [HttpPost]
+        [IgnoreAntiforgeryToken]
+        public async Task<IActionResult> OnPostMarkAsVisitedAsync([FromBody] MarkAsVisited request) // Usa il modello corretto
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine($"MarkAsVisitedAsync chiamato con PlanId (string): {request?.PlanId}");
+
+                if (string.IsNullOrWhiteSpace(request?.PlanId))
+                {
+                    System.Diagnostics.Debug.WriteLine("ERRORE: ID piano non valido.");
+                    return new JsonResult(new { success = false, message = "ID piano non valido" });
+                }
+
+                var user = await _userManager.GetUserAsync(User);
+                if (user == null)
+                {
+                    System.Diagnostics.Debug.WriteLine("ERRORE: Utente non autenticato.");
+                    return new JsonResult(new { success = false, message = "Utente non autenticato" });
+                }
+
+                var planIdToMark = request.PlanId.Trim(); // ID string
+
+                // Recupera il piano dal database (confronto string)
+                var plan = await _dbContext.PlannedTrips
+                    .FirstOrDefaultAsync(p => p.Id == planIdToMark && p.UserId == user.Id); // Confronto string
+
+                if (plan == null)
+                {
+                    System.Diagnostics.Debug.WriteLine($"ERRORE: Piano con ID '{planIdToMark}' non trovato.");
+                    return new JsonResult(new { success = false, message = "Piano di viaggio non trovato" });
+                }
+                System.Diagnostics.Debug.WriteLine($"Piano trovato (ID: {plan.Id}). Procedo con Marcatura Visitato.");
+
+                // Trova il paese corrispondente nel database
+                var country = await _dbContext.Countries
+                    .FirstOrDefaultAsync(c => c.Name == plan.CountryName || c.Code == plan.CountryCode);
+
+                if (country == null)
+                {
+                    System.Diagnostics.Debug.WriteLine($"ERRORE: Paese '{plan.CountryName}' (Code: '{plan.CountryCode}') non trovato nel DB.");
+                    // Potresti voler gestire questo caso diversamente, ma per ora restituisci errore
+                    return new JsonResult(new { success = false, message = "Paese di destinazione non trovato nel database. Impossibile segnare come visitato." });
+                }
+                System.Diagnostics.Debug.WriteLine($"Paese trovato (ID: {country.Id}, Name: {country.Name}).");
+
+                // Verifica se l'utente ha già visitato questo paese
+                var existingVisit = await _dbContext.VisitedCountries
+                    .FirstOrDefaultAsync(vc => vc.UserId == user.Id && vc.CountryId == country.Id);
+
+                if (existingVisit == null)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Nessuna visita esistente per Paese ID {country.Id}. Aggiungo nuova VisitedCountry.");
+                    // Crea un nuovo record di visita
+                    var visitedCountry = new VisitedCountry
+                    {
+                        UserId = user.Id,
+                        CountryId = country.Id,
+                        VisitDate = plan.EndDate // Usa la data di fine viaggio come data della visita
+                    };
+                    _dbContext.VisitedCountries.Add(visitedCountry);
+                }
+                else
+                {
+                    System.Diagnostics.Debug.WriteLine($"Visita già esistente per Paese ID {country.Id}. Non aggiungo duplicato.");
+                    // Potresti aggiornare la VisitDate se lo desideri: existingVisit.VisitDate = plan.EndDate;
+                }
+
+                // Crea opzionalmente un TravelJournal
+                if (!string.IsNullOrEmpty(plan.Notes))
+                {
+                    System.Diagnostics.Debug.WriteLine($"Note presenti nel piano. Aggiungo/Aggiorno TravelJournal.");
+                    // Verifica se esiste già un diario per questo utente/paese
+                    var existingJournal = await _dbContext.TravelJournals
+                        .FirstOrDefaultAsync(tj => tj.UserId == user.Id && tj.CountryId == country.Id);
+
+                    if (existingJournal == null)
+                    {
+                        var travelJournal = new TravelJournal
+                        {
+                            UserId = user.Id,
+                            CountryId = country.Id,
+                            Notes = plan.Notes,
+                            VisitDate = plan.EndDate,
+                            Rating = 5 // Rating di default
+                        };
+                        _dbContext.TravelJournals.Add(travelJournal);
+                        System.Diagnostics.Debug.WriteLine($"Nuovo TravelJournal creato.");
+                    }
+                    else
+                    {
+                        // Aggiorna il diario esistente (es. aggiungi note o aggiorna data)
+                        existingJournal.Notes += $"\n\nNote aggiunte dal viaggio del {plan.EndDate:dd/MM/yyyy}:\n{plan.Notes}";
+                        existingJournal.VisitDate = plan.EndDate; // Aggiorna all'ultima data
+                        System.Diagnostics.Debug.WriteLine($"TravelJournal esistente aggiornato.");
+                    }
+
+                }
+
+                // Rimuovi gli elementi della checklist associati al piano
+                var checklistItems = await _dbContext.ChecklistItems
+                    .Where(c => c.PlannedTripId == plan.Id) // Filtra per ID string piano
+                    .ToListAsync();
+
+                if (checklistItems.Any())
+                {
+                    _dbContext.ChecklistItems.RemoveRange(checklistItems);
+                    System.Diagnostics.Debug.WriteLine($"Rimossi {checklistItems.Count} elementi checklist associati.");
+                }
+
+                // Rimuovi il piano
+                _dbContext.PlannedTrips.Remove(plan);
+                System.Diagnostics.Debug.WriteLine($"Piano (ID: {plan.Id}) rimosso dal DbContext.");
+
+                // Salva tutte le modifiche al database
+                await _dbContext.SaveChangesAsync();
+                System.Diagnostics.Debug.WriteLine($"Marcatura visitato completata.");
+
                 return new JsonResult(new
                 {
                     success = true,
-                    message = "La funzione è in fase di implementazione. Le modifiche saranno visibili al prossimo aggiornamento."
+                    message = $"{plan.CityName}, {plan.CountryName} contrassegnata come visitata!",
+                    visitedCountry = new // DTO della visita (opzionale)
+                    {
+                        id = country.Id,
+                        name = country.Name,
+                        code = country.Code,
+                        visitDate = plan.EndDate.ToString("yyyy-MM-dd")
+                    }
                 });
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Eccezione in MarkAsVisitedAsync: {ex.Message}");
-                return new JsonResult(new { success = false, message = ex.Message });
+                System.Diagnostics.Debug.WriteLine($"Eccezione in MarkAsVisitedAsync: {ex.Message}\nStackTrace: {ex.StackTrace}");
+                return new JsonResult(new { success = false, message = "Errore durante la marcatura come visitato." });
             }
-        }        // Classi per i modelli di richieste e form
+        }
+
+
+        // --- Classi Modello per le Richieste JSON ---
+        // (Assicurati che siano definite UNA SOLA VOLTA nel file)
+
+        // Per spostare da Wishlist (int ID) a Planning (string ID)
         public class MoveToPlanning
         {
-            public string? DreamId { get; set; }
+            public string? DreamId { get; set; } // Riceve ID int come stringa
         }
 
+        // Per marcare un piano (string ID) come visitato
         public class MarkAsVisited
         {
-            public string? PlanId { get; set; }
+            public string? PlanId { get; set; } // Riceve ID stringa
         }
 
+        // Per rimuovere un piano (string ID)
         public class RemovePlan
         {
-            public string? PlanId { get; set; }
+            public string? PlanId { get; set; } // Riceve ID stringa
         }
 
-                         public class UpdatePlan
-            {
-                public string? PlanId { get; set; }
-                public string? Notes { get; set; }
-                public string? StartDate { get; set; }
-                public string? EndDate { get; set; }
-                public int? CompletionPercentage { get; set; }
-                public List<ChecklistItem>? Checklist { get; set; }
-            }
+        // Per rimuovere un sogno dalla wishlist (int ID)
+        public class RemoveDreamRequest // Nome specifico
+        {
+            public string? DreamId { get; set; } // Riceve ID int come stringa
+        }
 
+        // Per aggiornare i dettagli di un piano (string ID)
+        public class UpdatePlan
+        {
+            public string? PlanId { get; set; } // Riceve ID stringa
+            public string? Notes { get; set; }
+            public string? StartDate { get; set; } // Riceve come stringa
+            public string? EndDate { get; set; }   // Riceve come stringa
+            // CompletionPercentage non è più necessaria qui, viene calcolata dal server
+            public List<ChecklistItemDto>? Checklist { get; set; } // Usa DTO
+        }
+
+        // DTO per ChecklistItem (ricevuto/inviato via JSON)
+        public class ChecklistItemDto
+        {
+            // L'ID ricevuto dal client può essere null (nuovo) o una stringa (esistente o temporaneo client)
+            // L'ID inviato nella risposta sarà l'ID int del DB convertito in stringa.
+            public string? Id { get; set; }
+            public string Title { get; set; } = string.Empty;
+            public string? Category { get; set; }
+            public DateTime? DueDate { get; set; }
+            public bool IsCompleted { get; set; }
+        }
+
+        // Modello per il Form Wishlist (invariato)
         public class WishlistItemViewModel
         {
             [Required(ErrorMessage = "Seleziona una città")]
@@ -997,6 +976,7 @@ namespace WanderGlobe.Pages
             public List<CityInfo> AvailableCities { get; set; } = new List<CityInfo>();
         }
 
+        // Helper per il dropdown città (invariato)
         public class CityInfo
         {
             public string? Name { get; set; }
@@ -1004,123 +984,66 @@ namespace WanderGlobe.Pages
             public string? CountryCode { get; set; }
         }
 
-    public async Task<IActionResult> OnPostMarkAsVisitedAsync(int destinationId)
-    {
-        if (User?.Identity?.IsAuthenticated != true)
-        {
-            return RedirectToPage("/Account/Login", new { area = "Identity" });
-        }
 
-            var userId = _userManager.GetUserId(User);
-            
+        // --- Altri metodi helper (GetAvailableCapitalsAsync, SaveWishlistImageAsync, BuildPrompt, ecc.) ---
+        // ... (assicurati che esistano e siano corretti) ...
+        // Metodo ausiliario per salvare l'immagine della wishlist
+        private async Task<string?> SaveWishlistImageAsync(IFormFile image)
+        {
+            if (image == null || image.Length == 0)
+                return null;
+
             try
             {
-                // Prima otteniamo i dettagli della destinazione
-                var userWishlist = await _dreamService.GetUserWishlistAsync(userId);
-                var wishlistItem = userWishlist.FirstOrDefault(d => d.Id == destinationId);
-                
-                if (wishlistItem == null)
+                string uploadsFolder = Path.Combine(_webHostEnvironment.WebRootPath, "images", "wishlist");
+                Directory.CreateDirectory(uploadsFolder); // Crea se non esiste
+
+                string uniqueFileName = $"{Guid.NewGuid()}{Path.GetExtension(image.FileName)}";
+                string filePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+                using (var fileStream = new FileStream(filePath, FileMode.Create))
                 {
-                    TempData["ErrorMessage"] = "Destinazione non trovata nella wishlist.";
-                    return RedirectToPage();
+                    await image.CopyToAsync(fileStream);
                 }
-                
-                // Cerchiamo la città nel database
-                var cities = await _cityService.GetAllCitiesAsync();
-                var city = cities.FirstOrDefault(c => 
-                    c.Name.Equals(wishlistItem.CityName, StringComparison.OrdinalIgnoreCase) &&
-                    c.Country.Name.Equals(wishlistItem.CountryName, StringComparison.OrdinalIgnoreCase));
-                
-                if (city == null)
-                {
-                    TempData["ErrorMessage"] = $"Non è stato possibile trovare la città {wishlistItem.CityName} nel database.";
-                    return RedirectToPage();
-                }
-                
-                // Segna la città come visitata e rimuovila dalla wishlist
-                var result = await _cityService.MarkCityAsVisitedAsync(city.Id, userId, DateTime.Now);
-                
-                if (result)
-                {
-                    TempData["SuccessMessage"] = $"La città {wishlistItem.CityName} è stata segnata come visitata e rimossa dalla wishlist.";
-                }
-                else
-                {
-                    TempData["ErrorMessage"] = "Si è verificato un errore durante il salvataggio.";
-                }
+
+                return $"/images/wishlist/{uniqueFileName}"; // Restituisce percorso relativo web
             }
             catch (Exception ex)
             {
-                TempData["ErrorMessage"] = $"Si è verificato un errore: {ex.Message}";
+                System.Diagnostics.Debug.WriteLine($"Errore salvataggio immagine wishlist: {ex.Message}");
+                return null; // O restituisci un'immagine di default
             }
-            
-            return RedirectToPage();
         }
 
-        [HttpGet]
-        [IgnoreAntiforgeryToken]
-        public async Task<IActionResult> OnGetDiagnosticAsync()
+        private async Task<List<CityInfo>> GetAvailableCapitalsAsync()
         {
             try
             {
-                // Recupera tutte le città e i paesi
-                var userId = _userManager.GetUserId(User);
-                
-                // Otteni tutti i paesi
-                var allCountries = await _countryService.GetAllCountriesAsync();
-                
-                // Ottieni tutte le città
-                var allCities = await _dbContext.Cities
-                    .Include(c => c.Country)
-                    .ToListAsync();
+                // Ottieni tutte le città che sono capitali, includendo il paese
+                var capitalCities = await _dbContext.Cities
+                   .Where(c => c.IsCapital == true) // Filtra per capitali
+                   .Include(c => c.Country) // Carica i dati del paese associato
+                   .OrderBy(c => c.Country.Name).ThenBy(c => c.Name) // Ordina per paese, poi per città
+                   .ToListAsync();
 
-                // Verifica l'integrità della relazione
-                var citiesWithoutCountry = allCities.Count(c => c.Country == null);
-                
-                // Ottiene il numero di città per paese
-                var citiesPerCountry = allCities
-                    .Where(c => c.Country != null)
-                    .GroupBy(c => c.Country.Name)
-                    .Select(g => new { Country = g.Key, Count = g.Count() })
-                    .OrderByDescending(x => x.Count)
-                    .Take(10)
-                    .ToList();
+                // Mappa le città trovate nel formato CityInfo
+                var cityInfoList = capitalCities
+                   .Where(city => city.Country != null) // Assicurati che il paese esista
+                   .Select(city => new CityInfo
+                   {
+                       Name = city.Name,
+                       Country = city.Country.Name,
+                       CountryCode = city.Country.Code
+                   })
+                   .ToList();
 
-                // Prova ad usare il metodo GetAllCitiesWithCountryAsync
-                List<City> citiesWithCountry = new List<City>();
-                try
-                {
-                    citiesWithCountry = await _cityService.GetAllCitiesWithCountryAsync();
-                }
-                catch (Exception ex)
-                {
-                    return new JsonResult(new
-                    {
-                        success = false,
-                        error = $"Errore in GetAllCitiesWithCountryAsync: {ex.Message}",
-                        stack = ex.StackTrace
-                    });
-                }
-
-                return new JsonResult(new
-                {
-                    success = true,
-                    countriesCount = allCountries.Count,
-                    citiesCount = allCities.Count,
-                    citiesWithoutCountry = citiesWithoutCountry,
-                    citiesWithCountryCount = citiesWithCountry.Count,
-                    citiesPerCountry = citiesPerCountry,
-                    citiesWithoutCountryIds = allCities.Where(c => c.Country == null).Select(c => c.Id).ToList()
-                });
+                System.Diagnostics.Debug.WriteLine($"Trovate {cityInfoList.Count} capitali per il dropdown.");
+                return cityInfoList;
             }
             catch (Exception ex)
             {
-                return new JsonResult(new
-                {
-                    success = false,
-                    error = ex.Message,
-                    stack = ex.StackTrace
-                });
+                System.Diagnostics.Debug.WriteLine($"Errore in GetAvailableCapitalsAsync: {ex.Message}");
+                return new List<CityInfo>(); // Restituisci lista vuota in caso di errore
             }
         }
 
@@ -1133,7 +1056,8 @@ namespace WanderGlobe.Pages
                 {
                     Path.Combine(_webHostEnvironment.WebRootPath, "images", "empty-wishlist.svg"),
                     Path.Combine(_webHostEnvironment.WebRootPath, "images", "empty-planning.svg"),
-                    Path.Combine(_webHostEnvironment.WebRootPath, "images", "placeholder-destination.jpg")
+                    Path.Combine(_webHostEnvironment.WebRootPath, "images", "placeholder-destination.jpg"),
+                    Path.Combine(_webHostEnvironment.WebRootPath, "images", "default-city.jpg") // Assicurati che esista anche questa
                 };
 
                 // Verifica se le immagini esistono e creale se mancano
@@ -1143,7 +1067,7 @@ namespace WanderGlobe.Pages
                     {
                         string filename = Path.GetFileName(path);
                         string extension = Path.GetExtension(path).ToLowerInvariant();
-                          // Crea la directory se non esiste
+                        // Crea la directory se non esiste
                         string? directoryName = Path.GetDirectoryName(path);
                         if (!string.IsNullOrEmpty(directoryName))
                         {
@@ -1152,23 +1076,38 @@ namespace WanderGlobe.Pages
 
                         if (extension == ".svg")
                         {
-                            // Crea un semplice SVG
-                            string svgContent = @"<?xml version=""1.0"" encoding=""UTF-8""?>
-<svg width=""200px"" height=""200px"" viewBox=""0 0 200 200"" xmlns=""http://www.w3.org/2000/svg"">
-  <rect width=""200"" height=""200"" fill=""#f8f9fa"" />
-  <text x=""50"" y=""100"" font-family=""Arial"" font-size=""14"" fill=""#6c757d"">
-    " + filename + @"
-  </text>
-</svg>";
+                            // Crea un semplice SVG placeholder
+                            string svgContent = @"<svg width=""100"" height=""100"" xmlns=""http://www.w3.org/2000/svg""><rect width=""100%"" height=""100%"" fill=""#eee""/><text x=""50%"" y=""50%"" dominant-baseline=""middle"" text-anchor=""middle"" fill=""#aaa"" font-size=""10"">" + filename + @"</text></svg>";
                             System.IO.File.WriteAllText(path, svgContent);
+                            System.Diagnostics.Debug.WriteLine($"Creato file SVG placeholder: {path}");
                         }
                         else if (extension == ".jpg" || extension == ".jpeg" || extension == ".png")
                         {
-                            // Trova un'immagine predefinita da copiare
+                            // Prova a copiare default-city.jpg se esiste
                             string defaultImagePath = Path.Combine(_webHostEnvironment.WebRootPath, "images", "default-city.jpg");
-                            if (System.IO.File.Exists(defaultImagePath))
+                            if (System.IO.File.Exists(defaultImagePath) && path != defaultImagePath)
                             {
-                                System.IO.File.Copy(defaultImagePath, path);
+                                try
+                                {
+                                    System.IO.File.Copy(defaultImagePath, path);
+                                    System.Diagnostics.Debug.WriteLine($"Copiata immagine di default in: {path}");
+                                }
+                                catch (IOException ioEx)
+                                {
+                                    System.Diagnostics.Debug.WriteLine($"Errore IO durante la copia dell'immagine di default per {path}: {ioEx.Message}");
+                                }
+                            }
+                            else if (!System.IO.File.Exists(defaultImagePath) && path != defaultImagePath)
+                            {
+                                System.Diagnostics.Debug.WriteLine($"WARN: Immagine di default '{defaultImagePath}' non trovata per creare {path}.");
+                                // Potresti creare un JPG/PNG placeholder programmaticamente qui se necessario
+                            }
+                            else if (path == defaultImagePath && !System.IO.File.Exists(defaultImagePath))
+                            {
+                                System.Diagnostics.Debug.WriteLine($"WARN: Immagine di default '{defaultImagePath}' mancante.");
+                                // Crea un placeholder anche per default-city.jpg
+                                // (Logica per creare JPG/PNG placeholder non inclusa qui per brevità)
+
                             }
                         }
                     }
@@ -1179,5 +1118,145 @@ namespace WanderGlobe.Pages
                 System.Diagnostics.Debug.WriteLine($"Errore nella verifica delle immagini: {ex.Message}");
             }
         }
-    }
-}
+
+        // --- Handler Get per Suggerimenti AI (presumibilmente invariato) ---
+        [HttpGet]
+        [IgnoreAntiforgeryToken]
+        public async Task<IActionResult> OnGetTravelsuggestionsAsync(string cityName, string suggestionType)
+        {
+            // ... (Codice esistente per chiamare Gemini API) ...
+            // Assicurati che la logica interna sia corretta
+            try
+            {
+                System.Diagnostics.Debug.WriteLine($"Handler GetTravelsuggestionsAsync chiamato - Città: {cityName}, Tipo: {suggestionType}");
+
+                var client = _clientFactory.CreateClient();
+
+                if (string.IsNullOrEmpty(_geminiApiKey))
+                {
+                    System.Diagnostics.Debug.WriteLine("Errore: Chiave API Gemini mancante");
+                    return new JsonResult(new { success = false, error = "Chiave API Gemini non configurata" });
+                }
+
+                string prompt = BuildPrompt(cityName, suggestionType); // Assicurati che BuildPrompt esista
+
+                var requestData = new
+                {
+                    contents = new[] { new { parts = new[] { new { text = prompt } } } }
+                };
+
+                // Prova prima con 1.5 Flash che sembra più permissivo per account gratuiti
+                string apiUrl = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key={_geminiApiKey}";
+
+                System.Diagnostics.Debug.WriteLine($"URL API: {apiUrl.Substring(0, apiUrl.IndexOf('?'))}?key=API_KEY_HIDDEN");
+                System.Diagnostics.Debug.WriteLine($"Prompt inviato: {prompt.Substring(0, Math.Min(prompt.Length, 100))}...");
+
+                var content = new StringContent(JsonConvert.SerializeObject(requestData), Encoding.UTF8, "application/json");
+                client.Timeout = TimeSpan.FromSeconds(45); // Timeout leggermente più lungo
+
+                HttpResponseMessage response;
+                string responseContent;
+
+                try
+                {
+                    response = await client.PostAsync(apiUrl, content);
+                    responseContent = await response.Content.ReadAsStringAsync();
+                    System.Diagnostics.Debug.WriteLine($"Risposta da {apiUrl}: {response.StatusCode}");
+                }
+                catch (TaskCanceledException timeoutEx)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Timeout API Gemini: {timeoutEx.Message}");
+                    return new JsonResult(new { success = false, error = "Timeout durante la richiesta all'API Gemini." });
+                }
+                catch (HttpRequestException httpEx)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Errore HTTP API Gemini: {httpEx.Message}");
+                    return new JsonResult(new { success = false, error = $"Errore di rete API Gemini: {httpEx.StatusCode}" });
+                }
+
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Errore API ({response.StatusCode}): {responseContent}");
+                    // Qui potresti provare altri modelli se 1.5-flash fallisce, ma per ora restituisci errore
+                    return new JsonResult(new { success = false, error = $"Errore dall'API Gemini ({response.StatusCode})", debugInfo = responseContent });
+                }
+
+                // Parsing della risposta (più robusto)
+                try
+                {
+                    dynamic? parsedResponse = JsonConvert.DeserializeObject(responseContent);
+
+                    // Navigazione sicura nell'oggetto JSON
+                    string? textResult = parsedResponse?.candidates?[0]?.content?.parts?[0]?.text?.ToString();
+
+                    if (!string.IsNullOrEmpty(textResult))
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Testo ricevuto da Gemini: {textResult.Substring(0, Math.Min(textResult.Length, 200))}...");
+                        string htmlContent = CleanupMarkdownCodeDelimiters(textResult); // Assicurati che CleanupMarkdownCodeDelimiters esista
+                        return new JsonResult(new { success = true, html = htmlContent });
+                    }
+                    else
+                    {
+                        System.Diagnostics.Debug.WriteLine("Risposta API valida ma struttura JSON inattesa o testo mancante.");
+                        System.Diagnostics.Debug.WriteLine($"Raw Response: {responseContent}");
+                        return new JsonResult(new { success = false, error = "Struttura risposta API inattesa.", debugInfo = responseContent });
+                    }
+                }
+                catch (JsonReaderException jsonEx)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Errore parsing JSON risposta: {jsonEx.Message}");
+                    return new JsonResult(new { success = false, error = "Errore nel leggere la risposta dall'API.", debugInfo = responseContent });
+                }
+                catch (Exception parseEx) // Altre eccezioni durante il parsing
+                {
+                    System.Diagnostics.Debug.WriteLine($"Errore generico parsing risposta: {parseEx.Message}");
+                    return new JsonResult(new { success = false, error = "Errore nell'elaborare la risposta dall'API.", debugInfo = responseContent });
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Eccezione in OnGetTravelsuggestionsAsync: {ex.Message}\nStackTrace: {ex.StackTrace}");
+                return new JsonResult(new { success = false, error = $"Errore interno del server: {ex.Message}" });
+            }
+        }
+        private string BuildPrompt(string cityName, string suggestionType)
+        {
+            // Implementazione di BuildPrompt come fornita precedentemente
+            // ... (assicurati che generi prompt corretti) ...
+            string basePrompt = $"Sei un esperto di viaggi conciso e focalizzato. Fornisci SOLO il contenuto richiesto in formato HTML valido, senza prefazioni, conclusioni, commenti HTML (<!-- -->) o delimitatori di codice come ```html.";
+
+            switch (suggestionType.ToLowerInvariant())
+            {
+                case "attractions":
+                    return $"{basePrompt} Lista 5 attrazioni principali di {cityName}. Per ogni attrazione: <ul><li><strong>Nome Attrazione:</strong> Breve descrizione (10-15 parole).</li></ul>";
+                case "gastronomy":
+                    return $"{basePrompt} Breve introduzione <p>sulla cucina locale di {cityName} (20 parole max).</p> Lista 5 piatti/esperienze culinarie: <ul><li><strong>Nome Piatto:</strong> Breve descrizione (10-15 parole).</li></ul>";
+                case "history":
+                    return $"{basePrompt} Breve introduzione <p>sulla storia di {cityName} (20 parole max).</p> Lista 5-6 eventi storici significativi in ordine cronologico: <ul><li><strong>Anno/Periodo:</strong> Fatto interessante (10-15 parole).</li></ul>";
+                case "tips":
+                    return $"{basePrompt} Lista 5-6 consigli pratici per visitare {cityName} (es. trasporti, sicurezza, periodo migliore, etc.): <ul><li><strong>Consiglio (es. Trasporti):</strong> Dettaglio pratico (15-20 parole).</li></ul>";
+                default:
+                    return $"{basePrompt} Fornisci una descrizione generale di {cityName} come meta turistica in un singolo paragrafo <p>.</p>";
+            }
+        }
+
+        private string CleanupMarkdownCodeDelimiters(string content)
+        {
+            // Implementazione di CleanupMarkdownCodeDelimiters come fornita precedentemente
+            // ... (assicurati che rimuova ```html e ```) ...
+            if (string.IsNullOrEmpty(content)) return content;
+
+            // Rimuovi ```html, ```HTML, ``` all'inizio, con eventuali spazi/newline
+            content = System.Text.RegularExpressions.Regex.Replace(content, @"^\s*```(html|HTML)?\s*", "", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            // Rimuovi ``` alla fine, con eventuali spazi/newline
+            content = System.Text.RegularExpressions.Regex.Replace(content, @"\s*```\s*$", "");
+            // Rimuovi eventuali tag <pre> o </pre> rimasti (meno probabile con i prompt aggiornati)
+            content = System.Text.RegularExpressions.Regex.Replace(content, @"^\s*<pre>\s*|\s*</pre>\s*$", "", System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.Singleline);
+
+
+            return content.Trim();
+        }
+
+    } // Chiusura classe DreamMapModel
+} // Chiusura namespace

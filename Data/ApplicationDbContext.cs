@@ -1,5 +1,4 @@
-﻿// Codice completo per ApplicationDbContext.cs
-using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Linq;
@@ -24,7 +23,8 @@ namespace WanderGlobe.Data
         public DbSet<Photo> Photos { get; set; } = null!;
         public DbSet<DreamDestination> DreamDestinations { get; set; } = null!;
         public DbSet<PlannedTrip> PlannedTrips { get; set; } = null!;
-        public DbSet<ChecklistItem> ChecklistItems { get; set; }
+        public DbSet<ChecklistItem> ChecklistItems { get; set; } = null!;
+        
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
@@ -43,6 +43,35 @@ namespace WanderGlobe.Data
                 .WithMany(c => c.VisitedByUsers)
                 .HasForeignKey(vc => vc.CountryId);
 
+            builder.Entity<TravelJournal>()
+                .HasKey(tj => new { tj.UserId, tj.CountryId });
+
+            builder.Entity<TravelJournal>()
+                .HasOne(tj => tj.User)
+                .WithMany(u => u.TravelJournals)
+                .HasForeignKey(tj => tj.UserId);
+
+            builder.Entity<TravelJournal>()
+                .HasOne(tj => tj.Country)
+                .WithMany(c => c.TravelJournals)
+                .HasForeignKey(tj => tj.CountryId);
+
+            // Configura PlannedTrip con id di tipo string
+            builder.Entity<PlannedTrip>()
+                .Property(p => p.Id)
+                .HasMaxLength(50);
+                
+            // Configura ChecklistItem con PlannedTripId di tipo string
+            builder.Entity<ChecklistItem>()
+                .Property(c => c.PlannedTripId)
+                .HasMaxLength(50);
+                
+            // Configura la relazione tra PlannedTrip e ChecklistItem
+            builder.Entity<ChecklistItem>()
+                .HasOne<PlannedTrip>()
+                .WithMany(p => p.Checklist)
+                .HasForeignKey(c => c.PlannedTripId);
+                
             builder.Entity<UserBadge>()
                 .HasKey(ub => new { ub.UserId, ub.BadgeId });
                 

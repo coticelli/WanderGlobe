@@ -59,32 +59,33 @@ namespace WanderGlobe.Models.Custom
         public List<string> Tags { get; set; } = new List<string>();
     }
 
-       public class PlannedTrip
+ public class PlannedTrip
     {
-        public int Id { get; set; }
-        public string UserId { get; set; }
-        public string CityName { get; set; }
-        public string CountryName { get; set; }
-        public string CountryCode { get; set; }
+        public string Id { get; set; } = string.Empty;
+        public string UserId { get; set; } = string.Empty;
+        public string CityName { get; set; } = string.Empty;
+        public string CountryName { get; set; } = string.Empty;
+        public string CountryCode { get; set; } = string.Empty;
         public double Latitude { get; set; }
         public double Longitude { get; set; }
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
-        public string ImageUrl { get; set; }
-        public string Notes { get; set; }
+        public string ImageUrl { get; set; } = string.Empty;
+        public string Notes { get; set; } = string.Empty;
         public int CompletionPercentage { get; set; }
+        public DateTime CreatedAt { get; set; }
+        
+        // Relazione con ChecklistItem
         public List<ChecklistItem> Checklist { get; set; } = new List<ChecklistItem>();
-        public DateTime CreatedAt { get; set; } // Aggiungi questa proprietà
     }
 
     // Aggiungi al tuo modello di dati
-    public class ChecklistItem
+ public class ChecklistItem
     {
         public int Id { get; set; }
-        public int PlannedTripId { get; set; }
-        public PlannedTrip PlannedTrip { get; set; }
-        public string Title { get; set; }
-        public string Category { get; set; }
+        public string PlannedTripId { get; set; } = string.Empty;
+        public string Title { get; set; } = string.Empty;
+        public string Category { get; set; } = "other";
         public DateTime? DueDate { get; set; }
         public bool IsCompleted { get; set; }
     }

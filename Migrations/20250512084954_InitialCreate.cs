@@ -90,8 +90,7 @@ namespace WanderGlobe.Migrations
                 name: "PlannedTrips",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "INTEGER", nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
+                    Id = table.Column<string>(type: "TEXT", maxLength: 50, nullable: false),
                     UserId = table.Column<string>(type: "TEXT", nullable: false),
                     CityName = table.Column<string>(type: "TEXT", nullable: false),
                     CountryName = table.Column<string>(type: "TEXT", nullable: false),
@@ -298,19 +297,15 @@ namespace WanderGlobe.Migrations
                 name: "TravelJournals",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "INTEGER", nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
                     UserId = table.Column<string>(type: "TEXT", nullable: false),
                     CountryId = table.Column<int>(type: "INTEGER", nullable: false),
                     VisitDate = table.Column<DateTime>(type: "TEXT", nullable: false),
-                    Title = table.Column<string>(type: "TEXT", nullable: false),
-                    Content = table.Column<string>(type: "TEXT", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "TEXT", nullable: true)
+                    Notes = table.Column<string>(type: "TEXT", nullable: false),
+                    Rating = table.Column<int>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_TravelJournals", x => x.Id);
+                    table.PrimaryKey("PK_TravelJournals", x => new { x.UserId, x.CountryId });
                     table.ForeignKey(
                         name: "FK_TravelJournals_AspNetUsers_UserId",
                         column: x => x.UserId,
@@ -360,7 +355,7 @@ namespace WanderGlobe.Migrations
                 {
                     Id = table.Column<int>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
-                    PlannedTripId = table.Column<int>(type: "INTEGER", nullable: false),
+                    PlannedTripId = table.Column<string>(type: "TEXT", maxLength: 50, nullable: false),
                     Title = table.Column<string>(type: "TEXT", nullable: false),
                     Category = table.Column<string>(type: "TEXT", nullable: false),
                     DueDate = table.Column<DateTime>(type: "TEXT", nullable: true),
@@ -387,16 +382,18 @@ namespace WanderGlobe.Migrations
                     FilePath = table.Column<string>(type: "TEXT", nullable: false),
                     Caption = table.Column<string>(type: "TEXT", nullable: false),
                     TravelJournalId = table.Column<int>(type: "INTEGER", nullable: false),
+                    TravelJournalUserId = table.Column<string>(type: "TEXT", nullable: false),
+                    TravelJournalCountryId = table.Column<int>(type: "INTEGER", nullable: false),
                     UploadedAt = table.Column<DateTime>(type: "TEXT", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Photos", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Photos_TravelJournals_TravelJournalId",
-                        column: x => x.TravelJournalId,
+                        name: "FK_Photos_TravelJournals_TravelJournalUserId_TravelJournalCountryId",
+                        columns: x => new { x.TravelJournalUserId, x.TravelJournalCountryId },
                         principalTable: "TravelJournals",
-                        principalColumn: "Id",
+                        principalColumns: new[] { "UserId", "CountryId" },
                         onDelete: ReferentialAction.Cascade);
                 });
 
@@ -1093,19 +1090,14 @@ namespace WanderGlobe.Migrations
                 column: "ApplicationUserId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Photos_TravelJournalId",
+                name: "IX_Photos_TravelJournalUserId_TravelJournalCountryId",
                 table: "Photos",
-                column: "TravelJournalId");
+                columns: new[] { "TravelJournalUserId", "TravelJournalCountryId" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_TravelJournals_CountryId",
                 table: "TravelJournals",
                 column: "CountryId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_TravelJournals_UserId",
-                table: "TravelJournals",
-                column: "UserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_UserBadges_BadgeId",
