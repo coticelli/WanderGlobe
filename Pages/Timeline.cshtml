@@ -26,7 +26,8 @@
                     <button class="btn btn-glass dropdown-toggle" type="button" id="filterDropdown" data-bs-toggle="dropdown" aria-expanded="false">
                         <i class="fas fa-filter"></i> Filtra per
                     </button>
-                    <ul class="dropdown-menu glass-menu dropdown-menu-end" aria-labelledby="filterDropdown">
+                    <!-- Modificato: aggiunto data-bs-auto-close="true" e aumentato z-index -->
+                    <ul class="dropdown-menu glass-menu dropdown-menu-end filter-menu" aria-labelledby="filterDropdown" data-bs-auto-close="true">
                         <li><a class="dropdown-item filter-option active" href="#" data-filter="all">
                             <i class="fas fa-globe-americas"></i> Tutte le destinazioni
                         </a></li>
@@ -44,7 +45,8 @@
                     <button class="btn btn-glass dropdown-toggle" type="button" id="sortDropdown" data-bs-toggle="dropdown" aria-expanded="false">
                         <i class="fas fa-sort"></i> Ordinamento
                     </button>
-                    <ul class="dropdown-menu glass-menu dropdown-menu-end" aria-labelledby="sortDropdown">
+                    <!-- Modificato: aggiunto data-bs-auto-close="true" e aumentato z-index -->
+                    <ul class="dropdown-menu glass-menu dropdown-menu-end sort-menu" aria-labelledby="sortDropdown" data-bs-auto-close="true">
                         <li><a class="dropdown-item sort-option active" href="#" data-sort="newest">
                             <i class="fas fa-arrow-down"></i> Più recenti prima
                         </a></li>
@@ -55,6 +57,7 @@
                 </div>
             </div>
         </div>
+
 
         <!-- Anno tabs - con effetto parallasse -->
         <div class="timeline-year-tabs animated-element">
@@ -372,260 +375,308 @@
             min-height: 100vh;
             overflow: hidden;
             padding-bottom: 30px;
-        }
-        
-        /* ===== ANIMAZIONE STELLE ===== */
-        #stars-container {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: transparent;
-            z-index: -1;
-            overflow: hidden;
-        }
-        
-        .star {
-            position: absolute;
-            background-color: white;
-            border-radius: 50%;
-            opacity: 0.6;
-            animation: twinkle 4s infinite ease-in-out;
-            pointer-events: none;
-        }
-        
-        @@keyframes twinkle {
-            0% { opacity: 0.2; }
-            50% { opacity: 0.8; }
-            100% { opacity: 0.2; }
-        }
-        
-                // Effetto turbulenza dell'aereo
-        @@keyframes turbulence {
-            0% { transform: translateY(0) rotate(0deg); }
-            25% { transform: translateY(2px) rotate(1deg); }
-            75% { transform: translateY(-2px) rotate(-1deg); }
-            100% { transform: translateY(0) rotate(0deg); }
-        }
+                    }
+                    
+                    /* Aggiungi questi stili alla sezione Styles */
+            .filter-menu,
+            .sort-menu {
+                position: absolute !important;
+                z-index: 1100 !important; /* Aumentato z-index per apparire sopra la barra semitrasparente */
+                background-color: rgba(37, 53, 85, 0.9) !important; /* Sfondo più opaco per migliore leggibilità */
+                border: 2px solid rgba(255, 255, 255, 0.2) !important;
+                transform: translateY(10px) !important; /* Sposta leggermente il menu verso il basso */
+                margin-top: 0 !important;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5) !important; /* Ombra più pronunciata */
+                overflow: visible !important;
+            }
 
-        /* ===== CONTAINER PRINCIPALE ===== */
-        .timeline-container {
-            max-width: 1200px;
-            margin: 1.5rem auto;
-            padding: 0 20px;
-            position: relative;
-        }
-        
-        /* ===== HEADER TIMELINE ===== */
-        .timeline-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 2rem;
-            flex-wrap: wrap;
-            gap: 20px;
-            padding: 10px 0;
-        }
-        
-        .timeline-title {
-            display: flex;
-            align-items: center;
-            gap: 1.5rem;
-            opacity: 0;
-            animation: fadeInUp 0.8s ease-out forwards;
-        }
-        
-        .title-icon-wrapper {
-            position: relative;
-            width: 80px;
-            height: 80px;
-            background: var(--primary-gradient);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: var(--box-shadow-strong);
-            z-index: 1;
-        }
-        
-        .title-icon-wrapper i {
-            font-size: 2.5rem;
-            color: white;
-            z-index: 2;
-        }
-        
-        .pulse-effect {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            background: var(--primary-light);
-            opacity: 0.4;
-            animation: pulse 2s infinite;
-        }
-        
-        @@keyframes pulse {
-            0% { transform: scale(1); opacity: 0.4; }
-            50% { transform: scale(1.15); opacity: 0.2; }
-            100% { transform: scale(1); opacity: 0.4; }
-        }
-        
-        .timeline-title h1 {
-            font-size: 2.2rem;
-            font-weight: 800;
-            margin-bottom: 0.3rem;
-            color: var(--text-primary);
-            letter-spacing: -0.5px;
-            text-shadow: 0 2px 12px rgba(0,0,0,0.2);
-        }
-        
-        .timeline-title p {
-            margin: 0;
-            color: var(--text-secondary);
-            font-size: 1.1rem;
-            font-weight: 400;
-        }
-        
-        .timeline-controls {
-            display: flex;
-            gap: 1rem;
-            opacity: 0;
-            animation: fadeInRight 0.8s ease-out 0.3s forwards;
-        }
-        
-        /* Bottoni di controllo con effetto glass */
-        .btn-glass {
-            background: var(--glass-background);
-            backdrop-filter: var(--glass-backdrop);
-            -webkit-backdrop-filter: var(--glass-backdrop);
-            border: var(--glass-border);
-            border-radius: var(--border-radius);
-            color: var(--text-primary);
-            padding: 10px 20px;
-            font-weight: 500;
-            box-shadow: var(--glass-shadow);
-            transition: var(--transition);
-        }
-        
-        .btn-glass:hover {
-            background: rgba(70, 90, 126, 0.35);
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
-            color: white;
-            transform: translateY(-2px);
-        }
-        
-        .glass-menu {
-            background: var(--glass-background);
-            backdrop-filter: var(--glass-backdrop);
-            -webkit-backdrop-filter: var(--glass-backdrop);
-            border: var(--glass-border);
-            border-radius: 12px;
-            box-shadow: var(--glass-shadow);
-            padding: 8px 0;
-            margin-top: 10px;
-        }
-        
-        .glass-menu .dropdown-item {
-            color: var(--text-secondary);
-            padding: 10px 20px;
-            transition: var(--transition);
-        }
-        
-        .glass-menu .dropdown-item:hover {
-            background: rgba(255, 255, 255, 0.1);
-            color: var(--text-primary);
-        }
-        
-        .glass-menu .dropdown-item.active {
-            background: rgba(30, 136, 229, 0.3);
-            color: var(--text-primary);
-        }
-        
-        .glass-menu .dropdown-divider {
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-            margin: 6px 0;
-        }
-        
-        /* ===== NAVIGATION A SCHEDE ANNUALI ===== */
-        .timeline-year-tabs {
-            position: relative;
-            background: var(--glass-background);
-            backdrop-filter: var(--glass-backdrop);
-            -webkit-backdrop-filter: var(--glass-backdrop);
-            border: var(--glass-border);
-            border-radius: var(--border-radius);
-            box-shadow: var(--glass-shadow);
-            margin-bottom: 2.5rem;
-            padding: 0.8rem;
-            opacity: 0;
-            animation: fadeInUp 0.8s ease-out 0.5s forwards;
-            overflow: hidden;
-        }
-        
-        #floating-compass {
-            position: absolute;
-            right: 10px;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 30px;
-            height: 30px;
-            z-index: 1;
-            animation: rotateSlowly 15s infinite linear;
-        }
-        
-        #floating-compass img {
-            width: 100%;
-            height: 100%;
-            opacity: 0.5;
-            filter: brightness(1.5);
-        }
-        
-        @@keyframes rotateSlowly {
-            from { transform: translateY(-50%) rotate(0deg); }
-            to { transform: translateY(-50%) rotate(360deg); }
-        }
-        
-        .timeline-scroller {
-            display: flex;
-            overflow-x: auto;
-            scrollbar-width: thin;
-            scrollbar-color: var(--primary) var(--surface);
-            padding: 0.5rem 0.5rem;
-            gap: 14px;
-        }
-        
-        .timeline-scroller::-webkit-scrollbar {
-            height: 5px;
-        }
-        
-        .timeline-scroller::-webkit-scrollbar-track {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 10px;
-        }
-        
-        .timeline-scroller::-webkit-scrollbar-thumb {
-            background: var(--primary);
-            border-radius: 10px;
-        }
-        
-        .year-tab {
-            position: relative;
-            background: var(--surface-light);
-            border: none;
-            font-size: 1.15rem;
-            padding: 0.8rem 2rem;
-            margin-right: 0.25rem;
-            border-radius: 50px;
-            color: var(--text-secondary);
-            font-weight: 600;
-            transition: var(--transition);
-            white-space: nowrap;
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.2), 0 4px 10px rgba(0, 0, 0, 0.15);
+            .glass-menu .dropdown-item {
+                color: white !important; /* Testo più chiaro */
+                padding: 12px 20px !important; /* Padding maggiore per facilità di click */
+                font-weight: 500 !important;
+            }
+
+            .glass-menu .dropdown-item:hover {
+                background: rgba(255, 255, 255, 0.2) !important; /* Sfondo hover più visibile */
+            }
+
+            .glass-menu .dropdown-item.active {
+                background: rgba(30, 136, 229, 0.5) !important; /* Opzione attiva più visibile */
+                color: white !important;
+            }
+
+            /* Aggiungi una freccia al dropdown per migliorare UX */
+            .filter-menu::before,
+            .sort-menu::before {
+                content: '';
+                position: absolute;
+                top: -8px;
+                right: 20px;
+                width: 16px;
+                height: 16px;
+                background: rgba(37, 53, 85, 0.9);
+                transform: rotate(45deg);
+                border-left: 2px solid rgba(255, 255, 255, 0.2);
+                border-top: 2px solid rgba(255, 255, 255, 0.2);
+            }
+
+            /* Assicurati che il dropdown sia sopra gli altri elementi */
+            .dropdown {
+                position: relative !important;
+            }
+
+                    /* ===== ANIMAZIONE STELLE ===== */
+                    #stars-container {
+                        position: fixed;
+                        top: 0;
+                        left: 0;
+                        right: 0;
+                        bottom: 0;
+                        background: transparent;
+                        z-index: -1;
+                        overflow: hidden;
+                    }
+                    
+                    .star {
+                        position: absolute;
+                        background-color: white;
+                        border-radius: 50%;
+                        opacity: 0.6;
+                        animation: twinkle 4s infinite ease-in-out;
+                        pointer-events: none;
+                    }
+                    
+                    @@keyframes twinkle {
+                        0% { opacity: 0.2; }
+                        50% { opacity: 0.8; }
+                        100% { opacity: 0.2; }
+                    }
+                    
+                            // Effetto turbulenza dell'aereo
+                    @@keyframes turbulence {
+                        0% { transform: translateY(0) rotate(0deg); }
+                        25% { transform: translateY(2px) rotate(1deg); }
+                        75% { transform: translateY(-2px) rotate(-1deg); }
+                        100% { transform: translateY(0) rotate(0deg); }
+                    }
+
+                    /* ===== CONTAINER PRINCIPALE ===== */
+                    .timeline-container {
+                        max-width: 1200px;
+                        margin: 1.5rem auto;
+                        padding: 0 20px;
+                        position: relative;
+                    }
+                    
+                    /* ===== HEADER TIMELINE ===== */
+                    .timeline-header {
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        margin-bottom: 2rem;
+                        flex-wrap: wrap;
+                        gap: 20px;
+                        padding: 10px 0;
+                    }
+                    
+                    .timeline-title {
+                        display: flex;
+                        align-items: center;
+                        gap: 1.5rem;
+                        opacity: 0;
+                        animation: fadeInUp 0.8s ease-out forwards;
+                    }
+                    
+                    .title-icon-wrapper {
+                        position: relative;
+                        width: 80px;
+                        height: 80px;
+                        background: var(--primary-gradient);
+                        border-radius: 50%;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        box-shadow: var(--box-shadow-strong);
+                        z-index: 1;
+                    }
+                    
+                    .title-icon-wrapper i {
+                        font-size: 2.5rem;
+                        color: white;
+                        z-index: 2;
+                    }
+                    
+                    .pulse-effect {
+                        position: absolute;
+                        width: 100%;
+                        height: 100%;
+                        border-radius: 50%;
+                        background: var(--primary-light);
+                        opacity: 0.4;
+                        animation: pulse 2s infinite;
+                    }
+                    
+                    @@keyframes pulse {
+                        0% { transform: scale(1); opacity: 0.4; }
+                        50% { transform: scale(1.15); opacity: 0.2; }
+                        100% { transform: scale(1); opacity: 0.4; }
+                    }
+                    
+                    .timeline-title h1 {
+                        font-size: 2.2rem;
+                        font-weight: 800;
+                        margin-bottom: 0.3rem;
+                        color: var(--text-primary);
+                        letter-spacing: -0.5px;
+                        text-shadow: 0 2px 12px rgba(0,0,0,0.2);
+                    }
+                    
+                    .timeline-title p {
+                        margin: 0;
+                        color: var(--text-secondary);
+                        font-size: 1.1rem;
+                        font-weight: 400;
+                    }
+                    
+                    .timeline-controls {
+                        display: flex;
+                        gap: 1rem;
+                        opacity: 0;
+                        animation: fadeInRight 0.8s ease-out 0.3s forwards;
+                    }
+                    
+                    /* Bottoni di controllo con effetto glass */
+                    .btn-glass {
+                        background: var(--glass-background);
+                        backdrop-filter: var(--glass-backdrop);
+                        -webkit-backdrop-filter: var(--glass-backdrop);
+                        border: var(--glass-border);
+                        border-radius: var(--border-radius);
+                        color: var(--text-primary);
+                        padding: 10px 20px;
+                        font-weight: 500;
+                        box-shadow: var(--glass-shadow);
+                        transition: var(--transition);
+                    }
+                    
+                    .btn-glass:hover {
+                        background: rgba(70, 90, 126, 0.35);
+                        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+                        color: white;
+                        transform: translateY(-2px);
+                    }
+                    
+                    .glass-menu {
+                        background: var(--glass-background);
+                        backdrop-filter: var(--glass-backdrop);
+                        -webkit-backdrop-filter: var(--glass-backdrop);
+                        border: var(--glass-border);
+                        border-radius: 12px;
+                        box-shadow: var(--glass-shadow);
+                        padding: 8px 0;
+                        margin-top: 10px;
+                    }
+                    
+                    .glass-menu .dropdown-item {
+                        color: var(--text-secondary);
+                        padding: 10px 20px;
+                        transition: var(--transition);
+                    }
+                    
+                    .glass-menu .dropdown-item:hover {
+                        background: rgba(255, 255, 255, 0.1);
+                        color: var(--text-primary);
+                    }
+                    
+                    .glass-menu .dropdown-item.active {
+                        background: rgba(30, 136, 229, 0.3);
+                        color: var(--text-primary);
+                    }
+                    
+                    .glass-menu .dropdown-divider {
+                        border-top: 1px solid rgba(255, 255, 255, 0.1);
+                        margin: 6px 0;
+                    }
+                    
+                    /* ===== NAVIGATION A SCHEDE ANNUALI ===== */
+                    .timeline-year-tabs {
+                        position: relative;
+                        background: var(--glass-background);
+                        backdrop-filter: var(--glass-backdrop);
+                        -webkit-backdrop-filter: var(--glass-backdrop);
+                        border: var(--glass-border);
+                        border-radius: var(--border-radius);
+                        box-shadow: var(--glass-shadow);
+                        margin-bottom: 2.5rem;
+                        padding: 0.8rem;
+                        opacity: 0;
+                        animation: fadeInUp 0.8s ease-out 0.5s forwards;
+                        overflow: hidden;
+                    }
+                    
+                    #floating-compass {
+                        position: absolute;
+                        right: 10px;
+                        top: 50%;
+                        transform: translateY(-50%);
+                        width: 30px;
+                        height: 30px;
+                        z-index: 1;
+                        animation: rotateSlowly 15s infinite linear;
+                    }
+                    
+                    #floating-compass img {
+                        width: 100%;
+                        height: 100%;
+                        opacity: 0.5;
+                        filter: brightness(1.5);
+                    }
+                    
+                    @@keyframes rotateSlowly {
+                        from { transform: translateY(-50%) rotate(0deg); }
+                        to { transform: translateY(-50%) rotate(360deg); }
+                    }
+                    
+                    .timeline-scroller {
+                        display: flex;
+                        overflow-x: auto;
+                        scrollbar-width: thin;
+                        scrollbar-color: var(--primary) var(--surface);
+                        padding: 0.5rem 0.5rem;
+                        gap: 14px;
+                    }
+                    
+                    .timeline-scroller::-webkit-scrollbar {
+                        height: 5px;
+                    }
+                    
+                    .timeline-scroller::-webkit-scrollbar-track {
+                        background: rgba(255, 255, 255, 0.05);
+                        border-radius: 10px;
+                    }
+                    
+                    .timeline-scroller::-webkit-scrollbar-thumb {
+                        background: var(--primary);
+                        border-radius: 10px;
+                    }
+                    
+                    .year-tab {
+                        position: relative;
+                        background: var(--surface-light);
+                        border: none;
+                        font-size: 1.15rem;
+                        padding: 0.8rem 2rem;
+                        margin-right: 0.25rem;
+                        border-radius: 50px;
+                        color: var(--text-secondary);
+                        font-weight: 600;
+                        transition: var(--transition);
+                        white-space: nowrap;
+                        text-decoration: none;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.2), 0 4px 10px rgba(0, 0, 0, 0.15);
             overflow: hidden;
         }
         
