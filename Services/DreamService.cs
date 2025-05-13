@@ -51,6 +51,72 @@ namespace WanderGlobe.Services
             return destination;
         }
 
+// In DreamMap.cshtml.cs
+
+// Definire la classe per la richiesta JSON
+public class UpdateVisitedDetailsRequest
+{
+    public string VisitId { get; set; }
+    public string? VisitDate { get; set; } // Ricevuto come stringa YYYY-MM-DD
+    public int Rating { get; set; }
+    public string? Memories { get; set; }
+    public List<string>? Highlights { get; set; }
+    public List<string>? TravelCompanions { get; set; }
+    // public List<string> PhotoUrls { get; set; } // Se gestisci gli URL delle foto
+}
+
+/*
+// Handler da implementare (esempio, non funzionante senza modello DB e servizio)
+[HttpPost]
+[IgnoreAntiforgeryToken]
+public async Task<IActionResult> OnPostUpdateVisitedDetailsAsync([FromBody] UpdateVisitedDetailsRequest request)
+{
+    try
+    {
+        var user = await _userManager.GetUserAsync(User);
+        if (user == null) return new JsonResult(new { success = false, message = "Utente non autenticato." });
+
+        // QUI: Logica per trovare e aggiornare l'entità VisitedCity/UserTripMemory nel database
+        // basata su request.VisitId e user.Id.
+        // Esempio concettuale:
+        // var visitedPlace = await _dbContext.UserTripMemories.FirstOrDefaultAsync(m => m.Id == request.VisitId && m.UserId == user.Id);
+        // if (visitedPlace == null) return new JsonResult(new { success = false, message = "Visita non trovata." });
+        //
+        // if (DateTime.TryParse(request.VisitDate, out var parsedDate))
+        // {
+        //     visitedPlace.VisitDate = parsedDate;
+        // }
+        // visitedPlace.Rating = request.Rating;
+        // visitedPlace.Memories = request.Memories;
+        // visitedPlace.Highlights = request.Highlights ?? new List<string>();
+        // visitedPlace.TravelCompanions = request.TravelCompanions ?? new List<string>();
+        // visitedPlace.UpdatedAt = DateTime.UtcNow;
+        //
+        // await _dbContext.SaveChangesAsync();
+
+        System.Diagnostics.Debug.WriteLine($"TODO: Implementare salvataggio backend per VisitId: {request.VisitId}");
+
+        return new JsonResult(new { 
+            success = true, 
+            message = "Ricordi salvati (simulazione backend).",
+            // updatedVisit = new { // Invia i dati aggiornati se necessario
+            //    id = visitedPlace.Id,
+            //    visitDate = visitedPlace.VisitDate.ToString("yyyy-MM-dd"),
+            //    rating = visitedPlace.Rating,
+            //    memories = visitedPlace.Memories,
+            //    highlights = visitedPlace.Highlights,
+            //    travelCompanions = visitedPlace.TravelCompanions
+            //}
+        });
+    }
+    catch (Exception ex)
+    {
+        System.Diagnostics.Debug.WriteLine($"Errore in OnPostUpdateVisitedDetailsAsync: {ex.Message}");
+        return new JsonResult(new { success = false, message = "Errore server durante il salvataggio dei ricordi." });
+    }
+}
+*/
+
         public async Task<bool> RemoveFromWishlistAsync(int dreamId, string userId)
         {
             try

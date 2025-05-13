@@ -685,6 +685,81 @@
     </div>
 </div>
 
+<!-- Modal per Dettagli/Ricordi di una Città Visitata -->
+<div class="modal fade" id="visitDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header" style="background: var(--accent-color); color: white;">
+                <h5 class="modal-title"><i class="fas fa-mountain-city me-2"></i>Ricordi di Viaggio</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div class="visit-details-banner">
+                    <img src="/images/placeholder-destination.jpg" id="visitBannerImg" alt="Immagine destinazione visitata">
+                    <div class="visit-details-overlay">
+                        <h2 id="visitCityName">Nome Città</h2>
+                        <p id="visitCountryName">Nome Paese</p>
+                    </div>
+                </div>
+                <div class="visit-details-content p-3">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="visitDateInput" class="form-label"><i class="fas fa-calendar-check me-1"></i> Data della Visita</label>
+                                <input type="date" class="form-control" id="visitDateInput">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label"><i class="fas fa-star me-1"></i> Valutazione</label>
+                                <div id="visitRatingStars" class="rating-stars">
+                                    <i class="far fa-star" data-value="1"></i>
+                                    <i class="far fa-star" data-value="2"></i>
+                                    <i class="far fa-star" data-value="3"></i>
+                                    <i class="far fa-star" data-value="4"></i>
+                                    <i class="far fa-star" data-value="5"></i>
+                                </div>
+                                <input type="hidden" id="visitRatingInput" value="0">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="visitHighlightsInput" class="form-label"><i class="fas fa-bullseye me-1"></i> Momenti Salienti (separati da virgola)</label>
+                                <input type="text" class="form-control" id="visitHighlightsInput" placeholder="Es: Vista mozzafiato, Cena deliziosa">
+                            </div>
+                             <div class="mb-3">
+                                <label for="visitCompanionsInput" class="form-label"><i class="fas fa-users me-1"></i> Compagni di Viaggio (separati da virgola)</label>
+                                <input type="text" class="form-control" id="visitCompanionsInput" placeholder="Es: Maria, Famiglia">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="visitMemoriesTextarea" class="form-label"><i class="fas fa-book-open me-1"></i> I Miei Ricordi</label>
+                        <textarea class="form-control" id="visitMemoriesTextarea" rows="6" placeholder="Scrivi qui le tue esperienze, aneddoti e sensazioni..."></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label"><i class="fas fa-images me-1"></i> Galleria Foto</label>
+                        <div id="visitPhotoGallery" class="visit-photo-gallery">
+                            <!-- Le foto verranno aggiunte qui dinamicamente -->
+                            <p class="text-muted">Nessuna foto aggiunta per questa visita.</p>
+                        </div>
+                        <!-- Funzionalità upload foto (opzionale, per ora non implementata)
+                        <div class="mt-2">
+                            <input type="file" class="form-control form-control-sm" id="visitPhotoUpload" multiple accept="image/*">
+                            <button type="button" class="btn btn-sm btn-outline-primary mt-1" id="uploadVisitPhotosBtn"><i class="fas fa-upload"></i> Carica Foto</button>
+                        </div>
+                        -->
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Chiudi</button>
+                <button type="button" class="btn btn-success" id="saveVisitDetailsBtn"><i class="fas fa-save me-1"></i> Salva Ricordi</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Form invisibile per aggiungere un nuovo elemento alla checklist -->
 <div class="modal fade" id="addChecklistItemModal" tabindex="-1">
     <div class="modal-dialog">
@@ -735,7 +810,7 @@
             --danger-color: #f44336;
             --dark-color: #2c3e50;
             --light-color: #f8f9fa;
-            --muted-color: #6c757d;
+            --muted-color: #6c757d; /* Questo è un grigio visibile su bianco */
             --border-radius: 12px;
             --box-shadow: 0 4px 15px rgba(0,0,0,0.1);
             --transition: all 0.3s ease;
@@ -750,7 +825,7 @@
         .dreammap-container {
             display: grid;
             grid-template-columns: 380px 1fr;
-            height: calc(100vh - 56px);
+            height: calc(100vh - 56px); /* Se la navbar è 56px, altrimenti adattare a 64px se è l'altezza della navbar di layout.cshtml */
             overflow: hidden;
         }
         
@@ -806,7 +881,7 @@
 
 .dream-tag {
     display: inline-block;
-    background-color: var(--primary-color-light);
+    background-color: var(--primary-light); /* CORRETTO: --primary-light */
     color: var(--primary-color);
     border-radius: 15px;
     padding: 2px 10px;
@@ -814,6 +889,64 @@
     margin-bottom: 5px;
     font-size: 0.8rem;
 }
+
+
+/* Stili per Visit Details Modal */
+.visit-details-banner { /* Simile a dream-details-banner */
+    position: relative;
+    height: 200px; /* Un po' meno alto */
+}
+
+.visit-details-banner img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.visit-details-overlay { /* Simile a dream-details-overlay */
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
+    color: white;
+    padding: 15px 20px;
+}
+.visit-details-overlay h2 { margin: 0; font-size: 1.8rem; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); }
+.visit-details-overlay p { margin: 3px 0 0; font-size: 1rem; opacity: 0.9; }
+
+.rating-stars {
+    font-size: 1.5rem; /* Dimensione delle stelle */
+    color: var(--warning-color); /* Colore delle stelle */
+    cursor: pointer;
+}
+.rating-stars i:hover {
+    transform: scale(1.1);
+}
+
+.visit-photo-gallery {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    border: 1px dashed #ccc;
+    padding: 10px;
+    border-radius: var(--border-radius);
+    min-height: 80px;
+    align-items: center; /* Centra il testo "Nessuna foto" se presente */
+    justify-content: center; /* Centra il testo "Nessuna foto" se presente */
+}
+.visit-photo-gallery img {
+    width: 100px;
+    height: 100px;
+    object-fit: cover;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+.visit-photo-gallery .text-muted {
+    width: 100%;
+    text-align: center;
+}
+
         .dreammap-header {
             padding: 20px;
             border-bottom: 1px solid rgba(0,0,0,0.1);
@@ -822,7 +955,7 @@
         .dreammap-header h2 {
             margin: 0;
             font-size: 1.5rem;
-            color: var (--dark-color);
+            color: var(--dark-color); /* CORRETTO: --dark-color */
             display: flex;
             align-items: center;
             gap: 8px;
@@ -834,7 +967,7 @@
         
         .dreammap-header p {
             margin: 5px 0 0;
-            color: var (--muted-color);
+            color: var(--muted-color); /* CORRETTO: --muted-color */
             font-size: 0.9rem;
         }
         
@@ -844,23 +977,24 @@
             border-bottom: 1px solid rgba(0,0,0,0.1);
         }
         
-        .nav-tabs .nav-link {
+        .dreammap-sidebar .nav-tabs .nav-link { /* Aggiunto .dreammap-sidebar per specificità se necessario, ma il problema è !important */
             border: none;
             border-bottom: 2px solid transparent;
-            color: var (--muted-color);
-            padding: 10px 0;
+            color: var(--muted-color) !important; /* PRIMA MODIFICA: Aggiunto !important. var(--muted-color) è #6c757d */
+            padding: 10px 0; /* Rimosso !important se non strettamente necessario qui, ma il padding non è il problema */
             margin-right: 20px;
             font-weight: 500;
         }
         
-        .nav-tabs .nav-link.active {
-            border-bottom: 2px solid var (--primary-color);
-            color: var (--primary-color);
+        .dreammap-sidebar .nav-tabs .nav-link.active { /* Aggiunto .dreammap-sidebar per specificità se necessario */
+            border-bottom: 2px solid var(--primary-color); /* CORRETTO: --primary-color */
+            color: var(--primary-color) !important; /* SECONDA MODIFICA: Aggiunto !important. var(--primary-color) è #1a73e8 */
             background: transparent;
         }
         
-        .nav-tabs .nav-link i {
+        .dreammap-sidebar .nav-tabs .nav-link i { /* Aggiunto .dreammap-sidebar per specificità se necessario */
             margin-right: 5px;
+            /* Il colore dell'icona verrà ereditato dal .nav-link genitore, che ora è corretto */
         }
         
         /* Tab content */
@@ -881,21 +1015,14 @@
             min-height: 300px;
         }
 
-        .ai-error {
-            background-color: #fff5f5;
-            border-left: 4px solid #f44336;
-            padding: 15px;
-            margin: 10px 0;
-            border-radius: 4px;
-        }
         /* Dream item */
         .dream-item, .plan-item {
             background: white;
-            border-radius: var (--border-radius);
-            box-shadow: var (--box-shadow);
+            border-radius: var(--border-radius); /* CORRETTO: --border-radius */
+            box-shadow: var(--box-shadow); /* CORRETTO: --box-shadow */
             margin-bottom: 20px;
             overflow: hidden;
-            transition: var (--transition);
+            transition: var(--transition); /* CORRETTO: --transition */
         }
         
         .dream-item:hover, .plan-item:hover {
@@ -947,8 +1074,8 @@
             margin-bottom: 8px;
         }
         
-        .dream-priority.low i {
-            color: #ffb300;
+        .dream-priority.low i { /* Assicurarsi che queste classi esistano o siano applicate correttamente */
+            color: #ffb300; 
         }
         
         .dream-priority.medium i {
@@ -963,11 +1090,11 @@
             margin: 0;
             font-size: 1.2rem;
             font-weight: 600;
-            color: var (--dark-color);
+            color: var(--dark-color); /* CORRETTO: --dark-color */
         }
         
         .dream-country, .plan-country {
-            color: var (--muted-color);
+            color: var(--muted-color); /* CORRETTO: --muted-color */
             font-size: 0.9rem;
             margin-bottom: 10px;
         }
@@ -979,17 +1106,17 @@
             margin-bottom: 10px;
         }
         
-        .dream-tag {
-            background-color: var (--primary-light);
-            color: var (--primary-color);
-            font-size: 0.75rem;
+        .dream-tag { /* Stile già definito sopra, assicurarsi coerenza */
+            background-color: var(--primary-light); /* CORRETTO: --primary-light */
+            color: var(--primary-color);
+            font-size: 0.75rem; /* Leggermente più piccolo qui, unificare se necessario */
             padding: 2px 8px;
             border-radius: 15px;
         }
         
         .dream-note {
             font-size: 0.9rem;
-            color: var (--muted-color);
+            color: var(--muted-color); /* CORRETTO: --muted-color */
             line-height: 1.4;
         }
         
@@ -1028,7 +1155,7 @@
             display: flex;
             align-items: center;
             gap: 5px;
-            color: var (--warning-color);
+            color: var(--warning-color);
             font-size: 0.9rem;
             margin-bottom: 10px;
         }
@@ -1040,18 +1167,18 @@
         .plan-progress .progress {
             height: 8px;
             border-radius: 4px;
-            background-color: var (--light-color);
+            background-color: var(--light-color); /* CORRETTO: --light-color */
             margin-bottom: 5px;
         }
         
         .plan-progress .progress-bar {
-            background-color: var (--accent-color);
+            background-color: var(--accent-color);
             border-radius: 4px;
         }
         
         .plan-progress-text {
             font-size: 0.8rem;
-            color: var (--muted-color);;
+            color: var(--muted-color); /* CORRETTO: --muted-color */
         }
         
         .plan-checklist {
@@ -1060,48 +1187,26 @@
             margin: 0;
         }
         
-        .ai-suggestion-list {
-    padding-left: 20px;
-}
-
-.ai-suggestion-list li {
-    margin-bottom: 10px;
-}
-
-.ai-suggestion-list li strong {
-    color: var (--primary-color);
-}
-
-.ai-error {
-    background-color: #fff5f5;
-    border-left: 4px solid #f44336;
-    padding: 15px;
-    border-radius: 4px;
-    text-align: center;
-}
-
-.ai-error i {
-    color: #f44336;
-    font-size: 2rem;
-    margin-bottom: 10px;
-}
-
+        .ai-suggestion-list li strong {
+            color: var(--primary-color); /* CORRETTO: --primary-color */
+        }
+        
         .plan-checklist li {
             display: flex;
             align-items: center;
             gap: 5px;
             padding: 5px 0;
             font-size: 0.9rem;
-            color: var (--dark-color);;;
+            color: var(--dark-color); /* CORRETTO: --dark-color */
         }
         
         .plan-checklist li.completed {
-            color: var (--accent-color);
+            color: var(--accent-color);
             text-decoration: line-through;
         }
         
         .plan-checklist li.more {
-            color: var (--muted-color);
+            color: var(--muted-color); /* CORRETTO: --muted-color */
             font-style: italic;
             text-align: center;
             padding-top: 10px;
@@ -1126,7 +1231,7 @@
         
         .empty-state p {
             margin-bottom: 5px;
-            color: var (--dark-color);;;
+            color: var(--dark-color); /* CORRETTO: --dark-color */
         }
         
         .empty-state p.text-muted {
@@ -1136,8 +1241,8 @@
         /* Add dream button */
         .add-dream-btn {
             position: sticky;
-            bottom: 0;
-            margin-top: 20px;
+            bottom: 0; /* Potrebbe necessitare di un padding-bottom sul .tab-content per non sovrapporsi all'ultimo elemento */
+            margin-top: 20px; /* O padding-top sul contenitore del bottone se è fisso in basso */
             width: 100%;
             padding: 12px;
             border-radius: 8px;
@@ -1151,11 +1256,11 @@
         .discover-header h3 {
             margin: 0;
             font-size: 1.3rem;
-            color: var (--dark-color);;;
+            color: var(--dark-color); /* CORRETTO: --dark-color */
         }
         
         .discover-header p {
-            color: var (--muted-color);
+            color: var(--muted-color); /* CORRETTO: --muted-color */
             font-size: 0.9rem;
             margin: 5px 0 0;
         }
@@ -1173,10 +1278,10 @@
         
         .discover-card {
             background: white;
-            border-radius: var (--border-radius);
+            border-radius: var(--border-radius); /* CORRETTO: --border-radius */
             overflow: hidden;
-            box-shadow: var (--box-shadow);
-            transition: var (--transition);
+            box-shadow: var(--box-shadow); /* CORRETTO: --box-shadow */
+            transition: var(--transition); /* CORRETTO: --transition */
         }
         
         .discover-card:hover {
@@ -1195,7 +1300,7 @@
             object-fit: cover;
         }
         
-        .discover-flag {
+        .discover-flag { /* Stile già presente, assicurarsi coerenza */
             position: absolute;
             top: 10px;
             right: 10px;
@@ -1247,19 +1352,19 @@
         
         .discover-content p {
             margin: 0 0 10px 0;
-            color: var (--muted-color);
+            color: var(--muted-color); /* CORRETTO: --muted-color */
             font-size: 0.9rem;
         }
         
-        .discover-tags {
+        .discover-tags { /* Stile già presente, assicurarsi coerenza */
             display: flex;
             gap: 5px;
             margin-bottom: 15px;
         }
         
-        .discover-tag {
-            background-color: var (--primary-light);
-            color: var (--primary-color);
+        .discover-tag { /* Stile già presente, assicurarsi coerenza */
+            background-color: var(--primary-light); /* CORRETTO: --primary-light */
+            color: var(--primary-color);
             font-size: 0.75rem;
             padding: 2px 8px;
             border-radius: 15px;
@@ -1273,7 +1378,7 @@
         }
         
         .discover-highlight {
-            background-color: var (--light-color);
+            background-color: var(--light-color); /* CORRETTO: --light-color */
             border-radius: 5px;
             padding: 5px 10px;
             font-size: 0.85rem;
@@ -1283,7 +1388,7 @@
         }
         
         .discover-highlight i {
-            color: var (--primary-color);
+            color: var(--primary-color);
         }
         
         .discover-actions {
@@ -1301,12 +1406,12 @@
         
         /* Map container */
         .dreammap-main {
-            position: relative;
-            height: 100vh; /* Add this explicit height */
+            position: relative; /* Non dovrebbe essere necessario se height: 100vh non è usato qui e l'altezza è gestita da dreammap-container */
+             /* height: 100vh; Rimosso: l'altezza è gestita da grid in .dreammap-container */
         }
         
         #dreamMap {
-            height: 100%;
+            height: 100%; /* Occuperà l'altezza della cella grid in .dreammap-container */
             width: 100%;
         }
         
@@ -1318,7 +1423,7 @@
         }
         
         .modal-header {
-            background-color: var (--primary-color);
+            background-color: var(--primary-color); /* CORRETTO: --primary-color */
             color: white;
         }
         
@@ -1337,7 +1442,7 @@
         }
         
         .priority-selector i {
-            color: #ffb300;
+            color: #ffb300; /* O var(--warning-color) se preferito */
         }
         
         .destination-image-preview {
@@ -1345,7 +1450,7 @@
             height: 200px;
             border-radius: 12px;
             overflow: hidden;
-            box-shadow: var (--box-shadow);
+            box-shadow: var(--box-shadow); /* CORRETTO: --box-shadow */
         }
         
         .destination-image-preview img {
@@ -1367,7 +1472,7 @@
         
         /* Dream details modal */
         .dream-details-header, .plan-details-header {
-            background: linear-gradient(135deg, var (--primary-color), #4c6ef5);
+            background: linear-gradient(135deg, var(--primary-color), #4c6ef5); /* CORRETTO: --primary-color */
         }
         
         .dream-details-banner, .plan-details-banner {
@@ -1418,7 +1523,7 @@
         .detail-item {
             display: flex;
             gap: 15px;
-            flex: 1 1 calc(33.333% - 20px);
+            flex: 1 1 calc(33.333% - 20px); /* Per 3 colonne, aggiusta se necessario */
         }
         
         .detail-item.full-width {
@@ -1428,12 +1533,12 @@
         .detail-icon {
             width: 40px;
             height: 40px;
-            background-color: var (--primary-light);
+            background-color: var(--primary-light); /* CORRETTO: --primary-light */
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: var (--primary-color);
+            color: var(--primary-color); /* CORRETTO: --primary-color */
             font-size: 1.2rem;
             flex-shrink: 0;
         }
@@ -1444,12 +1549,12 @@
         
         .detail-text h6 {
             margin: 0 0 5px 0;
-            color: var (--muted-color);
+            color: var(--muted-color); /* CORRETTO: --muted-color */
             font-size: 0.9rem;
         }
         
-        .dream-note {
-            background-color: var (--light-color);
+        .dream-note { /* Stile già definito, assicurarsi coerenza */
+            background-color: var(--light-color); /* CORRETTO: --light-color */
             border-radius: 8px;
             padding: 15px;
             font-size: 0.95rem;
@@ -1469,7 +1574,7 @@
         }
         
         .dream-ai-suggestions h5 i {
-            color: var (--warning-color);
+            color: var(--warning-color);
         }
         
 /* Stili per i tab suggerimenti */
@@ -1488,14 +1593,14 @@
 }
 
 .suggestion-tab:hover {
-    background-color: rgba(0, 123, 255, 0.05);
-    border-bottom: 2px solid rgba(0, 123, 255, 0.3);
+    background-color: rgba(0, 123, 255, 0.05); /* Usa var(--primary-light) se definito e appropriato */
+    border-bottom: 2px solid rgba(0, 123, 255, 0.3); /* Usa var(--primary-color) con opacità */
 }
 
 .suggestion-tab.active {
     font-weight: 500;
-    border-bottom: 2px solid #007bff;
-    color: #007bff;
+    border-bottom: 2px solid var(--primary-color); /* Usa var(--primary-color) */
+    color: var(--primary-color); /* Usa var(--primary-color) */
 }
 
 .suggestion-pane {
@@ -1516,7 +1621,7 @@
             background-color: rgba(255, 255, 255, 0.2);
             border-radius: 20px;
             padding: 5px 15px;
-            display: inline-flex;
+            display: inline-flex; /* Per non occupare tutta la larghezza */
         }
         
         .plan-details-section {
@@ -1528,11 +1633,11 @@
             align-items: center;
             gap: 8px;
             margin-bottom: 15px;
-            color: var (--dark-color);
+            color: var(--dark-color); /* CORRETTO: --dark-color */
         }
         
         .plan-details-section h5 i {
-            color: var (--primary-color);
+            color: var(--primary-color); /* CORRETTO: --primary-color */
         }
         
         .plan-progress-bar {
@@ -1557,24 +1662,24 @@
             align-items: center;
             gap: 10px;
             padding: 10px 15px;
-            background-color: var (--light-color);
+            background-color: var(--light-color); /* CORRETTO: --light-color */
             border-radius: 8px;
             margin-bottom: 10px;
-            transition: var (--transition);
+            transition: var(--transition); /* CORRETTO: --transition */
         }
         
         .plan-detailed-checklist li:hover {
-            background-color: var (--primary-light);
+            background-color: var(--primary-light); /* CORRETTO: --primary-light */
         }
         
         .plan-detailed-checklist li.completed {
-            background-color: var (--accent-light);
+            background-color: var(--accent-light); /* CORRETTO: --accent-light */
             text-decoration: line-through;
-            color: var (--muted-color);
+            color: var(--muted-color); /* CORRETTO: --muted-color */
         }
         
-        .plan-detailed-checklist li i {
-            color: var (--accent-color);
+        .plan-detailed-checklist li i { /* Icona check/circle */
+            color: var(--accent-color); /* O var(--primary-color) se più coerente */
         }
         
         .plan-detailed-checklist .checklist-text {
@@ -1586,12 +1691,12 @@
             padding: 2px 8px;
             border-radius: 10px;
             font-size: 0.8rem;
-            color: var (--muted-color);
+            color: var(--muted-color); /* CORRETTO: --muted-color */
         }
         
         .plan-detailed-checklist .checklist-due {
             font-size: 0.8rem;
-            color: var (--warning-color);
+            color: var(--warning-color);
         }
         
         /* Info cards */
@@ -1606,12 +1711,12 @@
             background-color: white;
             border-radius: 12px;
             overflow: hidden;
-            box-shadow: var (--box-shadow);
+            box-shadow: var(--box-shadow); /* CORRETTO: --box-shadow */
         }
         
         .info-card-title {
-            background-color: var (--primary-light);
-            color: var (--primary-color);
+            background-color: var(--primary-light); /* CORRETTO: --primary-light */
+            color: var(--primary-color); /* CORRETTO: --primary-color */
             padding: 10px 15px;
             font-weight: 500;
             display: flex;
@@ -1632,7 +1737,7 @@
         
         .weather-icon {
             font-size: 2rem;
-            color: var (--warning-color);
+            color: var(--warning-color);
         }
         
         .weather-temp {
@@ -1640,14 +1745,14 @@
         }
         
         .weather-desc {
-            color: var (--muted-color);
+            color: var(--muted-color); /* CORRETTO: --muted-color */
         }
         
         .weather-forecast {
             margin-top: 10px;
             font-style: italic;
             font-size: 0.8rem;
-            color: var (--muted-color);
+            color: var(--muted-color); /* CORRETTO: --muted-color */
         }
         
         .explore-buttons {
@@ -1661,21 +1766,12 @@
         }
         
         /* Leaflet custom styles */
-        .custom-marker-icon {
-            background-color: white;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-        }
-        
-        .custom-marker-icon i {
-            color: var (--primary-color);
+        .custom-marker-icon i { /* Icona dentro al marker sulla mappa */
+            color: var(--primary-color); /* O un altro colore se i marker devono differenziarsi dal colore primario UI */
         }
         
         .custom-popup {
-            font-family: 'Roboto', sans-serif;
+            font-family: 'Roboto', sans-serif; /* O la font family del sito */
         }
         
         .custom-popup h3 {
@@ -1685,28 +1781,28 @@
         
         .custom-popup p {
             margin: 0 0 10px 0;
-            color: var (--muted-color);
+            color: var(--muted-color); /* CORRETTO: --muted-color */
         }
         
         /* Responsive */
         @@media (max-width: 992px) {
             .dreammap-container {
-                grid-template-columns: 1fr;
-                grid-template-rows: 1fr 350px;
+                grid-template-columns: 1fr; /* Stack su mobile */
+                grid-template-rows: 1fr 350px; /* Mappa sopra, sidebar sotto con altezza fissa */
             }
             
-            .dreammap-main {
-                order: 1;
+            .dreammap-main { /* Mappa */
+                order: 1; /* Appare prima */
             }
             
-            .dreammap-sidebar {
-                order: 2;
-                height: 350px;
-                overflow-y: auto;
+            .dreammap-sidebar { /* Sidebar */
+                order: 2; /* Appare dopo */
+                height: 350px; /* Altezza fissa per lo scroll */
+                overflow-y: auto; /* Abilita scroll verticale se il contenuto eccede */
             }
             
             .info-cards {
-                grid-template-columns: 1fr;
+                grid-template-columns: 1fr; /* Info cards in una colonna su mobile */
             }
         }
         
@@ -1716,11 +1812,11 @@
             }
             
             .detail-item {
-                flex: 1 1 100%;
+                flex: 1 1 100%; /* Elementi dettaglio a tutta larghezza */
             }
             
             .discover-grid {
-                grid-template-columns: 1fr;
+                grid-template-columns: 1fr; /* Card Discover in una colonna */
             }
         }
     </style>
@@ -2502,7 +2598,169 @@
                     setupLink('bookingBtn', 'https://www.booking.com/searchresults.html?ss={QUERY}');
                     setupLink('tripAdvisorBtn', 'https://www.tripadvisor.com/Search?q={QUERY}');
                 }
-        function showVisitDetails(visitId) { alert("Funzionalità Ricordi per ID: " + visitId + " in sviluppo."); }
+                function showVisitDetails(visitId) {
+            console.log('[showVisitDetails] Tentativo di mostrare dettagli per VisitId:', visitId);
+            const visitData = destinations.visitedCities.find(v => v.id && v.id.toString() === visitId.toString());
+
+            if (!visitData) {
+                console.error('[showVisitDetails] Dati visita non trovati per ID:', visitId);
+                showToast('Errore', 'Dettagli della visita non trovati.', 'danger');
+                return;
+            }
+            console.log('[showVisitDetails] Dati visita trovati:', visitData);
+
+            const modalElement = document.getElementById('visitDetailsModal');
+            if (!modalElement) {
+                console.error("[showVisitDetails] ERRORE CRITICO: Elemento modal 'visitDetailsModal' non trovato.");
+                return;
+            }
+            modalElement.setAttribute('data-visit-id', visitId);
+
+            // Popola il banner
+            document.getElementById('visitCityName').textContent = visitData.cityName || 'N/D';
+            document.getElementById('visitCountryName').textContent = visitData.countryName || 'N/D';
+            const bannerImg = document.getElementById('visitBannerImg');
+            bannerImg.onerror = function() { this.src = '/images/placeholder-destination.jpg'; };
+            bannerImg.src = visitData.imageUrl || '/images/placeholder-destination.jpg';
+
+            // Popola i campi del form
+            document.getElementById('visitDateInput').value = visitData.visitDate ? formatDateForInput(visitData.visitDate) : '';
+            document.getElementById('visitMemoriesTextarea').value = visitData.memories || '';
+            
+            // Popola highlights e companions (se presenti nel tuo modello dati visitData)
+            document.getElementById('visitHighlightsInput').value = (visitData.highlights || []).join(', ');
+            document.getElementById('visitCompanionsInput').value = (visitData.travelCompanions || []).join(', ');
+
+            // Gestione Rating
+            const ratingInput = document.getElementById('visitRatingInput');
+            const starsContainer = document.getElementById('visitRatingStars');
+            ratingInput.value = visitData.rating || 0;
+            
+            starsContainer.querySelectorAll('i').forEach(star => {
+                star.classList.remove('fas', 'far'); // Rimuovi entrambe le classi
+                star.classList.add(parseInt(star.dataset.value) <= ratingInput.value ? 'fas' : 'far'); // fas per piena, far per vuota
+                
+                // Rimuovi vecchi listener per evitare duplicazioni
+                const newStar = star.cloneNode(true);
+                star.parentNode.replaceChild(newStar, star);
+
+                newStar.addEventListener('click', function() {
+                    const newRating = parseInt(this.dataset.value);
+                    ratingInput.value = newRating;
+                    starsContainer.querySelectorAll('i').forEach(s => {
+                        s.classList.remove('fas', 'far');
+                        s.classList.add(parseInt(s.dataset.value) <= newRating ? 'fas' : 'far');
+                    });
+                });
+            });
+
+            // Popola Galleria Foto (se presente in visitData.photoUrls)
+            const photoGallery = document.getElementById('visitPhotoGallery');
+            photoGallery.innerHTML = ''; // Pulisci la galleria
+            if (visitData.photoUrls && visitData.photoUrls.length > 0) {
+                visitData.photoUrls.forEach(url => {
+                    const img = document.createElement('img');
+                    img.src = url;
+                    img.alt = "Foto del viaggio";
+                    img.onerror = function() { this.style.display='none'; /* Nascondi se l'immagine non carica */ };
+                    photoGallery.appendChild(img);
+                });
+            } else {
+                photoGallery.innerHTML = '<p class="text-muted">Nessuna foto aggiunta per questa visita.</p>';
+            }
+
+            // Configura pulsante Salva
+            const saveBtn = document.getElementById('saveVisitDetailsBtn');
+            const newSaveBtn = saveBtn.cloneNode(true); // Per rimuovere vecchi listener
+            saveBtn.parentNode.replaceChild(newSaveBtn, saveBtn);
+            newSaveBtn.onclick = function() {
+                updateVisitDetails(visitId);
+            };
+
+            const visitModal = new bootstrap.Modal(modalElement);
+            visitModal.show();
+
+            if (isValidLatitude(visitData.latitude) && isValidLongitude(visitData.longitude)) {
+                flyToDestination(visitData.latitude, visitData.longitude);
+            }
+        }
+
+                function updateVisitDetails(visitId) {
+            const visitDataIndex = destinations.visitedCities.findIndex(v => v.id && v.id.toString() === visitId.toString());
+            if (visitDataIndex === -1) {
+                showToast('Errore', 'Impossibile salvare, dati visita non trovati.', 'danger');
+                return;
+            }
+
+            // Raccogli i dati dal modal
+            const visitDate = document.getElementById('visitDateInput').value;
+            const rating = parseInt(document.getElementById('visitRatingInput').value) || 0;
+            const memories = document.getElementById('visitMemoriesTextarea').value;
+            const highlights = document.getElementById('visitHighlightsInput').value.split(',').map(s => s.trim()).filter(s => s);
+            const companions = document.getElementById('visitCompanionsInput').value.split(',').map(s => s.trim()).filter(s => s);
+            // Per ora, non gestiamo l'upload di nuove foto, solo la persistenza degli URL esistenti (se il backend lo supportasse)
+
+            // Aggiorna l'oggetto nell'array JavaScript 'destinations.visitedCities'
+            // Questi campi devono esistere sull'oggetto `MapDestinationItem` nel C# e `visitData` in JS
+            destinations.visitedCities[visitDataIndex].visitDate = visitDate ? new Date(visitDate) : null;
+            destinations.visitedCities[visitDataIndex].rating = rating;
+            destinations.visitedCities[visitDataIndex].memories = memories;
+            destinations.visitedCities[visitDataIndex].highlights = highlights; // Assicurati che 'highlights' esista in MapDestinationItem
+            destinations.visitedCities[visitDataIndex].travelCompanions = companions; // Assicurati che 'travelCompanions' esista in MapDestinationItem
+            // destinations.visitedCities[visitDataIndex].photoUrls = ... (se gestisci gli URL delle foto)
+
+
+            console.log('Dati visita aggiornati (client-side):', destinations.visitedCities[visitDataIndex]);
+            
+            // -------- INIZIO SEZIONE PER CHIAMATA BACKEND (da implementare) --------
+            // Qui andrebbe la chiamata fetch al backend per persistere le modifiche.
+            // Esempio di struttura della chiamata:
+            /*
+            showLoadingOverlay('Salvataggio ricordi...');
+            fetch('/DreamMap?handler=UpdateVisitedDetails', { // Handler da creare
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': getAntiForgeryToken() 
+                },
+                body: JSON.stringify({ 
+                    visitId: visitId,
+                    visitDate: visitDate,
+                    rating: rating,
+                    memories: memories,
+                    highlights: highlights,
+                    travelCompanions: companions
+                    // photoUrls: destinations.visitedCities[visitDataIndex].photoUrls // Invia gli URL esistenti
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                hideLoadingOverlay();
+                if (data.success) {
+                    // Opzionale: aggiorna l'oggetto locale con i dati restituiti dal server (es. se l'ID o altri campi vengono modificati)
+                    // destinations.visitedCities[visitDataIndex] = { ...destinations.visitedCities[visitDataIndex], ...data.updatedVisit };
+                    showToast('Successo', 'Ricordi salvati con successo!', 'success');
+                    bootstrap.Modal.getInstance(document.getElementById('visitDetailsModal')).hide();
+                } else {
+                    showToast('Errore', data.message || 'Salvataggio dei ricordi fallito.', 'danger');
+                }
+            })
+            .catch(error => {
+                hideLoadingOverlay();
+                console.error('Errore durante il salvataggio dei ricordi:', error);
+                showToast('Errore', 'Errore di connessione durante il salvataggio.', 'danger');
+            });
+            */
+            // -------- FINE SEZIONE PER CHIAMATA BACKEND --------
+            
+            // Per ora, simuliamo successo e chiudiamo il modal
+            showToast('Info', 'Ricordi aggiornati localmente (salvataggio backend non implementato).', 'info');
+            bootstrap.Modal.getInstance(document.getElementById('visitDetailsModal')).hide();
+
+            // Non è necessario chiamare sincronizzaStatoApp() se l'unico impatto visivo
+            // è sui dati del modal, a meno che non mostri rating/foto altrove.
+            // Se i marker sulla mappa dovessero cambiare (es. colore in base al rating), allora sì.
+        }
 
         function removePlan(planId) {
             if (!confirm('Eliminare questo piano di viaggio?')) return;
