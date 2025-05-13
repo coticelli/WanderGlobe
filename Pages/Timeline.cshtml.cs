@@ -8,6 +8,7 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using WanderGlobe.Data;
 using WanderGlobe.Models;
+using WanderGlobe.Models.Custom;
 using WanderGlobe.Services;
 
 namespace WanderGlobe.Pages
@@ -16,17 +17,25 @@ namespace WanderGlobe.Pages
     {
         private readonly ApplicationDbContext _context;
         private readonly ICityService _cityService;
+        private readonly IWeatherService _weatherService;
 
-        public TimelineModel(ApplicationDbContext context, ICityService cityService)
+        public TimelineModel(
+            ApplicationDbContext context, 
+            ICityService cityService,
+            IWeatherService weatherService)
         {
             _context = context;
             _cityService = cityService;
+            _weatherService = weatherService;
         }
 
         public List<VisitedCountry> Visits { get; set; } = new List<VisitedCountry>();
         public Dictionary<int, List<VisitedCountry>> GroupedVisits { get; set; } = new Dictionary<int, List<VisitedCountry>>();
         public List<int> VisitYears { get; set; } = new List<int>();
         public List<string> Continents { get; set; } = new List<string>();
+        
+        // Dictionary to cache weather data
+        public Dictionary<int, TimelineWeather> WeatherData { get; set; } = new Dictionary<int, TimelineWeather>();
 
         public async Task OnGetAsync()
         {
@@ -48,6 +57,24 @@ namespace WanderGlobe.Pages
                 .Distinct()
                 .OrderBy(continentName => continentName)
                 .ToListAsync();
+                
+            // Get weather data for visited countries
+            await LoadWeatherDataAsync();
+        }
+
+        private async Task LoadWeatherDataAsync()
+        {
+            foreach (var visit in Visits)
+            {
+                if (visit.Country != null && !WeatherData.ContainsKey(visit.CountryId))
+                {
+                    var weather = await _weatherService.GetCurrentWeatherAsync(
+                        visit.Country.Latitude, 
+                        visit.Country.Longitude);
+                    
+                    WeatherData[visit.CountryId] = weather;
+                }
+            }
         }
 
         public async Task<IActionResult> OnPostEditVisitAsync(int visitId, DateTime visitDate, string visitNotes)
@@ -68,6 +95,22 @@ namespace WanderGlobe.Pages
             await _context.SaveChangesAsync();
             return RedirectToPage();
         }
+        
+        public TimelineWeather GetWeatherForCountry(int countryId)
+        {
+            if (WeatherData.TryGetValue(countryId, out var weather))
+            {
+                return weather;
+            }
+            
+            // Default weather if not found
+            return new TimelineWeather
+            {
+                Month = DateTime.Now.Month,
+                Temperature = 22,
+                Condition = "Soleggiato"
+            };
+        }
 
         private string GetCurrentUserId()
         {
@@ -84,7 +127,7 @@ namespace WanderGlobe.Pages
                     return "DBG:CodeNullOrEmpty";
                 }
 
-                string searchCode = countryCode.Trim(); // Manteniamo il Trim qui sull'input
+                string searchCode = countryCode.Trim();
                 if (string.IsNullOrEmpty(searchCode))
                 {
                     return $"DBG:CodeTrimmedEmpty(Orig:'{originalCountryCodeForDebug}')";
@@ -93,7 +136,6 @@ namespace WanderGlobe.Pages
                 var italyTestCountry = await _context.Countries.FirstOrDefaultAsync(c => c.Code == "IT");
                 string italyTestResult = italyTestCountry == null ? "IT_NotFoundInDB" : $"IT_Found(ID:{italyTestCountry.Id}, Name:{italyTestCountry.Name})";
                 
-                // Modifica per la query LINQ
                 string searchCodeUpper = searchCode.ToUpper(); 
 
                 var country = await _context.Countries
@@ -101,8 +143,6 @@ namespace WanderGlobe.Pages
 
                 if (country == null)
                 {
-                    // Il debug per country null rimane, ma potremmo non aver bisogno di tutti i conteggi
-                    // se questo risolve l'eccezione.
                     var firstFiveCodes = await _context.Countries.Take(5).Select(c => c.Code ?? "NULL_CODE").ToListAsync();
                     string sampleCodes = string.Join(",", firstFiveCodes);
                     return $"DBG:CountryNull(S_UPPER:'{searchCodeUpper}',O:'{originalCountryCodeForDebug}',ITTest:'{italyTestResult}',Samples:'{sampleCodes}')";
@@ -112,23 +152,21 @@ namespace WanderGlobe.Pages
                 {
                     return $"DBG:CitySvcNull(Country:{country.Name},ITTest:'{italyTestResult}')";
                 }
-
-                var capital = await _cityService.GetCapitalCityByCountryIdAsync(country.Id);
+                
+                var capital = await _cityService.GetCapitalCityAsync(country.Id);
                 
                 if (capital == null)
                 {
-                    bool capitalExistsInDbForCountryId = await _context.Cities.AnyAsync(c => c.CountryId == country.Id && c.IsCapital);
-                    return $"DBG:CapitalNull(Country:{country.Name},CountryID:{country.Id},CapitalExistsInDB:{capitalExistsInDbForCountryId},ITTest:'{italyTestResult}')";
+                    return $"DBG:CapitalNull(Country:{country.Name}, ID:{country.Id})";
                 }
-
-                return capital.Name; 
+                
+                return capital.Name;
             }
             catch (Exception ex)
             {
                 string excType = ex.GetType().Name;
-                // Ottieni più dettagli dall'eccezione LINQ
-                string excMsg = ex.ToString(); // Ottenere il messaggio completo e lo stack trace può essere utile
-                excMsg = excMsg.Length > 200 ? excMsg.Substring(0, 200) : excMsg; // Limita la lunghezza per UI
+                string excMsg = ex.Message;
+                excMsg = excMsg.Length > 200 ? excMsg.Substring(0, 200) : excMsg;
 
                 return $"DBG:EXC({excType}:'{excMsg}',Orig:'{originalCountryCodeForDebug}')";
             }

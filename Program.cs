@@ -27,6 +27,7 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options => {
 
 // Add services to the container.
 builder.Services.AddRazorPages();
+builder.Services.AddScoped<IWeatherService, WeatherService>();
 
 // Registra i servizi
 builder.Services.AddScoped<ICountryService, CountryService>();

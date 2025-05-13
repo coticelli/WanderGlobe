@@ -127,163 +127,107 @@
                         
                         <div class="timeline-events-wrapper">
                             <div class="timeline-events">
-                                @foreach (var monthGroup in yearGroup.Value.GroupBy(v => v.VisitDate.Month).OrderBy(g => g.Key))
+                                @foreach (var visit in yearGroup.Value.OrderByDescending(v => v.VisitDate))
                                 {
-                                    <div class="timeline-month" data-month="@monthGroup.Key">
-                                        <div class="month-marker">
-                                            <div class="month-dot"></div>
-                                            <span class="month-name">@(new DateTime(yearGroup.Key, monthGroup.Key, 1).ToString("MMMM"))</span>
-                                        </div>
+                                    if (visit.Country != null)
+                                    {
+                                        var weatherData = Model.GetWeatherForCountry(visit.CountryId);
                                         
-                                        @foreach (var visit in monthGroup.OrderBy(v => v.VisitDate.Day))
-                                        {
-                                            <div class="timeline-event animated-card" 
-                                                 data-continent="@visit.Country.Continent?.ToLower()" 
-                                                 data-visit-id="@visit.CountryId"
-                                                 data-aos="fade-up">
-                                                <div class="event-date">
-                                                    <span>@visit.VisitDate.Day @(new DateTime(yearGroup.Key, monthGroup.Key, 1).ToString("MMMM"))</span>
+                                        <div class="timeline-event @visit.Country.Continent.ToLowerInvariant().Replace(" ", "-").Replace("/", "-")">
+                                            <div class="event-date">
+                                                <span>@visit.VisitDate.Day @(new DateTime(yearGroup.Key, visit.VisitDate.Month, 1).ToString("MMMM"))</span>
+                                            </div>
+                                            
+                                            <div class="event-card">
+                                                <div class="card-glare"></div>
+                                                <div class="event-image">
+                                                    <div class="image-wrapper">
+                                                        <img src="~/images/cities/@(visit.Country.Code.ToLower())-city.jpg" 
+                                                            alt="@await Model.GetCapitalAsync(visit.Country.Code)" 
+                                                            loading="lazy"
+                                                            onerror="this.onerror=null; this.src='/images/default-city.jpg';">
+                                                    </div>
+                                                    <div class="country-flag">
+                                                        <img src="~/images/flags/@(visit.Country.Code.ToLower()).png" 
+                                                            alt="@visit.Country.Name" 
+                                                            onerror="this.onerror=null; this.src='/images/flags/unknown.png';">
+                                                    </div>
+                                                    <div class="geo-tag">
+                                                        <i class="fas fa-map-marker-alt"></i>
+                                                    </div>
                                                 </div>
                                                 
-                                                <div class="event-card">
-                                                    <div class="card-glare"></div>
-                                                    <div class="event-image">
-                                                        <div class="image-wrapper">
-                                                            <img src="~/images/cities/@(visit.Country.Code.ToLower())-city.jpg" 
-                                                                alt="@await Model.GetCapitalAsync(visit.Country.Code)" 
-                                                                loading="lazy"
-                                                                onerror="this.onerror=null; this.src='/images/default-city.jpg';">
+                                                <div class="event-content">
+                                                    <h3>@await Model.GetCapitalAsync(visit.Country.Code)</h3>
+                                                    <div class="event-meta">
+                                                        <span class="country-name">
+                                                            <i class="fas fa-map"></i> @visit.Country.Name
+                                                        </span>
+                                                        <span class="continent-badge" data-continent="@visit.Country.Continent?.ToLower()">
+                                                            <i class="@GetContinentIcon(visit.Country.Continent)"></i> @visit.Country.Continent
+                                                        </span>
+                                                    </div>
+                                                    
+                                                    <div class="travel-metrics">
+                                                        <div class="metric">
+                                                            <i class="fas fa-temperature-high"></i>
+                                                            <span>22°C</span>
                                                         </div>
-                                                        <div class="country-flag">
-                                                            <img src="~/images/flags/@(visit.Country.Code.ToLower()).png" 
-                                                                alt="@visit.Country.Name" 
-                                                                onerror="this.onerror=null; this.src='/images/flags/unknown.png';">
+                                                        <div class="metric">
+                                                            <i class="fas fa-cloud-sun"></i>
+                                                            <span>Soleggiato</span>
                                                         </div>
-                                                        <div class="geo-tag">
-                                                            <i class="fas fa-map-marker-alt"></i>
+                                                        <div class="metric">
+                                                            <i class="fas fa-tachometer-alt"></i>
+                                                            <span>8,543 km</span>
                                                         </div>
                                                     </div>
                                                     
-                                                    <div class="event-content">
-                                                        <h3>@await Model.GetCapitalAsync(visit.Country.Code)</h3>
-                                                        <div class="event-meta">
-                                                            <span class="country-name">
-                                                                <i class="fas fa-map"></i> @visit.Country.Name
-                                                            </span>
-                                                            <span class="continent-badge" data-continent="@visit.Country.Continent?.ToLower()">
-                                                                <i class="@GetContinentIcon(visit.Country.Continent)"></i> @visit.Country.Continent
-                                                            </span>
-                                                        </div>
-                                                        
-                                                        <div class="travel-metrics">
-                                                            <div class="metric">
-                                                                <i class="fas fa-temperature-high"></i>
-                                                                <span>22°C</span>
+                                                    <div class="event-details">
+                                                        <!-- Add this section for weather -->
+                                                        <div class="weather-info">
+                                                            <div class="weather-icon">
+                                                                @{
+                                                                    string weatherIconClass = weatherData.Condition switch
+                                                                    {
+                                                                        "Soleggiato" => "fas fa-sun",
+                                                                        "Nuvoloso" => "fas fa-cloud",
+                                                                        "Piovoso" => "fas fa-cloud-rain",
+                                                                        "Pioviggine" => "fas fa-cloud-rain",
+                                                                        "Temporale" => "fas fa-bolt",
+                                                                        "Nevoso" => "fas fa-snowflake",
+                                                                        "Nebbioso" => "fas fa-smog",
+                                                                        "Foschia" => "fas fa-smog",
+                                                                        _ => "fas fa-cloud"
+                                                                    };
+                                                                }
+                                                                <i class="@weatherIconClass"></i>
                                                             </div>
-                                                            <div class="metric">
-                                                                <i class="fas fa-cloud-sun"></i>
-                                                                <span>Soleggiato</span>
-                                                            </div>
-                                                            <div class="metric">
-                                                                <i class="fas fa-tachometer-alt"></i>
-                                                                <span>8,543 km</span>
+                                                            <div class="weather-details">
+                                                                <span class="temperature">@weatherData.Temperature°C</span>
+                                                                <span class="condition">@weatherData.Condition</span>
                                                             </div>
                                                         </div>
-                                                        
-                                                        <div class="event-actions">
-                                                            <a href="/Globe?highlight=@visit.CountryId" class="btn btn-neo-primary hover-float">
-                                                                <i class="fas fa-globe"></i>
-                                                                <span>Visualizza sul globo</span>
-                                                            </a>
-                                                            <button type="button" class="btn btn-neo-secondary hover-float" data-bs-toggle="modal" data-bs-target="#visitModal@(visit.CountryId)">
-                                                                <i class="fas fa-edit"></i>
-                                                                <span>Modifica</span>
-                                                            </button>
-                                                            <button type="button" class="btn btn-circle memory-btn" title="Aggiungi ricordo">
-                                                                <i class="fas fa-camera"></i>
-                                                            </button>
-                                                        </div>
+                                                        <!-- Rest of the existing content... -->
+                                                    </div>
+                                                    
+                                                    <div class="event-actions">
+                                                        <a href="/Globe?highlight=@visit.CountryId" class="btn btn-neo-primary hover-float">
+                                                            <i class="fas fa-globe"></i>
+                                                            <span>Visualizza sul globo</span>
+                                                        </a>
+                                                        <button type="button" class="btn btn-neo-secondary hover-float" data-bs-toggle="modal" data-bs-target="#visitModal@(visit.CountryId)">
+                                                            <i class="fas fa-edit"></i>
+                                                            <span>Modifica</span>
+                                                        </button>
+                                                        <button type="button" class="btn btn-circle memory-btn" title="Aggiungi ricordo">
+                                                            <i class="fas fa-camera"></i>
+                                                        </button>
                                                     </div>
                                                 </div>
                                             </div>
-                                            
-                                            <!-- Modal per modifica visita -->
-                                            <div class="modal fade custom-modal" id="visitModal@(visit.CountryId)" tabindex="-1" aria-hidden="true">
-                                                <div class="modal-dialog modal-dialog-centered">
-                                                    <div class="modal-content glass-effect">
-                                                        <div class="modal-header">
-                                                            <h5 class="modal-title">
-                                                                <i class="fas fa-edit me-2"></i>
-                                                                Modifica visita a @await Model.GetCapitalAsync(visit.Country.Code)
-                                                            </h5>
-                                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                                        </div>
-                                                        <form method="post" asp-page-handler="EditVisit">
-                                                            <div class="modal-body">
-                                                                <input type="hidden" name="visitId" value="@visit.CountryId">
-
-                                                                <div class="city-info">
-                                                                    <div class="city-image">
-                                                                        <img src="~/images/cities/@(visit.Country.Code.ToLower())-city.jpg"
-                                                             alt="@await Model.GetCapitalAsync(visit.Country.Code)"
-                                                             onerror="this.onerror=null; this.src='/images/default-city.jpg';">
-                                                                    </div>
-                                                                    <div class="city-details">
-                                                                        <h6>@await Model.GetCapitalAsync(visit.Country.Code)</h6>
-                                                                        <p>@visit.Country.Name</p>
-                                                                    </div>
-                                                                </div>
-
-                                                                <div class="mb-4">
-                                                                    <label for="visitDate@(visit.CountryId)" class="form-label">
-                                                                        <i class="far fa-calendar-alt me-2"></i>
-                                                                        Data visita
-                                                                    </label>
-                                                                    <div class="date-input-wrapper">
-                                                                        <input type="date" class="form-control neo-input"
-                                                               id="visitDate@(visit.CountryId)"
-                                                               name="visitDate"
-                                                               value="@visit.VisitDate.ToString("yyyy-MM-dd")">
-                                                                    </div>
-                                                                </div>
-
-                                                                <div class="mb-4">
-                                                                    <label for="visitNotes@(visit.CountryId)" class="form-label">
-                                                                        <i class="far fa-sticky-note me-2"></i>
-                                                                        Note e ricordi
-                                                                    </label>
-                                                                    <textarea class="form-control neo-input"
-                                                              id="visitNotes@(visit.CountryId)"
-                                                              name="visitNotes"
-                                                              rows="3"
-                                                              placeholder="Scrivi i tuoi ricordi più belli...">@(visit.Notes ?? "")</textarea>
-                                                                </div>
-
-                                                                <div class="memory-gallery">
-                                                                    <div class="gallery-title">
-                                                                        <i class="fas fa-images me-2"></i>
-                                                                        I tuoi ricordi
-                                                                    </div>
-                                                                    <div class="memory-photos">
-                                                                        <div class="add-photo">
-                                                                            <i class="fas fa-plus"></i>
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                            <div class="modal-footer">
-                                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
-                                                                <button type="submit" class="btn btn-neo-primary">
-                                                                    <i class="fas fa-check me-1"></i>
-                                                                    Salva modifiche
-                                                                </button>
-                                                            </div>
-                                                        </form>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        }
-                                    </div>
+                                        </div>
+                                    }
                                 }
                             </div>
                         </div>
@@ -598,6 +542,66 @@
                         margin: 6px 0;
                     }
                     
+                     /* Weather Information Styling */
+        .weather-info {
+            display: flex;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 8px 12px;
+            margin-bottom: 10px;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .weather-icon {
+            margin-right: 12px;
+            font-size: 1.5rem;
+            width: 36px;
+            height: 36px;
+            background: rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+        }
+        
+        .weather-icon .fa-sun {
+            color: #ffc107;
+        }
+
+         .weather-icon .fa-cloud {
+            color: #90caf9;
+        }
+        
+        .weather-icon .fa-cloud-rain, 
+        .weather-icon .fa-bolt {
+            color: #64b5f6;
+        }
+        
+        .weather-icon .fa-snowflake {
+            color: #e3f2fd;
+        }
+        
+        .weather-icon .fa-smog {
+            color: #b0bec5;
+        }
+        
+        .weather-details {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .temperature {
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+         .condition {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
                     /* ===== NAVIGATION A SCHEDE ANNUALI ===== */
                     .timeline-year-tabs {
                         position: relative;
@@ -1267,7 +1271,7 @@
             backdrop-filter: var(--glass-backdrop);
             -webkit-backdrop-filter: var(--glass-backdrop);
             border: var(--glass-border);
-            color: var(--text-primary);
+            color: var (--text-primary);
             padding: 8px 16px;
             border-radius: 8px;
             font-weight: 500;
@@ -1424,7 +1428,7 @@
             border-radius: 10px;
             background: var(--glass-background);
             backdrop-filter: var(--glass-backdrop);
-            -webkit-backdrop-filter: var(--glass-backdrop);
+            -webkit-backdrop-filter: var (--glass-backdrop);
             border: var(--glass-border);
             display: flex;
             align-items: center;

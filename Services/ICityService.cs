@@ -8,6 +8,7 @@ namespace WanderGlobe.Services
         Task<List<City>> GetCitiesByCountryIdAsync(int countryId);
         Task<List<City>> GetCapitalCitiesAsync();
         Task<City> GetCityByIdAsync(int cityId);
+        Task<City?> GetCapitalCityAsync(int countryId);
         Task<City?> GetCapitalCityByCountryIdAsync(int countryId);
         Task<List<City>> GetAvailableCitiesForUserAsync(string userId);
         Task<List<City>> GetCitiesNotInWishlistAsync(string userId);

@@ -111,6 +111,11 @@ namespace WanderGlobe.Services
             
             return availableCities;
         }
+                public async Task<City?> GetCapitalCityAsync(int countryId)
+        {
+            return await _context.Cities
+                .FirstOrDefaultAsync(c => c.CountryId == countryId && c.IsCapital);
+        }
 
         public async Task<bool> IsCityVisitedByUserAsync(int cityId, string userId)
         {
