@@ -9,6 +9,7 @@ namespace WanderGlobe.Services
     {
         Task<List<Photo>> GetPhotosByUserAsync(string userId);
         Task<List<Photo>> GetPhotosByVisitAsync(int visitId);
+        Task<List<Photo>> GetPhotosByVisitAndUserAsync(int countryId, string userId);
         Task<Photo> GetPhotoByIdAsync(int photoId);
         Task<Photo> AddPhotoAsync(Photo photo);
         Task<bool> DeletePhotoAsync(int photoId, string userId);

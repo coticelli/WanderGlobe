@@ -80,6 +80,12 @@ namespace WanderGlobe.Data
 
             // Seed dei dati dei paesi
             SeedCountries(builder);
+
+            // Configure the Photo to TravelJournal relationship
+            builder.Entity<Photo>()
+                .HasOne(p => p.TravelJournal)
+                .WithMany()
+                .HasForeignKey(p => new { p.TravelJournalUserId, p.TravelJournalCountryId });
         }
 
         private void SeedCountries(ModelBuilder builder)

@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using WanderGlobe.Data;
 using WanderGlobe.Models;
 using WanderGlobe.Services;
+using Microsoft.AspNetCore.Http.Features;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -40,6 +41,13 @@ builder.Services.AddScoped<Microsoft.AspNetCore.Identity.UI.Services.IEmailSende
 
 // Aggiungi HttpClient per API esterne
 builder.Services.AddHttpClient();
+
+// Add this to your Program.cs where services are configured
+builder.Services.Configure<FormOptions>(options =>
+{
+    options.MultipartBodyLengthLimit = 10 * 1024 * 1024; // 10 MB
+});
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

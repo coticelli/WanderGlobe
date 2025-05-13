@@ -10,6 +10,9 @@ using WanderGlobe.Data;
 using WanderGlobe.Models;
 using WanderGlobe.Models.Custom;
 using WanderGlobe.Services;
+using Microsoft.AspNetCore.Http;
+using System.IO;
+using Microsoft.AspNetCore.Hosting;
 
 namespace WanderGlobe.Pages
 {
@@ -18,15 +21,21 @@ namespace WanderGlobe.Pages
         private readonly ApplicationDbContext _context;
         private readonly ICityService _cityService;
         private readonly IWeatherService _weatherService;
+        private readonly IPhotoService _photoService;
+        private readonly IWebHostEnvironment _environment;
 
         public TimelineModel(
             ApplicationDbContext context, 
             ICityService cityService,
-            IWeatherService weatherService)
+            IWeatherService weatherService,
+            IPhotoService photoService,
+            IWebHostEnvironment environment)
         {
             _context = context;
             _cityService = cityService;
             _weatherService = weatherService;
+            _photoService = photoService;
+            _environment = environment;
         }
 
         public List<VisitedCountry> Visits { get; set; } = new List<VisitedCountry>();
@@ -169,6 +178,125 @@ namespace WanderGlobe.Pages
                 excMsg = excMsg.Length > 200 ? excMsg.Substring(0, 200) : excMsg;
 
                 return $"DBG:EXC({excType}:'{excMsg}',Orig:'{originalCountryCodeForDebug}')";
+            }
+        }
+
+        // Add photo upload handler
+        [HttpPost]
+        public async Task<IActionResult> OnPostUploadPhotoAsync(IFormFile photo, int countryId)
+        {
+            if (photo == null || photo.Length == 0)
+                return new JsonResult(new { success = false, message = "Nessun file caricato" });
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId))
+                return new JsonResult(new { success = false, message = "Utente non autenticato" });
+
+            try
+            {
+                // Create unique filename
+                string uniqueFileName = $"{Guid.NewGuid()}_{Path.GetFileName(photo.FileName)}";
+                string uploadsFolder = Path.Combine(_environment.WebRootPath, "images", "uploads");
+                
+                // Ensure directory exists
+                Directory.CreateDirectory(uploadsFolder);
+                
+                string filePath = Path.Combine(uploadsFolder, uniqueFileName);
+                string urlPath = $"/images/uploads/{uniqueFileName}";
+
+                // Save the file
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await photo.CopyToAsync(stream);
+                }
+
+                // Create photo record in database
+                var newPhoto = new Photo
+                {
+                    UserId = userId,
+                    FileName = photo.FileName,
+                    FilePath = urlPath,
+                    Url = urlPath,
+                    Caption = Path.GetFileNameWithoutExtension(photo.FileName),
+                    UploadDate = DateTime.UtcNow,
+                    TravelJournalCountryId = countryId,
+                    TravelJournalUserId = userId
+                };
+
+                _context.Photos.Add(newPhoto);
+                await _context.SaveChangesAsync();
+
+                return new JsonResult(new 
+                { 
+                    success = true, 
+                    photoId = newPhoto.Id,
+                    url = newPhoto.Url,
+                    caption = newPhoto.Caption 
+                });
+            }
+            catch (Exception ex)
+            {
+                return new JsonResult(new { success = false, message = $"Errore: {ex.Message}" });
+            }
+        }
+
+        // Get photos for a visit
+        [HttpGet]
+        public async Task<IActionResult> OnGetVisitPhotosAsync(int countryId)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId))
+                return new JsonResult(new { success = false, message = "Utente non autenticato" });
+
+            try
+            {
+                // Use the overloaded method that accepts both parameters
+                var photos = await _photoService.GetPhotosByVisitAndUserAsync(countryId, userId);
+
+                return new JsonResult(photos.Select(p => new { 
+                    id = p.Id, 
+                    url = p.Url, 
+                    caption = p.Caption 
+                }));
+            }
+            catch (Exception ex)
+            {
+                return new JsonResult(new { success = false, message = $"Errore: {ex.Message}" });
+            }
+        }
+
+        // Delete a photo
+        [HttpPost]
+        public async Task<IActionResult> OnPostDeletePhotoAsync(int photoId)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId))
+                return new JsonResult(new { success = false, message = "Utente non autenticato" });
+
+            try
+            {
+                var photo = await _context.Photos.FindAsync(photoId);
+                if (photo == null || photo.UserId != userId)
+                    return new JsonResult(new { success = false, message = "Foto non trovata o non autorizzata" });
+
+                // Delete the physical file if possible
+                if (!string.IsNullOrEmpty(photo.FilePath))
+                {
+                    string filePath = Path.Combine(_environment.WebRootPath, photo.FilePath.TrimStart('/'));
+                    if (System.IO.File.Exists(filePath))
+                    {
+                        System.IO.File.Delete(filePath);
+                    }
+                }
+
+                _context.Photos.Remove(photo);
+                await _context.SaveChangesAsync();
+
+                return new JsonResult(new { success = true });
+            }
+            catch (Exception ex)
+            {
+                return new JsonResult(new { success = false, message = $"Errore: {ex.Message}" });
             }
         }
     }
