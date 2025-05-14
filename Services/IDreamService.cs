@@ -17,5 +17,6 @@ namespace WanderGlobe.Services
         Task<bool> DeletePlannedTripAsync(string tripId, string userId);
         Task<bool> MarkTripAsVisitedAsync(string tripId, string userId);
         Task<bool> IsCityInUserWishlistAsync(int cityId, string userId);
+        Task<List<RecommendedDestination>> GetAIRecommendationsAsync(string userId, string recommendationType);
     }
 }

@@ -93,16 +93,22 @@ namespace WanderGlobe.Models.Custom
 
     public class RecommendedDestination
     {
-        public int Id { get; set; }
+        public string Id { get; set; } // Changed to string to match your Gemini implementation
         public string CityName { get; set; }
         public string CountryName { get; set; }
-        public string CountryCode { get; set; }
+        public string CountryCode { get; set; } = string.Empty;
         public double Latitude { get; set; }
         public double Longitude { get; set; }
-        public string ImageUrl { get; set; }
+        public string ImageUrl { get; set; } = string.Empty;
+        
+        // New properties for AI recommendations
+        public string Description { get; set; } = string.Empty;
+        public string ReasonToVisit { get; set; } = string.Empty;
+        
+        // Optional existing properties that might be useful later
         public int MatchPercentage { get; set; }
-        public string Weather { get; set; }
-        public string CostLevel { get; set; }
+        public string Weather { get; set; } = string.Empty;
+        public string CostLevel { get; set; } = string.Empty;
         public int Accommodations { get; set; }
         public List<string> Tags { get; set; } = new List<string>();
     }

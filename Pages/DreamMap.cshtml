@@ -40,7 +40,8 @@
             </li>
         </ul>
 
-        <div class="tab-content" id="dreamTabsContent">            <!-- TAB WISHLIST -->
+        <div class="tab-content" id="dreamTabsContent">
+            <!-- TAB WISHLIST -->
             <div class="tab-pane fade show active" id="wishlist" role="tabpanel">
                 @if (TempData["SuccessMessage"] != null)
                 {
@@ -49,7 +50,7 @@
                         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                     </div>
                 }
-                
+
                 @if (TempData["ErrorMessage"] != null)
                 {
                     <div class="alert alert-danger alert-dismissible fade show" role="alert">
@@ -57,7 +58,7 @@
                         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                     </div>
                 }
-                
+
                 <div class="search-container mb-3">
                     <div class="input-group">
                         <span class="input-group-text"><i class="fas fa-search"></i></span>
@@ -315,9 +316,9 @@
                                     {
                                         @foreach (var city in Model.WishlistForm.AvailableCities)
                                         {
-                                            <option value="@city.Name" 
-                                                data-country="@city.Country"
-                                                data-country-code="@city.CountryCode">
+                                            <option value="@city.Name"
+                                            data-country="@city.Country"
+                                            data-country-code="@city.CountryCode">
                                                 @city.Name (@city.Country)
                                             </option>
                                         }
@@ -595,7 +596,7 @@
 
                         <div class="col-md-5">
                             <!-- ... Colonna destra del modal (Informazioni Utili, Esplora) ... -->
-                             <div class="plan-details-section">
+                            <div class="plan-details-section">
                                 <h5><i class="fas fa-info-circle"></i> Informazioni Utili</h5>
                                 <div class="info-cards">
                                     <div class="info-card" id="weatherCard">
@@ -725,7 +726,7 @@
                                 <label for="visitHighlightsInput" class="form-label"><i class="fas fa-bullseye me-1"></i> Momenti Salienti (separati da virgola)</label>
                                 <input type="text" class="form-control" id="visitHighlightsInput" placeholder="Es: Vista mozzafiato, Cena deliziosa">
                             </div>
-                             <div class="mb-3">
+                            <div class="mb-3">
                                 <label for="visitCompanionsInput" class="form-label"><i class="fas fa-users me-1"></i> Compagni di Viaggio (separati da virgola)</label>
                                 <input type="text" class="form-control" id="visitCompanionsInput" placeholder="Es: Maria, Famiglia">
                             </div>
@@ -796,6 +797,324 @@
     </div>
 </div>
 
+<!-- Inserire dopo la sezione main o dove opportuno nella struttura della pagina -->
+
+<div class="ai-recommendations-section">
+    <h2 class="section-title">
+        <i class="fas fa-globe-europe me-2"></i>
+        Destinazioni consigliate per te
+    </h2>
+    <p class="section-description">Basate sui tuoi interessi e destinazioni visitate</p>
+
+    <div class="recommendations-tabs">
+        <ul class="nav nav-pills" id="recommendationsTabs">
+            <li class="nav-item">
+                <button class="nav-link active" data-type="tutte">Tutte</button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" data-type="simili">Simili</button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" data-type="popolari">Popolari</button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" data-type="nuove">Nuove</button>
+            </li>
+        </ul>
+
+        <div class="refresh-recommendations">
+            <button id="refreshRecommendationsBtn" class="btn btn-outline-primary btn-sm">
+                <i class="fas fa-sync-alt me-1"></i>
+                Carica altri suggerimenti
+            </button>
+        </div>
+    </div>
+
+    <!-- Contenitore per le schede delle destinazioni consigliate -->
+    <div class="recommendations-container" id="recommendationsContainer">
+        <div class="recommendations-loading" id="recommendationsLoading">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Caricamento...</span>
+            </div>
+            <p>Ricerca destinazioni per te...</p>
+        </div>
+
+        <div class="recommendations-grid" id="recommendationsGrid">
+            @foreach (var destination in Model.RecommendedDestinations)
+            {
+                <div class="recommendation-card" data-id="@destination.Id">
+                    <div class="recommendation-image">
+                        <img src="@destination.ImageUrl" alt="@destination.CityName"
+                         onerror="this.src='/images/placeholder-destination.jpg'">
+                    </div>
+                    <div class="recommendation-content">
+                        <h3 class="recommendation-title">@destination.CityName</h3>
+                        <h4 class="recommendation-subtitle">@destination.CountryName</h4>
+                        <p class="recommendation-description">@destination.Description</p>
+                        <div class="recommendation-reason">
+                            <i class="fas fa-star me-1"></i>
+                            <span>@destination.ReasonToVisit</span>
+                        </div>
+                    </div>
+                    <div class="recommendation-actions">
+                        <button class="btn btn-primary add-to-wishlist" data-city="@destination.CityName"
+                            data-country="@destination.CountryName" data-lat="@destination.Latitude"
+                            data-lng="@destination.Longitude">
+                            <i class="fas fa-heart me-1"></i> Aggiungere
+                        </button>
+                        <button class="btn btn-outline-secondary fly-to-btn" data-lat="@destination.Latitude"
+                            data-lng="@destination.Longitude">
+                            <i class="fas fa-map-marker-alt me-1"></i> Mostra
+                        </button>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <div class="recommendations-empty" id="recommendationsEmpty" style="display: none;">
+            <i class="fas fa-search fa-2x mb-3"></i>
+            <h4>Nessun suggerimento disponibile</h4>
+            <p>Prova un'altra categoria o aggiorna i suggerimenti</p>
+        </div>
+
+        <div class="recommendations-error" id="recommendationsError" style="display: none;">
+            <i class="fas fa-exclamation-circle fa-2x mb-3"></i>
+            <h4>Errore durante il caricamento dei suggerimenti</h4>
+            <p>Si è verificato un problema nel recupero delle destinazioni consigliate</p>
+            <button class="btn btn-primary retry-btn">
+                <i class="fas fa-redo me-1"></i> Riprova
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Aggiungiamo lo stile CSS inline (poi sarà preferibile spostarlo in un file CSS) -->
+<style>
+    .ai-recommendations-section {
+        background-color: var(--section-bg);
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin: 2rem 0;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    }
+
+    .recommendations-tabs {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+    }
+
+        .recommendations-tabs .nav-pills {
+            border-radius: 50px;
+            overflow: hidden;
+            background: var(--light-bg);
+            padding: 0.25rem;
+        }
+
+        .recommendations-tabs .nav-link {
+            border-radius: 50px;
+            padding: 0.5rem 2rem;
+            margin: 0 0.25rem;
+            transition: all 0.3s ease;
+            color: var(--text-color);
+        }
+
+            .recommendations-tabs .nav-link.active {
+                background-color: var(--primary-color);
+                color: white;
+                box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+                transform: translateY(-2px);
+            }
+
+    #refreshRecommendationsBtn {
+        background-color: var(--light-bg);
+        border: 1px solid var(--border-color);
+        transition: all 0.3s ease;
+    }
+
+        #refreshRecommendationsBtn:hover {
+            background-color: var(--primary-color);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+    .recommendations-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .recommendation-card {
+        background-color: var(--card-bg);
+        border-radius: 10px;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+
+        .recommendation-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+
+    .recommendation-image {
+        height: 180px;
+        overflow: hidden;
+        position: relative;
+    }
+
+        .recommendation-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.5s ease;
+        }
+
+    .recommendation-card:hover .recommendation-image img {
+        transform: scale(1.05);
+    }
+
+    .recommendation-content {
+        padding: 1.25rem;
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .recommendation-title {
+        font-size: 1.4rem;
+        font-weight: 600;
+        margin: 0 0 0.25rem 0;
+        color: var(--heading-color);
+    }
+
+    .recommendation-subtitle {
+        font-size: 1rem;
+        color: var(--muted-color);
+        margin: 0 0 1rem 0;
+    }
+
+    .recommendation-description {
+        font-size: 0.9rem;
+        line-height: 1.5;
+        margin-bottom: 0.75rem;
+        color: var(--text-color);
+        flex-grow: 1;
+    }
+
+    .recommendation-reason {
+        background-color: var(--light-bg);
+        padding: 0.75rem;
+        border-radius: 8px;
+        font-size: 0.85rem;
+        margin-bottom: 1rem;
+        color: var(--primary-color);
+    }
+
+    .recommendation-actions {
+        display: flex;
+        gap: 0.5rem;
+        padding: 0 1.25rem 1.25rem;
+    }
+
+        .recommendation-actions .btn {
+            flex: 1;
+            padding: 0.5rem 0.75rem;
+            font-size: 0.85rem;
+        }
+
+    .recommendations-loading,
+    .recommendations-empty,
+    .recommendations-error {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 3rem 1rem;
+        text-align: center;
+    }
+
+        .recommendations-loading .spinner-border {
+            width: 3rem;
+            height: 3rem;
+            margin-bottom: 1rem;
+        }
+
+    @@media (max-width: 768px) {
+        .recommendations-tabs {
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+            .recommendations-tabs .nav-pills {
+                width: 100%;
+                overflow-x: auto;
+                white-space: nowrap;
+            }
+
+        .recommendation-card {
+            max-width: 100%;
+        }
+    }
+
+    /* Effetto glare sulle card */
+    .recommendation-card {
+        position: relative;
+        overflow: hidden;
+    }
+
+        .recommendation-card::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient( to bottom right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0) 100% );
+            transform: rotate(30deg);
+            pointer-events: none;
+            transition: transform 0.6s ease;
+            opacity: 0;
+        }
+
+        .recommendation-card:hover::after {
+            opacity: 1;
+            animation: card-glare 1.5s ease-in-out;
+        }
+
+    @@keyframes card-glare {
+        0% {
+            transform: rotate(30deg) translateX(-300%);
+        }
+
+        100% {
+            transform: rotate(30deg) translateX(300%);
+        }
+    }
+
+    /* Badge "AI Pick" per suggerimenti generati con AI */
+    .recommendation-card .ai-badge {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+        color: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 50px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        z-index: 1;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+</style>
+
+
+
+
 @section Styles {
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
@@ -815,12 +1134,12 @@
             --box-shadow: 0 4px 15px rgba(0,0,0,0.1);
             --transition: all 0.3s ease;
         }
-        
+
         body {
             background-color: #f2f7ff;
             overflow: hidden;
         }
-        
+
         /* Container principale */
         .dreammap-container {
             display: grid;
@@ -828,7 +1147,7 @@
             height: calc(100vh - 56px); /* Se la navbar è 56px, altrimenti adattare a 64px se è l'altezza della navbar di layout.cshtml */
             overflow: hidden;
         }
-        
+
         /* Sidebar */
         .dreammap-sidebar {
             background-color: white;
@@ -838,25 +1157,26 @@
             overflow: hidden;
             height: 100%;
         }
-        .custom-marker-icon {
-    background-color: white;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-    width: 30px;
-    height: 30px;
-}
 
-.ai-loading {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-    text-align: center;
-}
+        .custom-marker-icon {
+            background-color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            width: 30px;
+            height: 30px;
+        }
+
+        .ai-loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            text-align: center;
+        }
 
         .ai-error {
             background-color: #fff5f5;
@@ -865,118 +1185,132 @@
             margin: 10px 0;
             border-radius: 4px;
         }
-.ai-suggestion-list {
-    padding-left: 20px;
-}
 
-.ai-suggestion-list li {
-    margin-bottom: 10px;
-}
+        .ai-suggestion-list {
+            padding-left: 20px;
+        }
 
-#detailsBannerImg {
-    width: 100%;
-    height: 200px;
-    object-fit: cover;
-}
+            .ai-suggestion-list li {
+                margin-bottom: 10px;
+            }
 
-.dream-tag {
-    display: inline-block;
-    background-color: var(--primary-light); /* CORRETTO: --primary-light */
-    color: var(--primary-color);
-    border-radius: 15px;
-    padding: 2px 10px;
-    margin-right: 5px;
-    margin-bottom: 5px;
-    font-size: 0.8rem;
-}
+        #detailsBannerImg {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+
+        .dream-tag {
+            display: inline-block;
+            background-color: var(--primary-light); /* CORRETTO: --primary-light */
+            color: var(--primary-color);
+            border-radius: 15px;
+            padding: 2px 10px;
+            margin-right: 5px;
+            margin-bottom: 5px;
+            font-size: 0.8rem;
+        }
 
 
-/* Stili per Visit Details Modal */
-.visit-details-banner { /* Simile a dream-details-banner */
-    position: relative;
-    height: 200px; /* Un po' meno alto */
-}
+        /* Stili per Visit Details Modal */
+        .visit-details-banner { /* Simile a dream-details-banner */
+            position: relative;
+            height: 200px; /* Un po' meno alto */
+        }
 
-.visit-details-banner img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
+            .visit-details-banner img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+            }
 
-.visit-details-overlay { /* Simile a dream-details-overlay */
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
-    color: white;
-    padding: 15px 20px;
-}
-.visit-details-overlay h2 { margin: 0; font-size: 1.8rem; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); }
-.visit-details-overlay p { margin: 3px 0 0; font-size: 1rem; opacity: 0.9; }
+        .visit-details-overlay { /* Simile a dream-details-overlay */
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
+            color: white;
+            padding: 15px 20px;
+        }
 
-.rating-stars {
-    font-size: 1.5rem; /* Dimensione delle stelle */
-    color: var(--warning-color); /* Colore delle stelle */
-    cursor: pointer;
-}
-.rating-stars i:hover {
-    transform: scale(1.1);
-}
+            .visit-details-overlay h2 {
+                margin: 0;
+                font-size: 1.8rem;
+                text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+            }
 
-.visit-photo-gallery {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    border: 1px dashed #ccc;
-    padding: 10px;
-    border-radius: var(--border-radius);
-    min-height: 80px;
-    align-items: center; /* Centra il testo "Nessuna foto" se presente */
-    justify-content: center; /* Centra il testo "Nessuna foto" se presente */
-}
-.visit-photo-gallery img {
-    width: 100px;
-    height: 100px;
-    object-fit: cover;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-.visit-photo-gallery .text-muted {
-    width: 100%;
-    text-align: center;
-}
+            .visit-details-overlay p {
+                margin: 3px 0 0;
+                font-size: 1rem;
+                opacity: 0.9;
+            }
+
+        .rating-stars {
+            font-size: 1.5rem; /* Dimensione delle stelle */
+            color: var(--warning-color); /* Colore delle stelle */
+            cursor: pointer;
+        }
+
+            .rating-stars i:hover {
+                transform: scale(1.1);
+            }
+
+        .visit-photo-gallery {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            border: 1px dashed #ccc;
+            padding: 10px;
+            border-radius: var(--border-radius);
+            min-height: 80px;
+            align-items: center; /* Centra il testo "Nessuna foto" se presente */
+            justify-content: center; /* Centra il testo "Nessuna foto" se presente */
+        }
+
+            .visit-photo-gallery img {
+                width: 100px;
+                height: 100px;
+                object-fit: cover;
+                border-radius: 8px;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+
+            .visit-photo-gallery .text-muted {
+                width: 100%;
+                text-align: center;
+            }
 
         .dreammap-header {
             padding: 20px;
             border-bottom: 1px solid rgba(0,0,0,0.1);
         }
-        
-        .dreammap-header h2 {
-            margin: 0;
-            font-size: 1.5rem;
-            color: var(--dark-color); /* CORRETTO: --dark-color */
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .dreammap-header h2 i {
-            color: var(--warning-color);
-        }
-        
-        .dreammap-header p {
-            margin: 5px 0 0;
-            color: var(--muted-color); /* CORRETTO: --muted-color */
-            font-size: 0.9rem;
-        }
-        
+
+            .dreammap-header h2 {
+                margin: 0;
+                font-size: 1.5rem;
+                color: var(--dark-color); /* CORRETTO: --dark-color */
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+
+                .dreammap-header h2 i {
+                    color: var(--warning-color);
+                }
+
+            .dreammap-header p {
+                margin: 5px 0 0;
+                color: var(--muted-color); /* CORRETTO: --muted-color */
+                font-size: 0.9rem;
+            }
+
         /* Nav tabs */
         .nav-tabs {
             padding: 0 20px;
             border-bottom: 1px solid rgba(0,0,0,0.1);
         }
-        
+
         .dreammap-sidebar .nav-tabs .nav-link { /* Aggiunto .dreammap-sidebar per specificità se necessario, ma il problema è !important */
             border: none;
             border-bottom: 2px solid transparent;
@@ -985,30 +1319,30 @@
             margin-right: 20px;
             font-weight: 500;
         }
-        
-        .dreammap-sidebar .nav-tabs .nav-link.active { /* Aggiunto .dreammap-sidebar per specificità se necessario */
-            border-bottom: 2px solid var(--primary-color); /* CORRETTO: --primary-color */
-            color: var(--primary-color) !important; /* SECONDA MODIFICA: Aggiunto !important. var(--primary-color) è #1a73e8 */
-            background: transparent;
-        }
-        
-        .dreammap-sidebar .nav-tabs .nav-link i { /* Aggiunto .dreammap-sidebar per specificità se necessario */
-            margin-right: 5px;
-            /* Il colore dell'icona verrà ereditato dal .nav-link genitore, che ora è corretto */
-        }
-        
+
+            .dreammap-sidebar .nav-tabs .nav-link.active { /* Aggiunto .dreammap-sidebar per specificità se necessario */
+                border-bottom: 2px solid var(--primary-color); /* CORRETTO: --primary-color */
+                color: var(--primary-color) !important; /* SECONDA MODIFICA: Aggiunto !important. var(--primary-color) è #1a73e8 */
+                background: transparent;
+            }
+
+            .dreammap-sidebar .nav-tabs .nav-link i { /* Aggiunto .dreammap-sidebar per specificità se necessario */
+                margin-right: 5px;
+                /* Il colore dell'icona verrà ereditato dal .nav-link genitore, che ora è corretto */
+            }
+
         /* Tab content */
         .tab-content {
             flex: 1;
             overflow-y: auto;
             padding: 20px;
         }
-        
+
         /* Search container */
         .search-container {
             position: relative;
         }
-        
+
         /* Dream list */
         .dreammap-list {
             margin-bottom: 20px;
@@ -1024,31 +1358,31 @@
             overflow: hidden;
             transition: var(--transition); /* CORRETTO: --transition */
         }
-        
-        .dream-item:hover, .plan-item:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 6px 18px rgba(0,0,0,0.15);
-            cursor: pointer;
-        }
-        
+
+            .dream-item:hover, .plan-item:hover {
+                transform: translateY(-3px);
+                box-shadow: 0 6px 18px rgba(0,0,0,0.15);
+                cursor: pointer;
+            }
+
         .dream-item-image, .plan-item-image {
             position: relative;
             height: 120px;
             overflow: hidden;
         }
-        
-        .dream-item-image img, .plan-item-image img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transition: transform 0.3s ease;
-        }
-        
-        .dream-item:hover .dream-item-image img, 
+
+            .dream-item-image img, .plan-item-image img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                transition: transform 0.3s ease;
+            }
+
+        .dream-item:hover .dream-item-image img,
         .plan-item:hover .plan-item-image img {
             transform: scale(1.05);
         }
-        
+
         .dream-flag, .plan-flag {
             position: absolute;
             top: 10px;
@@ -1059,53 +1393,53 @@
             overflow: hidden;
             box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }
-        
-        .dream-flag img, .plan-flag img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-        
+
+            .dream-flag img, .plan-flag img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+            }
+
         .dream-item-content, .plan-item-content {
             padding: 15px;
         }
-        
+
         .dream-priority {
             margin-bottom: 8px;
         }
-        
-        .dream-priority.low i { /* Assicurarsi che queste classi esistano o siano applicate correttamente */
-            color: #ffb300; 
-        }
-        
-        .dream-priority.medium i {
-            color: #fb8c00;
-        }
-        
-        .dream-priority.high i {
-            color: #f57c00;
-        }
-        
+
+            .dream-priority.low i { /* Assicurarsi che queste classi esistano o siano applicate correttamente */
+                color: #ffb300;
+            }
+
+            .dream-priority.medium i {
+                color: #fb8c00;
+            }
+
+            .dream-priority.high i {
+                color: #f57c00;
+            }
+
         .dream-name, .plan-name {
             margin: 0;
             font-size: 1.2rem;
             font-weight: 600;
             color: var(--dark-color); /* CORRETTO: --dark-color */
         }
-        
+
         .dream-country, .plan-country {
             color: var(--muted-color); /* CORRETTO: --muted-color */
             font-size: 0.9rem;
             margin-bottom: 10px;
         }
-        
+
         .dream-tags {
             display: flex;
             flex-wrap: wrap;
             gap: 5px;
             margin-bottom: 10px;
         }
-        
+
         .dream-tag { /* Stile già definito sopra, assicurarsi coerenza */
             background-color: var(--primary-light); /* CORRETTO: --primary-light */
             color: var(--primary-color);
@@ -1113,20 +1447,20 @@
             padding: 2px 8px;
             border-radius: 15px;
         }
-        
+
         .dream-note {
             font-size: 0.9rem;
             color: var(--muted-color); /* CORRETTO: --muted-color */
             line-height: 1.4;
         }
-        
+
         .dream-item-actions, .plan-item-actions {
             display: flex;
             gap: 5px;
             padding: 10px 15px;
             border-top: 1px solid rgba(0,0,0,0.05);
         }
-        
+
         /* Plan specific */
         .plan-dates {
             position: absolute;
@@ -1140,7 +1474,7 @@
             align-items: center;
             gap: 10px;
         }
-        
+
         .plan-date-icon {
             width: 30px;
             height: 30px;
@@ -1150,7 +1484,7 @@
             align-items: center;
             justify-content: center;
         }
-        
+
         .plan-countdown {
             display: flex;
             align-items: center;
@@ -1159,38 +1493,38 @@
             font-size: 0.9rem;
             margin-bottom: 10px;
         }
-        
+
         .plan-progress {
             margin-bottom: 15px;
         }
-        
-        .plan-progress .progress {
-            height: 8px;
-            border-radius: 4px;
-            background-color: var(--light-color); /* CORRETTO: --light-color */
-            margin-bottom: 5px;
-        }
-        
-        .plan-progress .progress-bar {
-            background-color: var(--accent-color);
-            border-radius: 4px;
-        }
-        
+
+            .plan-progress .progress {
+                height: 8px;
+                border-radius: 4px;
+                background-color: var(--light-color); /* CORRETTO: --light-color */
+                margin-bottom: 5px;
+            }
+
+            .plan-progress .progress-bar {
+                background-color: var(--accent-color);
+                border-radius: 4px;
+            }
+
         .plan-progress-text {
             font-size: 0.8rem;
             color: var(--muted-color); /* CORRETTO: --muted-color */
         }
-        
+
         .plan-checklist {
             list-style: none;
             padding: 0;
             margin: 0;
         }
-        
+
         .ai-suggestion-list li strong {
-            color: var(--primary-color); /* CORRETTO: --primary-color */
+            color: var (--primary-color); /* CORRETTO: --primary-color */
         }
-        
+
         .plan-checklist li {
             display: flex;
             align-items: center;
@@ -1199,19 +1533,19 @@
             font-size: 0.9rem;
             color: var(--dark-color); /* CORRETTO: --dark-color */
         }
-        
-        .plan-checklist li.completed {
-            color: var(--accent-color);
-            text-decoration: line-through;
-        }
-        
-        .plan-checklist li.more {
-            color: var(--muted-color); /* CORRETTO: --muted-color */
-            font-style: italic;
-            text-align: center;
-            padding-top: 10px;
-        }
-        
+
+            .plan-checklist li.completed {
+                color: var(--accent-color);
+                text-decoration: line-through;
+            }
+
+            .plan-checklist li.more {
+                color: var (--muted-color); /* CORRETTO: --muted-color */
+                font-style: italic;
+                text-align: center;
+                padding-top: 10px;
+            }
+
         /* Empty state */
         .empty-state {
             display: flex;
@@ -1221,23 +1555,23 @@
             padding: 40px 20px;
             text-align: center;
         }
-        
+
         .empty-state-icon {
             width: 150px;
             height: 150px;
             margin-bottom: 20px;
             opacity: 0.7;
         }
-        
+
         .empty-state p {
             margin-bottom: 5px;
             color: var(--dark-color); /* CORRETTO: --dark-color */
         }
-        
-        .empty-state p.text-muted {
-            font-size: 0.9rem;
-        }
-        
+
+            .empty-state p.text-muted {
+                font-size: 0.9rem;
+            }
+
         /* Add dream button */
         .add-dream-btn {
             position: sticky;
@@ -1247,35 +1581,35 @@
             padding: 12px;
             border-radius: 8px;
         }
-        
+
         /* Discover tab */
         .discover-header {
             margin-bottom: 20px;
         }
-        
-        .discover-header h3 {
-            margin: 0;
-            font-size: 1.3rem;
-            color: var(--dark-color); /* CORRETTO: --dark-color */
-        }
-        
-        .discover-header p {
-            color: var(--muted-color); /* CORRETTO: --muted-color */
-            font-size: 0.9rem;
-            margin: 5px 0 0;
-        }
-        
+
+            .discover-header h3 {
+                margin: 0;
+                font-size: 1.3rem;
+                color: var(--dark-color); /* CORRETTO: --dark-color */
+            }
+
+            .discover-header p {
+                color: var(--muted-color); /* CORRETTO: --muted-color */
+                font-size: 0.9rem;
+                margin: 5px 0 0;
+            }
+
         .recommendation-filters {
             margin-bottom: 20px;
         }
-        
+
         .discover-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
             gap: 20px;
             margin-bottom: 20px;
         }
-        
+
         .discover-card {
             background: white;
             border-radius: var(--border-radius); /* CORRETTO: --border-radius */
@@ -1283,23 +1617,23 @@
             box-shadow: var(--box-shadow); /* CORRETTO: --box-shadow */
             transition: var(--transition); /* CORRETTO: --transition */
         }
-        
-        .discover-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.15);
-        }
-        
+
+            .discover-card:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+            }
+
         .discover-image {
             position: relative;
             height: 150px;
         }
-        
-        .discover-image img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-        
+
+            .discover-image img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+            }
+
         .discover-flag { /* Stile già presente, assicurarsi coerenza */
             position: absolute;
             top: 10px;
@@ -1310,13 +1644,13 @@
             overflow: hidden;
             box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }
-        
-        .discover-flag img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-        
+
+            .discover-flag img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+            }
+
         .discover-match {
             position: absolute;
             bottom: 10px;
@@ -1330,38 +1664,38 @@
             align-items: center;
             line-height: 1.1;
         }
-        
-        .discover-match span {
-            font-weight: 700;
-            font-size: 1rem;
-        }
-        
-        .discover-match small {
-            font-size: 0.7rem;
-            opacity: 0.8;
-        }
-        
+
+            .discover-match span {
+                font-weight: 700;
+                font-size: 1rem;
+            }
+
+            .discover-match small {
+                font-size: 0.7rem;
+                opacity: 0.8;
+            }
+
         .discover-content {
             padding: 15px;
         }
-        
-        .discover-content h4 {
-            margin: 0 0 5px 0;
-            font-size: 1.1rem;
-        }
-        
-        .discover-content p {
-            margin: 0 0 10px 0;
-            color: var(--muted-color); /* CORRETTO: --muted-color */
-            font-size: 0.9rem;
-        }
-        
+
+            .discover-content h4 {
+                margin: 0 0 5px 0;
+                font-size: 1.1rem;
+            }
+
+            .discover-content p {
+                margin: 0 0 10px 0;
+                color: var(--muted-color); /* CORRETTO: --muted-color */
+                font-size: 0.9rem;
+            }
+
         .discover-tags { /* Stile già presente, assicurarsi coerenza */
             display: flex;
             gap: 5px;
             margin-bottom: 15px;
         }
-        
+
         .discover-tag { /* Stile già presente, assicurarsi coerenza */
             background-color: var(--primary-light); /* CORRETTO: --primary-light */
             color: var(--primary-color);
@@ -1369,14 +1703,14 @@
             padding: 2px 8px;
             border-radius: 15px;
         }
-        
+
         .discover-highlights {
             display: flex;
             flex-wrap: wrap;
             gap: 10px;
             margin-bottom: 10px;
         }
-        
+
         .discover-highlight {
             background-color: var(--light-color); /* CORRETTO: --light-color */
             border-radius: 5px;
@@ -1386,65 +1720,65 @@
             align-items: center;
             gap: 5px;
         }
-        
-        .discover-highlight i {
-            color: var(--primary-color);
-        }
-        
+
+            .discover-highlight i {
+                color: var(--primary-color);
+            }
+
         .discover-actions {
             padding: 10px 15px;
             border-top: 1px solid rgba(0,0,0,0.05);
             display: flex;
             justify-content: space-between;
         }
-        
+
         .discover-more {
             display: flex;
             justify-content: center;
             margin-top: 20px;
         }
-        
+
         /* Map container */
         .dreammap-main {
             position: relative; /* Non dovrebbe essere necessario se height: 100vh non è usato qui e l'altezza è gestita da dreammap-container */
-             /* height: 100vh; Rimosso: l'altezza è gestita da grid in .dreammap-container */
+            /* height: 100vh; Rimosso: l'altezza è gestita da grid in .dreammap-container */
         }
-        
+
         #dreamMap {
             height: 100%; /* Occuperà l'altezza della cella grid in .dreammap-container */
             width: 100%;
         }
-        
+
         /* Modal styles */
         .modal-content {
             border-radius: 15px;
             border: none;
             overflow: hidden;
         }
-        
+
         .modal-header {
             background-color: var(--primary-color); /* CORRETTO: --primary-color */
             color: white;
         }
-        
-        .modal-header .btn-close {
-            filter: brightness(200%);
-        }
-        
+
+            .modal-header .btn-close {
+                filter: brightness(200%);
+            }
+
         /* Add dream modal */
         .priority-selector {
             display: flex;
             gap: 15px;
         }
-        
-        .priority-selector .form-check-inline {
-            margin-right: 0;
-        }
-        
-        .priority-selector i {
-            color: #ffb300; /* O var(--warning-color) se preferito */
-        }
-        
+
+            .priority-selector .form-check-inline {
+                margin-right: 0;
+            }
+
+            .priority-selector i {
+                color: #ffb300; /* O var(--warning-color) se preferito */
+            }
+
         .destination-image-preview {
             position: relative;
             height: 200px;
@@ -1452,13 +1786,13 @@
             overflow: hidden;
             box-shadow: var(--box-shadow); /* CORRETTO: --box-shadow */
         }
-        
-        .destination-image-preview img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-        
+
+            .destination-image-preview img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+            }
+
         .image-overlay {
             position: absolute;
             bottom: 0;
@@ -1469,23 +1803,23 @@
             display: flex;
             justify-content: center;
         }
-        
+
         /* Dream details modal */
         .dream-details-header, .plan-details-header {
             background: linear-gradient(135deg, var(--primary-color), #4c6ef5); /* CORRETTO: --primary-color */
         }
-        
+
         .dream-details-banner, .plan-details-banner {
             position: relative;
             height: 250px;
         }
-        
-        .dream-details-banner img, .plan-details-banner img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-        
+
+            .dream-details-banner img, .plan-details-banner img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+            }
+
         .dream-details-overlay, .plan-details-overlay {
             position: absolute;
             bottom: 0;
@@ -1495,41 +1829,41 @@
             color: white;
             padding: 20px;
         }
-        
-        .dream-details-overlay h2, .plan-details-overlay h2 {
-            margin: 0;
-            font-size: 2rem;
-            text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
-        }
-        
-        .dream-details-overlay p, .plan-details-overlay p {
-            margin: 5px 0 0;
-            font-size: 1.1rem;
-            opacity: 0.9;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
-        }
-        
+
+            .dream-details-overlay h2, .plan-details-overlay h2 {
+                margin: 0;
+                font-size: 2rem;
+                text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+            }
+
+            .dream-details-overlay p, .plan-details-overlay p {
+                margin: 5px 0 0;
+                font-size: 1.1rem;
+                opacity: 0.9;
+                text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+            }
+
         .dream-details-content, .plan-details-content {
             padding: 20px;
         }
-        
+
         .dream-details-info {
             display: flex;
             flex-wrap: wrap;
             gap: 20px;
             margin-bottom: 30px;
         }
-        
+
         .detail-item {
             display: flex;
             gap: 15px;
             flex: 1 1 calc(33.333% - 20px); /* Per 3 colonne, aggiusta se necessario */
         }
-        
-        .detail-item.full-width {
-            flex: 1 1 100%;
-        }
-        
+
+            .detail-item.full-width {
+                flex: 1 1 100%;
+            }
+
         .detail-icon {
             width: 40px;
             height: 40px;
@@ -1542,17 +1876,17 @@
             font-size: 1.2rem;
             flex-shrink: 0;
         }
-        
+
         .detail-text {
             flex: 1;
         }
-        
-        .detail-text h6 {
-            margin: 0 0 5px 0;
-            color: var(--muted-color); /* CORRETTO: --muted-color */
-            font-size: 0.9rem;
-        }
-        
+
+            .detail-text h6 {
+                margin: 0 0 5px 0;
+                color: var(--muted-color); /* CORRETTO: --muted-color */
+                font-size: 0.9rem;
+            }
+
         .dream-note { /* Stile già definito, assicurarsi coerenza */
             background-color: var(--light-color); /* CORRETTO: --light-color */
             border-radius: 8px;
@@ -1560,58 +1894,58 @@
             font-size: 0.95rem;
             line-height: 1.5;
         }
-        
+
         /* AI Suggestions */
         .dream-ai-suggestions {
             margin-top: 30px;
         }
-        
-        .dream-ai-suggestions h5 {
+
+            .dream-ai-suggestions h5 {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                margin-bottom: 20px;
+            }
+
+                .dream-ai-suggestions h5 i {
+                    color: var(--warning-color);
+                }
+
+        /* Stili per i tab suggerimenti */
+        .suggestion-tabs {
             display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 20px;
+            border-bottom: 1px solid #dee2e6;
+            margin-bottom: 15px;
         }
-        
-        .dream-ai-suggestions h5 i {
-            color: var(--warning-color);
+
+        .suggestion-tab {
+            padding: 8px 15px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border-bottom: 2px solid transparent;
+            margin-right: 5px;
         }
-        
-/* Stili per i tab suggerimenti */
-.suggestion-tabs {
-    display: flex;
-    border-bottom: 1px solid #dee2e6;
-    margin-bottom: 15px;
-}
 
-.suggestion-tab {
-    padding: 8px 15px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    border-bottom: 2px solid transparent;
-    margin-right: 5px;
-}
+            .suggestion-tab:hover {
+                background-color: rgba(0, 123, 255, 0.05); /* Usa var(--primary-light) se definito e appropriato */
+                border-bottom: 2px solid rgba(0, 123, 255, 0.3); /* Usa var(--primary-color) con opacità */
+            }
 
-.suggestion-tab:hover {
-    background-color: rgba(0, 123, 255, 0.05); /* Usa var(--primary-light) se definito e appropriato */
-    border-bottom: 2px solid rgba(0, 123, 255, 0.3); /* Usa var(--primary-color) con opacità */
-}
+            .suggestion-tab.active {
+                font-weight: 500;
+                border-bottom: 2px solid var(--primary-color); /* Usa var(--primary-color) */
+                color: var(--primary-color); /* Usa var(--primary-color) */
+            }
 
-.suggestion-tab.active {
-    font-weight: 500;
-    border-bottom: 2px solid var(--primary-color); /* Usa var(--primary-color) */
-    color: var(--primary-color); /* Usa var(--primary-color) */
-}
+        .suggestion-pane {
+            display: none;
+            padding: 10px 0;
+        }
 
-.suggestion-pane {
-    display: none;
-    padding: 10px 0;
-}
+            .suggestion-pane.active {
+                display: block;
+            }
 
-.suggestion-pane.active {
-    display: block;
-}
-        
         /* Plan details */
         .plan-date-range {
             display: flex;
@@ -1623,82 +1957,82 @@
             padding: 5px 15px;
             display: inline-flex; /* Per non occupare tutta la larghezza */
         }
-        
+
         .plan-details-section {
             margin-bottom: 30px;
         }
-        
-        .plan-details-section h5 {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 15px;
-            color: var(--dark-color); /* CORRETTO: --dark-color */
-        }
-        
-        .plan-details-section h5 i {
-            color: var(--primary-color); /* CORRETTO: --primary-color */
-        }
-        
+
+            .plan-details-section h5 {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                margin-bottom: 15px;
+                color: var(--dark-color); /* CORRETTO: --dark-color */
+            }
+
+                .plan-details-section h5 i {
+                    color: var(--primary-color); /* CORRETTO: --primary-color */
+                }
+
         .plan-progress-bar {
             margin-bottom: 20px;
         }
-        
+
         .checklist-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 15px;
         }
-        
+
         .plan-detailed-checklist {
             list-style: none;
             padding: 0;
             margin: 0;
         }
-        
-        .plan-detailed-checklist li {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 10px 15px;
-            background-color: var(--light-color); /* CORRETTO: --light-color */
-            border-radius: 8px;
-            margin-bottom: 10px;
-            transition: var(--transition); /* CORRETTO: --transition */
-        }
-        
-        .plan-detailed-checklist li:hover {
-            background-color: var(--primary-light); /* CORRETTO: --primary-light */
-        }
-        
-        .plan-detailed-checklist li.completed {
-            background-color: var(--accent-light); /* CORRETTO: --accent-light */
-            text-decoration: line-through;
-            color: var(--muted-color); /* CORRETTO: --muted-color */
-        }
-        
-        .plan-detailed-checklist li i { /* Icona check/circle */
-            color: var(--accent-color); /* O var(--primary-color) se più coerente */
-        }
-        
-        .plan-detailed-checklist .checklist-text {
-            flex: 1;
-        }
-        
-        .plan-detailed-checklist .checklist-category {
-            background-color: rgba(0,0,0,0.05);
-            padding: 2px 8px;
-            border-radius: 10px;
-            font-size: 0.8rem;
-            color: var(--muted-color); /* CORRETTO: --muted-color */
-        }
-        
-        .plan-detailed-checklist .checklist-due {
-            font-size: 0.8rem;
-            color: var(--warning-color);
-        }
-        
+
+            .plan-detailed-checklist li {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                padding: 10px 15px;
+                background-color: var(--light-color); /* CORRETTO: --light-color */
+                border-radius: 8px;
+                margin-bottom: 10px;
+                transition: var(--transition); /* CORRETTO: --transition */
+            }
+
+                .plan-detailed-checklist li:hover {
+                    background-color: var(--primary-light); /* CORRETTO: --primary-light */
+                }
+
+                .plan-detailed-checklist li.completed {
+                    background-color: var(--accent-light); /* CORRETTO: --accent-light */
+                    text-decoration: line-through;
+                    color: var(--muted-color); /* CORRETTO: --muted-color */
+                }
+
+                .plan-detailed-checklist li i { /* Icona check/circle */
+                    color: var(--accent-color); /* O var(--primary-color) se più coerente */
+                }
+
+            .plan-detailed-checklist .checklist-text {
+                flex: 1;
+            }
+
+            .plan-detailed-checklist .checklist-category {
+                background-color: rgba(0,0,0,0.05);
+                padding: 2px 8px;
+                border-radius: 10px;
+                font-size: 0.8rem;
+                color: var(--muted-color); /* CORRETTO: --muted-color */
+            }
+
+            .plan-detailed-checklist .checklist-due {
+                font-size: 0.8rem;
+                color: var(--warning-color);
+            }
+
         /* Info cards */
         .info-cards {
             display: grid;
@@ -1706,14 +2040,14 @@
             gap: 15px;
             margin-bottom: 20px;
         }
-        
+
         .info-card {
             background-color: white;
             border-radius: 12px;
             overflow: hidden;
             box-shadow: var(--box-shadow); /* CORRETTO: --box-shadow */
         }
-        
+
         .info-card-title {
             background-color: var(--primary-light); /* CORRETTO: --primary-light */
             color: var(--primary-color); /* CORRETTO: --primary-color */
@@ -1723,98 +2057,98 @@
             align-items: center;
             gap: 8px;
         }
-        
+
         .info-card-content {
             padding: 15px;
             font-size: 0.9rem;
         }
-        
+
         .weather-info {
             display: flex;
             align-items: center;
             gap: 15px;
         }
-        
+
         .weather-icon {
             font-size: 2rem;
             color: var(--warning-color);
         }
-        
+
         .weather-temp {
             font-weight: 700;
         }
-        
+
         .weather-desc {
             color: var(--muted-color); /* CORRETTO: --muted-color */
         }
-        
+
         .weather-forecast {
             margin-top: 10px;
             font-style: italic;
             font-size: 0.8rem;
             color: var(--muted-color); /* CORRETTO: --muted-color */
         }
-        
+
         .explore-buttons {
             display: flex;
             flex-wrap: wrap;
             gap: 10px;
         }
-        
-        .explore-buttons .btn {
-            flex: 1;
-        }
-        
+
+            .explore-buttons .btn {
+                flex: 1;
+            }
+
         /* Leaflet custom styles */
         .custom-marker-icon i { /* Icona dentro al marker sulla mappa */
             color: var(--primary-color); /* O un altro colore se i marker devono differenziarsi dal colore primario UI */
         }
-        
+
         .custom-popup {
             font-family: 'Roboto', sans-serif; /* O la font family del sito */
         }
-        
-        .custom-popup h3 {
-            margin: 0 0 5px 0;
-            font-size: 1.2rem;
-        }
-        
-        .custom-popup p {
-            margin: 0 0 10px 0;
-            color: var(--muted-color); /* CORRETTO: --muted-color */
-        }
-        
+
+            .custom-popup h3 {
+                margin: 0 0 5px 0;
+                font-size: 1.2rem;
+            }
+
+            .custom-popup p {
+                margin: 0 0 10px 0;
+                color: var(--muted-color); /* CORRETTO: --muted-color */
+            }
+
         /* Responsive */
         @@media (max-width: 992px) {
             .dreammap-container {
                 grid-template-columns: 1fr; /* Stack su mobile */
                 grid-template-rows: 1fr 350px; /* Mappa sopra, sidebar sotto con altezza fissa */
             }
-            
+
             .dreammap-main { /* Mappa */
                 order: 1; /* Appare prima */
             }
-            
+
             .dreammap-sidebar { /* Sidebar */
                 order: 2; /* Appare dopo */
                 height: 350px; /* Altezza fissa per lo scroll */
                 overflow-y: auto; /* Abilita scroll verticale se il contenuto eccede */
             }
-            
+
             .info-cards {
                 grid-template-columns: 1fr; /* Info cards in una colonna su mobile */
             }
         }
-        
+
         @@media (max-width: 768px) {
             .dream-details-info {
                 gap: 15px;
             }
-            
+
             .detail-item {
                 flex: 1 1 100%; /* Elementi dettaglio a tutta larghezza */
             }
-            
+
             .discover-grid {
                 grid-template-columns: 1fr; /* Card Discover in una colonna */
             }
@@ -2165,26 +2499,26 @@
                         const priorityClass = dream.priority === 3 ? 'high' : dream.priority === 2 ? 'medium' : 'low';
                         const starsHtml = Array(dream.priority || 1).fill(0).map(() => '<i class="fas fa-star"></i>').join('');
                         const dreamItemHtml = `
-                                    <div class="dream-item" data-city="${(dream.cityName || '').toLowerCase()}" data-country="${(dream.countryName || '').toLowerCase()}"
-                                        data-id="${dream.id}" data-lat="${dream.latitude}" data-lng="${dream.longitude}"
-                                        onclick="flyToDestination(${dream.latitude}, ${dream.longitude})">
-                                        <div class="dream-item-image">
-                                            <img src="${dream.imageUrl || '/images/placeholder-city.jpg'}" alt="${dream.cityName}" onerror="this.src='/images/placeholder-city.jpg'">
-                                            <div class="dream-flag"><img src="/images/flags/${getCountryCode(dream.countryName).toLowerCase()}.png" alt="${dream.countryName}"></div>
-                                        </div>
-                                        <div class="dream-item-content">
-                                            <div class="dream-priority ${priorityClass}">${starsHtml}</div>
-                                            <h3 class="dream-name">${dream.cityName}</h3>
-                                            <p class="dream-country">${dream.countryName || ''}</p>
-                                            <div class="dream-tags">${(dream.tags || ['viaggio']).map(tag => `<span class="dream-tag">${tag}</span>`).join('')}</div>
-                                            <div class="dream-note">${dream.notes ? (dream.notes.length > 100 ? dream.notes.substring(0, 100) + "..." : dream.notes) : ''}</div>
-                                        </div>
-                                        <div class="dream-item-actions">
-                                            <button type="button" class="btn btn-sm btn-outline-info show-details-btn" data-id="${dream.id}"><i class="fas fa-info-circle"></i></button>
-                                            <button type="button" class="btn btn-sm btn-outline-warning" onclick="moveToPlanningPhase('${dream.id}')"><i class="fas fa-calendar-plus"></i></button>
-                                            <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeDream('${dream.id}')"><i class="fas fa-trash"></i></button>
-                                        </div>
-                                    </div>`;
+                                            <div class="dream-item" data-city="${(dream.cityName || '').toLowerCase()}" data-country="${(dream.countryName || '').toLowerCase()}"
+                                                data-id="${dream.id}" data-lat="${dream.latitude}" data-lng="${dream.longitude}"
+                                                onclick="flyToDestination(${dream.latitude}, ${dream.longitude})">
+                                                <div class="dream-item-image">
+                                                    <img src="${dream.imageUrl || '/images/placeholder-city.jpg'}" alt="${dream.cityName}" onerror="this.src='/images/placeholder-city.jpg'">
+                                                    <div class="dream-flag"><img src="/images/flags/${getCountryCode(dream.countryName).toLowerCase()}.png" alt="${dream.countryName}"></div>
+                                                </div>
+                                                <div class="dream-item-content">
+                                                    <div class="dream-priority ${priorityClass}">${starsHtml}</div>
+                                                    <h3 class="dream-name">${dream.cityName}</h3>
+                                                    <p class="dream-country">${dream.countryName || ''}</p>
+                                                    <div class="dream-tags">${(dream.tags || ['viaggio']).map(tag => `<span class="dream-tag">${tag}</span>`).join('')}</div>
+                                                    <div class="dream-note">${dream.notes ? (dream.notes.length > 100 ? dream.notes.substring(0, 100) + "..." : dream.notes) : ''}</div>
+                                                </div>
+                                                <div class="dream-item-actions">
+                                                    <button type="button" class="btn btn-sm btn-outline-info show-details-btn" data-id="${dream.id}"><i class="fas fa-info-circle"></i></button>
+                                                    <button type="button" class="btn btn-sm btn-outline-warning" onclick="moveToPlanningPhase('${dream.id}')"><i class="fas fa-calendar-plus"></i></button>
+                                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeDream('${dream.id}')"><i class="fas fa-trash"></i></button>
+                                                </div>
+                                            </div>`;
                         wishlistContainer.innerHTML += dreamItemHtml;
                     });
                 }
@@ -2205,30 +2539,30 @@
                             : '<li>Nessuna checklist.</li>';
 
                         const planItemHtml = `
-                                    <div class="plan-item" data-city="${(plan.cityName || '').toLowerCase()}" data-country="${(plan.countryName || '').toLowerCase()}"
-                                        data-id="${plan.id}" data-lat="${plan.latitude}" data-lng="${plan.longitude}"
-                                        onclick="flyToDestination(${plan.latitude}, ${plan.longitude})">
-                                        <div class="plan-item-image">
-                                            <img src="${plan.imageUrl || '/images/placeholder-city.jpg'}" alt="${plan.cityName}" onerror="this.src='/images/placeholder-city.jpg'">
-                                            <div class="plan-flag"><img src="/images/flags/${getCountryCode(plan.countryName).toLowerCase()}.png" alt="${plan.countryName}"></div>
-                                            <div class="plan-dates"><div class="plan-date-icon"><i class="fas fa-plane-departure"></i></div><div class="plan-date-range">${plan.startDate ? new Date(plan.startDate).toLocaleDateString("it-IT") : 'N/A'}</div></div>
-                                        </div>
-                                        <div class="plan-item-content">
-                                            <h3 class="plan-name">${plan.cityName}</h3>
-                                            <p class="plan-country">${plan.countryName || ''}</p>
-                                            <div class="plan-countdown"><i class="far fa-calendar-alt"></i><strong>${countdownDays}</strong> giorni rimanenti</div>
-                                            <div class="plan-progress">
-                                                <div class="progress"><div class="progress-bar" role="progressbar" style="width: ${plan.completionPercentage || 0}%" aria-valuenow="${plan.completionPercentage || 0}" aria-valuemin="0" aria-valuemax="100"></div></div>
-                                                <span class="plan-progress-text">${plan.completionPercentage || 0}% completato</span>
-                                            </div>
-                                            <ul class="plan-checklist">${checklistPreview}</ul>
-                                        </div>
-                                        <div class="plan-item-actions">
-                                            <button type="button" class="btn btn-sm btn-outline-info show-details-btn" data-id="${plan.id}"><i class="fas fa-info-circle"></i></button>
-                                            <button type="button" class="btn btn-sm btn-outline-success" onclick="markAsVisited('${plan.id}')"><i class="fas fa-check"></i></button>
-                                            <button type="button" class="btn btn-sm btn-outline-danger" onclick="removePlan('${plan.id}')"><i class="fas fa-trash"></i></button>
-                                        </div>
-                                    </div>`;
+                                            <div class="plan-item" data-city="${(plan.cityName || '').toLowerCase()}" data-country="${(plan.countryName || '').toLowerCase()}"
+                                                data-id="${plan.id}" data-lat="${plan.latitude}" data-lng="${plan.longitude}"
+                                                onclick="flyToDestination(${plan.latitude}, ${plan.longitude})">
+                                                <div class="plan-item-image">
+                                                    <img src="${plan.imageUrl || '/images/placeholder-city.jpg'}" alt="${plan.cityName}" onerror="this.src='/images/placeholder-city.jpg'">
+                                                    <div class="plan-flag"><img src="/images/flags/${getCountryCode(plan.countryName).toLowerCase()}.png" alt="${plan.countryName}"></div>
+                                                    <div class="plan-dates"><div class="plan-date-icon"><i class="fas fa-plane-departure"></i></div><div class="plan-date-range">${plan.startDate ? new Date(plan.startDate).toLocaleDateString("it-IT") : 'N/A'}</div></div>
+                                                </div>
+                                                <div class="plan-item-content">
+                                                    <h3 class="plan-name">${plan.cityName}</h3>
+                                                    <p class="plan-country">${plan.countryName || ''}</p>
+                                                    <div class="plan-countdown"><i class="far fa-calendar-alt"></i><strong>${countdownDays}</strong> giorni rimanenti</div>
+                                                    <div class="plan-progress">
+                                                        <div class="progress"><div class="progress-bar" role="progressbar" style="width: ${plan.completionPercentage || 0}%" aria-valuenow="${plan.completionPercentage || 0}" aria-valuemin="0" aria-valuemax="100"></div></div>
+                                                        <span class="plan-progress-text">${plan.completionPercentage || 0}% completato</span>
+                                                    </div>
+                                                    <ul class="plan-checklist">${checklistPreview}</ul>
+                                                </div>
+                                                <div class="plan-item-actions">
+                                                    <button type="button" class="btn btn-sm btn-outline-info show-details-btn" data-id="${plan.id}"><i class="fas fa-info-circle"></i></button>
+                                                    <button type="button" class="btn btn-sm btn-outline-success" onclick="markAsVisited('${plan.id}')"><i class="fas fa-check"></i></button>
+                                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="removePlan('${plan.id}')"><i class="fas fa-trash"></i></button>
+                                                </div>
+                                            </div>`;
                         planningContainer.innerHTML += planItemHtml;
                     });
                 }
@@ -2283,124 +2617,124 @@
                 });
         }
 
-               
-         function showPlanDetails(planId) {
-        console.log('[showPlanDetails] Tentativo di mostrare dettagli per PlanId:', planId, '(Tipo:', typeof planId, ')');
-        try {
-            if (!planId || String(planId).trim() === '') {
-                console.error('[showPlanDetails] ERRORE: ID piano nullo, vuoto o non valido fornito.');
-                showToast('Errore', 'ID piano non valido o mancante per visualizzare i dettagli.', 'danger');
-                return;
-            }
 
-            const planIdStr = String(planId).trim(); // Normalizza a stringa
-            console.log('[showPlanDetails] PlanId normalizzato a stringa:', planIdStr);
-
-            let planData = destinations.plannedTrips.find(p => p && p.id && String(p.id).trim() === planIdStr);
-            console.log('[showPlanDetails] Piano trovato nei dati locali (destinations.plannedTrips):', planData ? 'Sì' : 'No', planData);
-
-            if (!planData) {
-                const element = document.querySelector(`.plan-item[data-id="${planIdStr}"]`);
-                if (element) {
-                    console.warn('[showPlanDetails] Piano non trovato in destinations.plannedTrips. Tento fallback al DOM.');
-                    planData = {
-                        id: planIdStr,
-                        cityName: element.querySelector('.plan-name')?.textContent || 'N/A (da DOM)',
-                        countryName: element.querySelector('.plan-country')?.textContent || 'N/A (da DOM)',
-                        imageUrl: element.querySelector('.plan-item-image img')?.src || '/images/placeholder-city.jpg',
-                        startDate: new Date(), // Valore di fallback
-                        endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // Fallback
-                        completionPercentage: parseInt(element.querySelector('.plan-progress-text')?.textContent) || 0,
-                        notes: 'Note non caricate (fallback DOM)',
-                        latitude: parseFloat(element.getAttribute('data-lat')) || 0,
-                        longitude: parseFloat(element.getAttribute('data-lng')) || 0,
-                        checklist: [] // Fallback checklist vuota
-                    };
-                    // Aggiungi questo fallback ai dati locali per coerenza temporanea
-                    if (!destinations.plannedTrips.find(p => p && p.id && String(p.id).trim() === planIdStr)) {
-                        destinations.plannedTrips.push(planData);
-                         console.log('[showPlanDetails] Dati di fallback aggiunti a destinations.plannedTrips.');
-                    }
-                } else {
-                    console.error(`[showPlanDetails] ERRORE CRITICO: Impossibile trovare dati per PlanId '${planIdStr}' né in destinations.plannedTrips né nel DOM.`);
-                    showToast('Errore Dati', `Dati piano per ID '${planIdStr}' non trovati.`, 'danger');
+        function showPlanDetails(planId) {
+            console.log('[showPlanDetails] Tentativo di mostrare dettagli per PlanId:', planId, '(Tipo:', typeof planId, ')');
+            try {
+                if (!planId || String(planId).trim() === '') {
+                    console.error('[showPlanDetails] ERRORE: ID piano nullo, vuoto o non valido fornito.');
+                    showToast('Errore', 'ID piano non valido o mancante per visualizzare i dettagli.', 'danger');
                     return;
                 }
-            }
 
-            planData.checklist = planData.checklist || []; // Assicura che checklist sia un array
-            console.log('[showPlanDetails] Dati piano finali da usare:', JSON.parse(JSON.stringify(planData))); // Log profondo dei dati
+                const planIdStr = String(planId).trim(); // Normalizza a stringa
+                console.log('[showPlanDetails] PlanId normalizzato a stringa:', planIdStr);
 
-            const modal = document.getElementById('planDetailsModal');
-            if (!modal) {
-                console.error("[showPlanDetails] ERRORE CRITICO: Elemento modal 'planDetailsModal' non trovato nel DOM.");
-                return;
-            }
-            modal.setAttribute('data-plan-id', planData.id); // Usa l'ID dai dati (che è stato normalizzato)
-            console.log('[showPlanDetails] Attributo data-plan-id del modal impostato a:', modal.getAttribute('data-plan-id'));
+                let planData = destinations.plannedTrips.find(p => p && p.id && String(p.id).trim() === planIdStr);
+                console.log('[showPlanDetails] Piano trovato nei dati locali (destinations.plannedTrips):', planData ? 'Sì' : 'No', planData);
 
-            // Popolamento del modal (assicurati che gli ID degli elementi siano corretti)
-            document.getElementById('planCityName').textContent = planData.cityName;
-            document.getElementById('planCountryName').textContent = planData.countryName;
-
-            const bannerImg = document.getElementById('planBannerImg');
-            if (bannerImg) {
-                bannerImg.onerror = function () { this.src = '/images/placeholder-city.jpg'; };
-                bannerImg.src = planData.imageUrl || '/images/placeholder-city.jpg';
-            }
-
-            const startDate = planData.startDate ? new Date(planData.startDate) : new Date();
-            const endDate = planData.endDate ? new Date(planData.endDate) : new Date(new Date(startDate).setDate(startDate.getDate() + 7));
-
-            const planDateRangeDisplaySpan = document.getElementById('planDateRange')?.querySelector('span');
-            if (planDateRangeDisplaySpan) {
-                planDateRangeDisplaySpan.textContent = `${startDate.toLocaleDateString("it-IT")} - ${endDate.toLocaleDateString("it-IT")}`;
-            }
-
-            document.getElementById('planStartDateInput').value = formatDateForInput(startDate);
-            document.getElementById('planEndDateInput').value = formatDateForInput(endDate);
-            document.getElementById('planNotes').value = planData.notes || '';
-
-            renderChecklistInModal(planData.id); // Usa l'ID normalizzato
-            updateCompletionPercentage(planData.id); // Usa l'ID normalizzato
-
-            // Configura pulsante aggiungi item checklist
-            const addChecklistItemBtnInModal = document.getElementById('addChecklistItem');
-            if (addChecklistItemBtnInModal) {
-                const newAddBtn = addChecklistItemBtnInModal.cloneNode(true);
-                addChecklistItemBtnInModal.parentNode.replaceChild(newAddBtn, addChecklistItemBtnInModal);
-                newAddBtn.onclick = () => {
-                    const addModalEl = document.getElementById('addChecklistItemModal');
-                    if(addModalEl) {
-                        addModalEl.setAttribute('data-current-plan-id', planData.id); // Imposta l'ID del piano corrente
-                        document.getElementById('checklistItemTitle').value = '';
-                        document.getElementById('checklistItemCategory').value = 'travel';
-                        document.getElementById('checklistItemDueDate').value = '';
-                        new bootstrap.Modal(addModalEl).show();
+                if (!planData) {
+                    const element = document.querySelector(`.plan-item[data-id="${planIdStr}"]`);
+                    if (element) {
+                        console.warn('[showPlanDetails] Piano non trovato in destinations.plannedTrips. Tento fallback al DOM.');
+                        planData = {
+                            id: planIdStr,
+                            cityName: element.querySelector('.plan-name')?.textContent || 'N/A (da DOM)',
+                            countryName: element.querySelector('.plan-country')?.textContent || 'N/A (da DOM)',
+                            imageUrl: element.querySelector('.plan-item-image img')?.src || '/images/placeholder-city.jpg',
+                            startDate: new Date(), // Valore di fallback
+                            endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // Fallback
+                            completionPercentage: parseInt(element.querySelector('.plan-progress-text')?.textContent) || 0,
+                            notes: 'Note non caricate (fallback DOM)',
+                            latitude: parseFloat(element.getAttribute('data-lat')) || 0,
+                            longitude: parseFloat(element.getAttribute('data-lng')) || 0,
+                            checklist: [] // Fallback checklist vuota
+                        };
+                        // Aggiungi questo fallback ai dati locali per coerenza temporanea
+                        if (!destinations.plannedTrips.find(p => p && p.id && String(p.id).trim() === planIdStr)) {
+                            destinations.plannedTrips.push(planData);
+                            console.log('[showPlanDetails] Dati di fallback aggiunti a destinations.plannedTrips.');
+                        }
                     } else {
-                        console.error("[showPlanDetails] Modal 'addChecklistItemModal' non trovato.");
+                        console.error(`[showPlanDetails] ERRORE CRITICO: Impossibile trovare dati per PlanId '${planIdStr}' né in destinations.plannedTrips né nel DOM.`);
+                        showToast('Errore Dati', `Dati piano per ID '${planIdStr}' non trovati.`, 'danger');
+                        return;
                     }
-                };
+                }
+
+                planData.checklist = planData.checklist || []; // Assicura che checklist sia un array
+                console.log('[showPlanDetails] Dati piano finali da usare:', JSON.parse(JSON.stringify(planData))); // Log profondo dei dati
+
+                const modal = document.getElementById('planDetailsModal');
+                if (!modal) {
+                    console.error("[showPlanDetails] ERRORE CRITICO: Elemento modal 'planDetailsModal' non trovato nel DOM.");
+                    return;
+                }
+                modal.setAttribute('data-plan-id', planData.id); // Usa l'ID dai dati (che è stato normalizzato)
+                console.log('[showPlanDetails] Attributo data-plan-id del modal impostato a:', modal.getAttribute('data-plan-id'));
+
+                // Popolamento del modal (assicurati che gli ID degli elementi siano corretti)
+                document.getElementById('planCityName').textContent = planData.cityName;
+                document.getElementById('planCountryName').textContent = planData.countryName;
+
+                const bannerImg = document.getElementById('planBannerImg');
+                if (bannerImg) {
+                    bannerImg.onerror = function () { this.src = '/images/placeholder-city.jpg'; };
+                    bannerImg.src = planData.imageUrl || '/images/placeholder-city.jpg';
+                }
+
+                const startDate = planData.startDate ? new Date(planData.startDate) : new Date();
+                const endDate = planData.endDate ? new Date(planData.endDate) : new Date(new Date(startDate).setDate(startDate.getDate() + 7));
+
+                const planDateRangeDisplaySpan = document.getElementById('planDateRange')?.querySelector('span');
+                if (planDateRangeDisplaySpan) {
+                    planDateRangeDisplaySpan.textContent = `${startDate.toLocaleDateString("it-IT")} - ${endDate.toLocaleDateString("it-IT")}`;
+                }
+
+                document.getElementById('planStartDateInput').value = formatDateForInput(startDate);
+                document.getElementById('planEndDateInput').value = formatDateForInput(endDate);
+                document.getElementById('planNotes').value = planData.notes || '';
+
+                renderChecklistInModal(planData.id); // Usa l'ID normalizzato
+                updateCompletionPercentage(planData.id); // Usa l'ID normalizzato
+
+                // Configura pulsante aggiungi item checklist
+                const addChecklistItemBtnInModal = document.getElementById('addChecklistItem');
+                if (addChecklistItemBtnInModal) {
+                    const newAddBtn = addChecklistItemBtnInModal.cloneNode(true);
+                    addChecklistItemBtnInModal.parentNode.replaceChild(newAddBtn, addChecklistItemBtnInModal);
+                    newAddBtn.onclick = () => {
+                        const addModalEl = document.getElementById('addChecklistItemModal');
+                        if (addModalEl) {
+                            addModalEl.setAttribute('data-current-plan-id', planData.id); // Imposta l'ID del piano corrente
+                            document.getElementById('checklistItemTitle').value = '';
+                            document.getElementById('checklistItemCategory').value = 'travel';
+                            document.getElementById('checklistItemDueDate').value = '';
+                            new bootstrap.Modal(addModalEl).show();
+                        } else {
+                            console.error("[showPlanDetails] Modal 'addChecklistItemModal' non trovato.");
+                        }
+                    };
+                }
+
+                populateCountryInfo(planData.countryName); // Assicurati che questa funzione esista e funzioni
+                setupExternalLinks(planData.cityName, planData.countryName); // Assicurati che questa esista
+
+                configuraPulsantiModal(); // Chiamata FONDAMENTALE dopo aver popolato e PRIMA di mostrare il modal
+
+                if (isValidLatitude(planData.latitude) && isValidLongitude(planData.longitude)) {
+                    flyToDestination(planData.latitude, planData.longitude);
+                }
+
+                console.log('[showPlanDetails] Apertura modal planDetailsModal...');
+                new bootstrap.Modal(modal).show();
+                console.log('[showPlanDetails] Modal planDetailsModal dovrebbe essere visibile.');
+
+            } catch (error) {
+                console.error('[showPlanDetails] Eccezione CRITICA:', error);
+                showToast('Errore JavaScript', `Errore imprevisto in showPlanDetails: ${error.message}`, 'danger');
             }
-
-            populateCountryInfo(planData.countryName); // Assicurati che questa funzione esista e funzioni
-            setupExternalLinks(planData.cityName, planData.countryName); // Assicurati che questa esista
-
-            configuraPulsantiModal(); // Chiamata FONDAMENTALE dopo aver popolato e PRIMA di mostrare il modal
-
-            if (isValidLatitude(planData.latitude) && isValidLongitude(planData.longitude)) {
-                flyToDestination(planData.latitude, planData.longitude);
-            }
-
-            console.log('[showPlanDetails] Apertura modal planDetailsModal...');
-            new bootstrap.Modal(modal).show();
-            console.log('[showPlanDetails] Modal planDetailsModal dovrebbe essere visibile.');
-
-        } catch (error) {
-            console.error('[showPlanDetails] Eccezione CRITICA:', error);
-            showToast('Errore JavaScript', `Errore imprevisto in showPlanDetails: ${error.message}`, 'danger');
         }
-    }
 
 
 
@@ -2474,96 +2808,96 @@
             }
         }
 
- function configuraPulsantiModal() {
-        console.log("[configuraPulsantiModal] Inizio configurazione pulsanti modal dei dettagli del piano.");
-        const planDetailsModalEl = document.getElementById('planDetailsModal');
-        const updatePlanBtn = document.getElementById('updatePlanBtn');
-        const removePlanBtn = document.getElementById('removePlanBtn');
-        const markVisitedBtn = document.getElementById('markVisitedBtn');
-        const saveNotesBtn = document.getElementById('saveNotesBtn'); // Anche se chiama updatePlanDetails
+        function configuraPulsantiModal() {
+            console.log("[configuraPulsantiModal] Inizio configurazione pulsanti modal dei dettagli del piano.");
+            const planDetailsModalEl = document.getElementById('planDetailsModal');
+            const updatePlanBtn = document.getElementById('updatePlanBtn');
+            const removePlanBtn = document.getElementById('removePlanBtn');
+            const markVisitedBtn = document.getElementById('markVisitedBtn');
+            const saveNotesBtn = document.getElementById('saveNotesBtn'); // Anche se chiama updatePlanDetails
 
-        if (!planDetailsModalEl) {
-            console.error("[configuraPulsantiModal] ERRORE CRITICO: Elemento modal 'planDetailsModal' non trovato nel DOM.");
-            return;
-        }
+            if (!planDetailsModalEl) {
+                console.error("[configuraPulsantiModal] ERRORE CRITICO: Elemento modal 'planDetailsModal' non trovato nel DOM.");
+                return;
+            }
 
-        // Configura pulsante "Salva Modifiche" (updatePlanBtn)
-        if (updatePlanBtn) {
-            const newUpdateBtn = updatePlanBtn.cloneNode(true); // Clona per rimuovere vecchi listener
-            updatePlanBtn.parentNode.replaceChild(newUpdateBtn, updatePlanBtn);
-            newUpdateBtn.onclick = function() {
-                const planId = planDetailsModalEl.getAttribute('data-plan-id');
-                console.log("[configuraPulsantiModal] Pulsante 'Salva Modifiche' (updatePlanBtn) cliccato. PlanId recuperato dal modal:", planId);
-                if (planId && String(planId).trim() !== '') {
-                    updatePlanDetails(planId); // Chiama la funzione principale di aggiornamento
-                } else {
-                    console.error("[configuraPulsantiModal] ERRORE: planId non valido o mancante su 'updatePlanBtn'. Impossibile aggiornare.");
-                    showToast('Errore Interno', 'ID Piano non valido nel modal. Riprova.', 'danger');
-                }
-            };
-            console.log("[configuraPulsantiModal] Listener 'onclick' per 'updatePlanBtn' impostato.");
-        } else {
-            console.warn("[configuraPulsantiModal] AVVISO: Pulsante 'updatePlanBtn' non trovato nel DOM.");
-        }
+            // Configura pulsante "Salva Modifiche" (updatePlanBtn)
+            if (updatePlanBtn) {
+                const newUpdateBtn = updatePlanBtn.cloneNode(true); // Clona per rimuovere vecchi listener
+                updatePlanBtn.parentNode.replaceChild(newUpdateBtn, updatePlanBtn);
+                newUpdateBtn.onclick = function () {
+                    const planId = planDetailsModalEl.getAttribute('data-plan-id');
+                    console.log("[configuraPulsantiModal] Pulsante 'Salva Modifiche' (updatePlanBtn) cliccato. PlanId recuperato dal modal:", planId);
+                    if (planId && String(planId).trim() !== '') {
+                        updatePlanDetails(planId); // Chiama la funzione principale di aggiornamento
+                    } else {
+                        console.error("[configuraPulsantiModal] ERRORE: planId non valido o mancante su 'updatePlanBtn'. Impossibile aggiornare.");
+                        showToast('Errore Interno', 'ID Piano non valido nel modal. Riprova.', 'danger');
+                    }
+                };
+                console.log("[configuraPulsantiModal] Listener 'onclick' per 'updatePlanBtn' impostato.");
+            } else {
+                console.warn("[configuraPulsantiModal] AVVISO: Pulsante 'updatePlanBtn' non trovato nel DOM.");
+            }
 
-        // Configura pulsante "Salva Note" (saveNotesBtn) - di solito chiama la stessa logica di updatePlanDetails
-        if (saveNotesBtn) {
-            const newSaveNotesBtn = saveNotesBtn.cloneNode(true);
-            saveNotesBtn.parentNode.replaceChild(newSaveNotesBtn, saveNotesBtn);
-            newSaveNotesBtn.onclick = function() {
-                const planId = planDetailsModalEl.getAttribute('data-plan-id');
-                console.log("[configuraPulsantiModal] Pulsante 'Salva Note' (saveNotesBtn) cliccato. PlanId recuperato:", planId);
-                if (planId && String(planId).trim() !== '') {
-                    updatePlanDetails(planId); // Chiama la stessa funzione di aggiornamento
-                } else {
-                    console.error("[configuraPulsantiModal] ERRORE: planId non valido o mancante su 'saveNotesBtn'. Impossibile salvare note.");
-                    showToast('Errore Interno', 'ID Piano non valido nel modal per salvare le note. Riprova.', 'danger');
-                }
-            };
-            console.log("[configuraPulsantiModal] Listener 'onclick' per 'saveNotesBtn' impostato.");
-        } else {
-            console.warn("[configuraPulsantiModal] AVVISO: Pulsante 'saveNotesBtn' non trovato nel DOM.");
-        }
+            // Configura pulsante "Salva Note" (saveNotesBtn) - di solito chiama la stessa logica di updatePlanDetails
+            if (saveNotesBtn) {
+                const newSaveNotesBtn = saveNotesBtn.cloneNode(true);
+                saveNotesBtn.parentNode.replaceChild(newSaveNotesBtn, saveNotesBtn);
+                newSaveNotesBtn.onclick = function () {
+                    const planId = planDetailsModalEl.getAttribute('data-plan-id');
+                    console.log("[configuraPulsantiModal] Pulsante 'Salva Note' (saveNotesBtn) cliccato. PlanId recuperato:", planId);
+                    if (planId && String(planId).trim() !== '') {
+                        updatePlanDetails(planId); // Chiama la stessa funzione di aggiornamento
+                    } else {
+                        console.error("[configuraPulsantiModal] ERRORE: planId non valido o mancante su 'saveNotesBtn'. Impossibile salvare note.");
+                        showToast('Errore Interno', 'ID Piano non valido nel modal per salvare le note. Riprova.', 'danger');
+                    }
+                };
+                console.log("[configuraPulsantiModal] Listener 'onclick' per 'saveNotesBtn' impostato.");
+            } else {
+                console.warn("[configuraPulsantiModal] AVVISO: Pulsante 'saveNotesBtn' non trovato nel DOM.");
+            }
 
-        // Configura pulsante "Elimina Piano" (removePlanBtn)
-        if (removePlanBtn) {
-            const newRemoveBtn = removePlanBtn.cloneNode(true);
-            removePlanBtn.parentNode.replaceChild(newRemoveBtn, removePlanBtn);
-            newRemoveBtn.onclick = function() {
-                const planId = planDetailsModalEl.getAttribute('data-plan-id');
-                console.log("[configuraPulsantiModal] Pulsante 'Elimina Piano' (removePlanBtn) cliccato. PlanId recuperato:", planId);
-                if (planId && String(planId).trim() !== '') {
-                    removePlan(planId); // Chiama la funzione di rimozione
-                } else {
-                    console.error("[configuraPulsantiModal] ERRORE: planId non valido o mancante su 'removePlanBtn'. Impossibile eliminare.");
-                    showToast('Errore Interno', 'ID Piano non valido nel modal per eliminare. Riprova.', 'danger');
-                }
-            };
-            console.log("[configuraPulsantiModal] Listener 'onclick' per 'removePlanBtn' impostato.");
-        } else {
-            console.warn("[configuraPulsantiModal] AVVISO: Pulsante 'removePlanBtn' non trovato nel DOM.");
-        }
+            // Configura pulsante "Elimina Piano" (removePlanBtn)
+            if (removePlanBtn) {
+                const newRemoveBtn = removePlanBtn.cloneNode(true);
+                removePlanBtn.parentNode.replaceChild(newRemoveBtn, removePlanBtn);
+                newRemoveBtn.onclick = function () {
+                    const planId = planDetailsModalEl.getAttribute('data-plan-id');
+                    console.log("[configuraPulsantiModal] Pulsante 'Elimina Piano' (removePlanBtn) cliccato. PlanId recuperato:", planId);
+                    if (planId && String(planId).trim() !== '') {
+                        removePlan(planId); // Chiama la funzione di rimozione
+                    } else {
+                        console.error("[configuraPulsantiModal] ERRORE: planId non valido o mancante su 'removePlanBtn'. Impossibile eliminare.");
+                        showToast('Errore Interno', 'ID Piano non valido nel modal per eliminare. Riprova.', 'danger');
+                    }
+                };
+                console.log("[configuraPulsantiModal] Listener 'onclick' per 'removePlanBtn' impostato.");
+            } else {
+                console.warn("[configuraPulsantiModal] AVVISO: Pulsante 'removePlanBtn' non trovato nel DOM.");
+            }
 
-        // Configura pulsante "Segna come Visitato" (markVisitedBtn)
-        if (markVisitedBtn) {
-            const newMarkVisitedBtn = markVisitedBtn.cloneNode(true);
-            markVisitedBtn.parentNode.replaceChild(newMarkVisitedBtn, markVisitedBtn);
-            newMarkVisitedBtn.onclick = function() {
-                const planId = planDetailsModalEl.getAttribute('data-plan-id');
-                console.log("[configuraPulsantiModal] Pulsante 'Segna come Visitato' (markVisitedBtn) cliccato. PlanId recuperato:", planId);
-                if (planId && String(planId).trim() !== '') {
-                    markAsVisited(planId); // Chiama la funzione per marcare come visitato
-                } else {
-                    console.error("[configuraPulsantiModal] ERRORE: planId non valido o mancante su 'markVisitedBtn'.");
-                    showToast('Errore Interno', 'ID Piano non valido nel modal. Riprova.', 'danger');
-                }
-            };
-            console.log("[configuraPulsantiModal] Listener 'onclick' per 'markVisitedBtn' impostato.");
-        } else {
-            console.warn("[configuraPulsantiModal] AVVISO: Pulsante 'markVisitedBtn' non trovato nel DOM.");
+            // Configura pulsante "Segna come Visitato" (markVisitedBtn)
+            if (markVisitedBtn) {
+                const newMarkVisitedBtn = markVisitedBtn.cloneNode(true);
+                markVisitedBtn.parentNode.replaceChild(newMarkVisitedBtn, markVisitedBtn);
+                newMarkVisitedBtn.onclick = function () {
+                    const planId = planDetailsModalEl.getAttribute('data-plan-id');
+                    console.log("[configuraPulsantiModal] Pulsante 'Segna come Visitato' (markVisitedBtn) cliccato. PlanId recuperato:", planId);
+                    if (planId && String(planId).trim() !== '') {
+                        markAsVisited(planId); // Chiama la funzione per marcare come visitato
+                    } else {
+                        console.error("[configuraPulsantiModal] ERRORE: planId non valido o mancante su 'markVisitedBtn'.");
+                        showToast('Errore Interno', 'ID Piano non valido nel modal. Riprova.', 'danger');
+                    }
+                };
+                console.log("[configuraPulsantiModal] Listener 'onclick' per 'markVisitedBtn' impostato.");
+            } else {
+                console.warn("[configuraPulsantiModal] AVVISO: Pulsante 'markVisitedBtn' non trovato nel DOM.");
+            }
+            console.log("[configuraPulsantiModal] Fine configurazione pulsanti modal.");
         }
-        console.log("[configuraPulsantiModal] Fine configurazione pulsanti modal.");
-    }
 
 
         function getCountryCode(countryName) {
@@ -2571,34 +2905,34 @@
             return countryMap[countryName] || 'unknown';
         }
 
-                                function setupExternalLinks(cityName, countryName) {
-                    if (!cityName || !countryName) { 
-                        console.error('Nome città o paese mancante per link esterni'); 
-                        return; 
-                    }
-                    
-                    const encodedQuery = encodeURIComponent(`${cityName}, ${countryName}`);
-                    
-                    const setupLink = (id, urlPattern) => {
-                        const btn = document.getElementById(id);
-                        if (btn) {
-                            const finalUrl = urlPattern.replace('{QUERY}', encodedQuery);
-                            btn.href = finalUrl; // Imposta href per accessibilità e fallback
-                            
-                            // Use a regular function (not arrow function) for proper 'return' statement
-                            btn.onclick = function(e) { 
-                                e.preventDefault(); 
-                                window.open(finalUrl, '_blank'); 
-                                return false; 
-                            };
-                        }
+        function setupExternalLinks(cityName, countryName) {
+            if (!cityName || !countryName) {
+                console.error('Nome città o paese mancante per link esterni');
+                return;
+            }
+
+            const encodedQuery = encodeURIComponent(`${cityName}, ${countryName}`);
+
+            const setupLink = (id, urlPattern) => {
+                const btn = document.getElementById(id);
+                if (btn) {
+                    const finalUrl = urlPattern.replace('{QUERY}', encodedQuery);
+                    btn.href = finalUrl; // Imposta href per accessibilità e fallback
+
+                    // Use a regular function (not arrow function) for proper 'return' statement
+                    btn.onclick = function (e) {
+                        e.preventDefault();
+                        window.open(finalUrl, '_blank');
+                        return false;
                     };
-                    
-                    setupLink('googleMapsBtn', 'https://www.google.com/maps/search/{QUERY}');
-                    setupLink('bookingBtn', 'https://www.booking.com/searchresults.html?ss={QUERY}');
-                    setupLink('tripAdvisorBtn', 'https://www.tripadvisor.com/Search?q={QUERY}');
                 }
-                function showVisitDetails(visitId) {
+            };
+
+            setupLink('googleMapsBtn', 'https://www.google.com/maps/search/{QUERY}');
+            setupLink('bookingBtn', 'https://www.booking.com/searchresults.html?ss={QUERY}');
+            setupLink('tripAdvisorBtn', 'https://www.tripadvisor.com/Search?q={QUERY}');
+        }
+        function showVisitDetails(visitId) {
             console.log('[showVisitDetails] Tentativo di mostrare dettagli per VisitId:', visitId);
             const visitData = destinations.visitedCities.find(v => v.id && v.id.toString() === visitId.toString());
 
@@ -2620,13 +2954,13 @@
             document.getElementById('visitCityName').textContent = visitData.cityName || 'N/D';
             document.getElementById('visitCountryName').textContent = visitData.countryName || 'N/D';
             const bannerImg = document.getElementById('visitBannerImg');
-            bannerImg.onerror = function() { this.src = '/images/placeholder-destination.jpg'; };
+            bannerImg.onerror = function () { this.src = '/images/placeholder-destination.jpg'; };
             bannerImg.src = visitData.imageUrl || '/images/placeholder-destination.jpg';
 
             // Popola i campi del form
             document.getElementById('visitDateInput').value = visitData.visitDate ? formatDateForInput(visitData.visitDate) : '';
             document.getElementById('visitMemoriesTextarea').value = visitData.memories || '';
-            
+
             // Popola highlights e companions (se presenti nel tuo modello dati visitData)
             document.getElementById('visitHighlightsInput').value = (visitData.highlights || []).join(', ');
             document.getElementById('visitCompanionsInput').value = (visitData.travelCompanions || []).join(', ');
@@ -2635,16 +2969,16 @@
             const ratingInput = document.getElementById('visitRatingInput');
             const starsContainer = document.getElementById('visitRatingStars');
             ratingInput.value = visitData.rating || 0;
-            
+
             starsContainer.querySelectorAll('i').forEach(star => {
                 star.classList.remove('fas', 'far'); // Rimuovi entrambe le classi
                 star.classList.add(parseInt(star.dataset.value) <= ratingInput.value ? 'fas' : 'far'); // fas per piena, far per vuota
-                
+
                 // Rimuovi vecchi listener per evitare duplicazioni
                 const newStar = star.cloneNode(true);
                 star.parentNode.replaceChild(newStar, star);
 
-                newStar.addEventListener('click', function() {
+                newStar.addEventListener('click', function () {
                     const newRating = parseInt(this.dataset.value);
                     ratingInput.value = newRating;
                     starsContainer.querySelectorAll('i').forEach(s => {
@@ -2662,7 +2996,7 @@
                     const img = document.createElement('img');
                     img.src = url;
                     img.alt = "Foto del viaggio";
-                    img.onerror = function() { this.style.display='none'; /* Nascondi se l'immagine non carica */ };
+                    img.onerror = function () { this.style.display = 'none'; /* Nascondi se l'immagine non carica */ };
                     photoGallery.appendChild(img);
                 });
             } else {
@@ -2673,7 +3007,7 @@
             const saveBtn = document.getElementById('saveVisitDetailsBtn');
             const newSaveBtn = saveBtn.cloneNode(true); // Per rimuovere vecchi listener
             saveBtn.parentNode.replaceChild(newSaveBtn, saveBtn);
-            newSaveBtn.onclick = function() {
+            newSaveBtn.onclick = function () {
                 updateVisitDetails(visitId);
             };
 
@@ -2685,7 +3019,7 @@
             }
         }
 
-                function updateVisitDetails(visitId) {
+        function updateVisitDetails(visitId) {
             const visitDataIndex = destinations.visitedCities.findIndex(v => v.id && v.id.toString() === visitId.toString());
             if (visitDataIndex === -1) {
                 showToast('Errore', 'Impossibile salvare, dati visita non trovati.', 'danger');
@@ -2711,7 +3045,7 @@
 
 
             console.log('Dati visita aggiornati (client-side):', destinations.visitedCities[visitDataIndex]);
-            
+
             // -------- INIZIO SEZIONE PER CHIAMATA BACKEND (da implementare) --------
             // Qui andrebbe la chiamata fetch al backend per persistere le modifiche.
             // Esempio di struttura della chiamata:
@@ -2719,11 +3053,11 @@
             showLoadingOverlay('Salvataggio ricordi...');
             fetch('/DreamMap?handler=UpdateVisitedDetails', { // Handler da creare
                 method: 'POST',
-                headers: { 
+                headers: {
                     'Content-Type': 'application/json',
-                    'RequestVerificationToken': getAntiForgeryToken() 
+                    'RequestVerificationToken': getAntiForgeryToken()
                 },
-                body: JSON.stringify({ 
+                body: JSON.stringify({
                     visitId: visitId,
                     visitDate: visitDate,
                     rating: rating,
@@ -2752,7 +3086,7 @@
             });
             */
             // -------- FINE SEZIONE PER CHIAMATA BACKEND --------
-            
+
             // Per ora, simuliamo successo e chiudiamo il modal
             showToast('Info', 'Ricordi aggiornati localmente (salvataggio backend non implementato).', 'info');
             bootstrap.Modal.getInstance(document.getElementById('visitDetailsModal')).hide();
@@ -2809,347 +3143,177 @@
                 .catch(error => { hideLoadingOverlay(); console.error('Errore spostamento:', error); showToast('Errore', 'Errore connessione.', 'danger'); });
         }
 
-        
+
         function updatePlanDetails(planId) { // planId dovrebbe essere già una stringa normalizzata da chi la chiama
-    console.log('--- [JS updatePlanDetails] FUNZIONE CHIAMATA ---');
-    console.log('[JS updatePlanDetails] ID Piano ricevuto:', planId, '(Tipo:', typeof planId, ')');
+            console.log('--- [JS updatePlanDetails] FUNZIONE CHIAMATA ---');
+            console.log('[JS updatePlanDetails] ID Piano ricevuto:', planId, '(Tipo:', typeof planId, ')');
 
-    if (!planId || String(planId).trim() === '') {
-        console.error("[JS updatePlanDetails] ERRORE: ID piano nullo, vuoto o non valido all'inizio della funzione.");
-        showToast('Errore Critico JS', 'ID Piano non valido per l\'aggiornamento.', 'danger');
-        return;
-    }
-
-    const planIdStr = String(planId).trim();
-    console.log('[JS updatePlanDetails] ID Piano normalizzato (o riconfermato) a stringa:', planIdStr);
-
-    try {
-        // Trova l'INDICE del piano nei dati locali 'destinations.plannedTrips'
-        // È importante lavorare con l'oggetto NELL'ARRAY destinations per mantenere la reattività
-        const planIndex = destinations.plannedTrips.findIndex(p => p && p.id && String(p.id).trim() === planIdStr);
-
-        if (planIndex === -1) {
-            console.error(`[JS updatePlanDetails] ERRORE: Piano con ID "${planIdStr}" non trovato in destinations.plannedTrips.`);
-            console.log("[JS updatePlanDetails] Contenuto di destinations.plannedTrips:", JSON.parse(JSON.stringify(destinations.plannedTrips)));
-            showToast('Errore Dati Client', `Piano ID="${planIdStr}" non trovato nei dati client. Ricarica la pagina o riprova.`, 'danger');
-            return;
-        }
-
-        // Ottieni il riferimento all'oggetto piano nell'array destinations
-        const planObjectFromState = destinations.plannedTrips[planIndex];
-        console.log("[JS updatePlanDetails] Oggetto piano recuperato da destinations.plannedTrips (prima delle modifiche dal form):", JSON.parse(JSON.stringify(planObjectFromState)));
-
-        // --- RECUPERO DATI DAL FORM DEL MODAL ---
-        const startDateInputEl = document.getElementById('planStartDateInput');
-        const endDateInputEl = document.getElementById('planEndDateInput');
-        const notesInputEl = document.getElementById('planNotes');
-
-        if (!startDateInputEl || !endDateInputEl || !notesInputEl) {
-            console.error("[JS updatePlanDetails] ERRORE: Uno o più elementi del form (planStartDateInput, planEndDateInput, planNotes) non trovati nel DOM.");
-            showToast('Errore Modulo', 'Campi del form mancanti. Impossibile salvare.', 'danger');
-            return;
-        }
-
-        // Leggi i valori CORRENTI dagli elementi del form
-        const startDateFromForm = startDateInputEl.value; // Formato YYYY-MM-DD
-        const endDateFromForm = endDateInputEl.value;     // Formato YYYY-MM-DD
-        const notesFromForm = notesInputEl.value;
-
-        console.log("[JS updatePlanDetails] Valori LETTI DIRETTAMENTE DAL FORM:");
-        console.log("  - StartDate (dal form):", startDateFromForm);
-        console.log("  - EndDate (dal form):", endDateFromForm);
-        console.log("  - Notes (dal form):", notesFromForm);
-
-        // Validazione date
-        if (!startDateFromForm || !endDateFromForm) {
-            console.error("[JS updatePlanDetails] ERRORE: Date di inizio o fine mancanti nel form.");
-            showToast('Errore Input', 'Inserisci sia la data di inizio che quella di fine.', 'danger');
-            return;
-        }
-        // Non è necessario creare oggetti Date qui se il backend si aspetta stringhe YYYY-MM-DD
-        // Ma la validazione che startDate non sia dopo endDate è utile:
-        if (new Date(startDateFromForm) > new Date(endDateFromForm)) {
-            console.error("[JS updatePlanDetails] ERRORE: Data di inizio successiva a data di fine.");
-            showToast('Errore Input', 'La data di inizio non può essere successiva alla data di fine.', 'danger');
-            return;
-        }
-
-        // Prepara l'oggetto checklist da inviare
-        // Questa si basa sullo stato corrente di `planObjectFromState.checklist`
-        const checklistToSend = (planObjectFromState.checklist || []).map(item => ({
-            id: String(item.id),
-            title: item.title,
-            category: item.category,
-            dueDate: item.dueDate ? formatDateForInput(new Date(item.dueDate)) : null,
-            isCompleted: item.isCompleted
-        }));
-        console.log("[JS updatePlanDetails] Checklist attuale (dall'oggetto 'planObjectFromState' in memoria) preparata per l'invio:", JSON.parse(JSON.stringify(checklistToSend)));
-
-
-        // --- Prepara l'oggetto dati da inviare al server ---
-        // USA I VALORI LETTI DIRETTAMENTE DAL FORM per date e note
-        const updateData = {
-            planId: planObjectFromState.id,      // ID originale del piano (stringa)
-            startDate: startDateFromForm,        // Data letta dal form (stringa YYYY-MM-DD)
-            endDate: endDateFromForm,          // Data letta dal form (stringa YYYY-MM-DD)
-            notes: notesFromForm,              // Note lette dal form
-            checklist: checklistToSend           // Checklist basata sullo stato client-side
-        };
-
-        console.log("[JS updatePlanDetails] Dati FINALI pronti per invio al server (con valori dal form):", JSON.stringify(updateData, null, 2));
-
-        if (!updateData.planId || String(updateData.planId).trim() === '') {
-            console.error("[JS updatePlanDetails] ERRORE CRITICO: planId in updateData è nullo o vuoto PRIMA della chiamata fetch!");
-            showToast('Errore Critico JS', 'ID Piano nullo o vuoto prima dell\'invio (JS). Controlla console.', 'danger');
-            return;
-        }
-
-        showLoadingOverlay('Salvataggio modifiche in corso...');
-
-        fetch('/DreamMap?handler=UpdatePlanDetails', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'RequestVerificationToken': getAntiForgeryToken()
-            },
-            body: JSON.stringify(updateData)
-        })
-        .then(response => {
-            console.log("[JS updatePlanDetails] Risposta Fetch ricevuta - Status:", response.status, response.statusText);
-            if (!response.ok) {
-                return response.text().then(text => {
-                    console.error("[JS updatePlanDetails] Errore HTTP dal server:", response.status, text);
-                    throw new Error(`Errore server (${response.status}): ${text.substring(0, 250)}...`);
-                });
+            if (!planId || String(planId).trim() === '') {
+                console.error("[JS updatePlanDetails] ERRORE: ID piano nullo, vuoto o non valido all'inizio della funzione.");
+                showToast('Errore Critico JS', 'ID Piano non valido per l\'aggiornamento.', 'danger');
+                return;
             }
-            return response.json();
-        })
-        .then(data => {
-            hideLoadingOverlay();
-            console.log("[JS updatePlanDetails] Risposta JSON dal server:", JSON.parse(JSON.stringify(data)));
-            if (data.success) {
-                console.log("[JS updatePlanDetails] Aggiornamento riuscito secondo il server. Messaggio:", data.message);
-                if (data.updatedPlan) {
-                    const serverPlan = data.updatedPlan;
-                    // Aggiorna l'oggetto planObjectFromState NELL'ARRAY destinations con i dati dal server
-                    planObjectFromState.startDate = new Date(serverPlan.startDate);
-                    planObjectFromState.endDate = new Date(serverPlan.endDate);
-                    planObjectFromState.notes = serverPlan.notes;
-                    planObjectFromState.completionPercentage = serverPlan.completionPercentage;
-                    planObjectFromState.checklist = (serverPlan.checklist || []).map(serverItem => ({
-                        id: serverItem.id,
-                        title: serverItem.title,
-                        category: serverItem.category,
-                        dueDate: serverItem.dueDate ? new Date(serverItem.dueDate) : null,
-                        isCompleted: serverItem.isCompleted
-                    }));
-                    console.log("[JS updatePlanDetails] Dati piano NELL'ARRAY 'destinations' aggiornati con risposta server.");
-                } else {
-                    console.warn("[JS updatePlanDetails] AVVISO: Risposta server success=true ma 'updatedPlan' mancante. L'aggiornamento locale potrebbe essere incompleto.");
-                    // Aggiornamento parziale con dati inviati, se 'updatedPlan' non è presente
-                    planObjectFromState.startDate = new Date(startDateFromForm);
-                    planObjectFromState.endDate = new Date(endDateFromForm);
-                    planObjectFromState.notes = notesFromForm;
-                    // La checklist è già lo stato client corrente, ma gli ID potrebbero non essere aggiornati se nuovi.
-                    updateCompletionPercentage(planObjectFromState.id); // Ricalcola % basata su questa checklist
+
+            const planIdStr = String(planId).trim();
+            console.log('[JS updatePlanDetails] ID Piano normalizzato (o riconfermato) a stringa:', planIdStr);
+
+            try {
+                // Trova l'INDICE del piano nei dati locali 'destinations.plannedTrips'
+                // È importante lavorare con l'oggetto NELL'ARRAY destinations per mantenere la reattività
+                const planIndex = destinations.plannedTrips.findIndex(p => p && p.id && String(p.id).trim() === planIdStr);
+
+                if (planIndex === -1) {
+                    console.error(`[JS updatePlanDetails] ERRORE: Piano con ID "${planIdStr}" non trovato in destinations.plannedTrips.`);
+                    console.log("[JS updatePlanDetails] Contenuto di destinations.plannedTrips:", JSON.parse(JSON.stringify(destinations.plannedTrips)));
+                    showToast('Errore Dati Client', `Piano ID="${planIdStr}" non trovato nei dati client. Ricarica la pagina o riprova.`, 'danger');
+                    return;
                 }
 
-                sincronizzaStatoApp();
+                // Ottieni il riferimento all'oggetto piano nell'array destinations
+                const planObjectFromState = destinations.plannedTrips[planIndex];
+                console.log("[JS updatePlanDetails] Oggetto piano recuperato da destinations.plannedTrips (prima delle modifiche dal form):", JSON.parse(JSON.stringify(planObjectFromState)));
 
-                const planDateRangeDisplaySpan = document.getElementById('planDateRange')?.querySelector('span');
-                if (planDateRangeDisplaySpan) {
-                    planDateRangeDisplaySpan.textContent = `${planObjectFromState.startDate.toLocaleDateString("it-IT")} - ${planObjectFromState.endDate.toLocaleDateString("it-IT")}`;
-                }
-                renderChecklistInModal(planObjectFromState.id);
-                showToast('Successo', data.message || 'Modifiche salvate!', 'success');
-            } else {
-                console.error("[JS updatePlanDetails] Errore logico restituito dal server:", data.message);
-                showToast('Errore Salvataggio', data.message || 'Salvataggio modifiche fallito.', 'danger');
-            }
-        })
-        .catch(error => {
-            hideLoadingOverlay();
-            console.error('[JS updatePlanDetails] Errore CRITICO durante fetch o elaborazione risposta:', error);
-            showToast('Errore Connessione', `Impossibile salvare: ${error.message}`, 'danger');
-        });
+                // --- RECUPERO DATI DAL FORM DEL MODAL ---
+                const startDateInputEl = document.getElementById('planStartDateInput');
+                const endDateInputEl = document.getElementById('planEndDateInput');
+                const notesInputEl = document.getElementById('planNotes');
 
-    } catch (error) {
-        console.error("[JS updatePlanDetails] Eccezione FATALE nel blocco try principale della funzione:", error);
-        hideLoadingOverlay();
-        showToast('Errore Critico JS', `Errore imprevisto nel JavaScript: ${error.message}`, 'danger');
-    }
-}
-
-
-function updatePlanDetails(planId) { // planId dovrebbe essere già una stringa normalizzata da chi la chiama
-    console.log('--- [JS updatePlanDetails] FUNZIONE CHIAMATA ---');
-    console.log('[JS updatePlanDetails] ID Piano ricevuto:', planId, '(Tipo:', typeof planId, ')');
-
-    if (!planId || String(planId).trim() === '') {
-        console.error("[JS updatePlanDetails] ERRORE: ID piano nullo, vuoto o non valido all'inizio della funzione.");
-        showToast('Errore Critico JS', 'ID Piano non valido per l\'aggiornamento.', 'danger');
-        return;
-    }
-
-    const planIdStr = String(planId).trim();
-    console.log('[JS updatePlanDetails] ID Piano normalizzato (o riconfermato) a stringa:', planIdStr);
-
-    try {
-        // Trova l'INDICE del piano nei dati locali 'destinations.plannedTrips'
-        // È importante lavorare con l'oggetto NELL'ARRAY destinations per mantenere la reattività
-        const planIndex = destinations.plannedTrips.findIndex(p => p && p.id && String(p.id).trim() === planIdStr);
-
-        if (planIndex === -1) {
-            console.error(`[JS updatePlanDetails] ERRORE: Piano con ID "${planIdStr}" non trovato in destinations.plannedTrips.`);
-            console.log("[JS updatePlanDetails] Contenuto di destinations.plannedTrips:", JSON.parse(JSON.stringify(destinations.plannedTrips)));
-            showToast('Errore Dati Client', `Piano ID="${planIdStr}" non trovato nei dati client. Ricarica la pagina o riprova.`, 'danger');
-            return;
-        }
-
-        // Ottieni il riferimento all'oggetto piano nell'array destinations
-        const planObjectFromState = destinations.plannedTrips[planIndex];
-        console.log("[JS updatePlanDetails] Oggetto piano recuperato da destinations.plannedTrips (prima delle modifiche dal form):", JSON.parse(JSON.stringify(planObjectFromState)));
-
-        // --- RECUPERO DATI DAL FORM DEL MODAL ---
-        const startDateInputEl = document.getElementById('planStartDateInput');
-        const endDateInputEl = document.getElementById('planEndDateInput');
-        const notesInputEl = document.getElementById('planNotes');
-
-        if (!startDateInputEl || !endDateInputEl || !notesInputEl) {
-            console.error("[JS updatePlanDetails] ERRORE: Uno o più elementi del form (planStartDateInput, planEndDateInput, planNotes) non trovati nel DOM.");
-            showToast('Errore Modulo', 'Campi del form mancanti. Impossibile salvare.', 'danger');
-            return;
-        }
-
-        // Leggi i valori CORRENTI dagli elementi del form
-        const startDateFromForm = startDateInputEl.value; // Formato YYYY-MM-DD
-        const endDateFromForm = endDateInputEl.value;     // Formato YYYY-MM-DD
-        const notesFromForm = notesInputEl.value;
-
-        console.log("[JS updatePlanDetails] Valori LETTI DIRETTAMENTE DAL FORM:");
-        console.log("  - StartDate (dal form):", startDateFromForm);
-        console.log("  - EndDate (dal form):", endDateFromForm);
-        console.log("  - Notes (dal form):", notesFromForm);
-
-        // Validazione date
-        if (!startDateFromForm || !endDateFromForm) {
-            console.error("[JS updatePlanDetails] ERRORE: Date di inizio o fine mancanti nel form.");
-            showToast('Errore Input', 'Inserisci sia la data di inizio che quella di fine.', 'danger');
-            return;
-        }
-        // Non è necessario creare oggetti Date qui se il backend si aspetta stringhe YYYY-MM-DD
-        // Ma la validazione che startDate non sia dopo endDate è utile:
-        if (new Date(startDateFromForm) > new Date(endDateFromForm)) {
-            console.error("[JS updatePlanDetails] ERRORE: Data di inizio successiva a data di fine.");
-            showToast('Errore Input', 'La data di inizio non può essere successiva alla data di fine.', 'danger');
-            return;
-        }
-
-        // Prepara l'oggetto checklist da inviare
-        // Questa si basa sullo stato corrente di `planObjectFromState.checklist`
-        const checklistToSend = (planObjectFromState.checklist || []).map(item => ({
-            id: String(item.id),
-            title: item.title,
-            category: item.category,
-            dueDate: item.dueDate ? formatDateForInput(new Date(item.dueDate)) : null,
-            isCompleted: item.isCompleted
-        }));
-        console.log("[JS updatePlanDetails] Checklist attuale (dall'oggetto 'planObjectFromState' in memoria) preparata per l'invio:", JSON.parse(JSON.stringify(checklistToSend)));
-
-
-        // --- Prepara l'oggetto dati da inviare al server ---
-        // USA I VALORI LETTI DIRETTAMENTE DAL FORM per date e note
-        const updateData = {
-            planId: planObjectFromState.id,      // ID originale del piano (stringa)
-            startDate: startDateFromForm,        // Data letta dal form (stringa YYYY-MM-DD)
-            endDate: endDateFromForm,          // Data letta dal form (stringa YYYY-MM-DD)
-            notes: notesFromForm,              // Note lette dal form
-            checklist: checklistToSend           // Checklist basata sullo stato client-side
-        };
-
-        console.log("[JS updatePlanDetails] Dati FINALI pronti per invio al server (con valori dal form):", JSON.stringify(updateData, null, 2));
-
-        if (!updateData.planId || String(updateData.planId).trim() === '') {
-            console.error("[JS updatePlanDetails] ERRORE CRITICO: planId in updateData è nullo o vuoto PRIMA della chiamata fetch!");
-            showToast('Errore Critico JS', 'ID Piano nullo o vuoto prima dell\'invio (JS). Controlla console.', 'danger');
-            return;
-        }
-
-        showLoadingOverlay('Salvataggio modifiche in corso...');
-
-        fetch('/DreamMap?handler=UpdatePlanDetails', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'RequestVerificationToken': getAntiForgeryToken()
-            },
-            body: JSON.stringify(updateData)
-        })
-        .then(response => {
-            console.log("[JS updatePlanDetails] Risposta Fetch ricevuta - Status:", response.status, response.statusText);
-            if (!response.ok) {
-                return response.text().then(text => {
-                    console.error("[JS updatePlanDetails] Errore HTTP dal server:", response.status, text);
-                    throw new Error(`Errore server (${response.status}): ${text.substring(0, 250)}...`);
-                });
-            }
-            return response.json();
-        })
-        .then(data => {
-            hideLoadingOverlay();
-            console.log("[JS updatePlanDetails] Risposta JSON dal server:", JSON.parse(JSON.stringify(data)));
-            if (data.success) {
-                console.log("[JS updatePlanDetails] Aggiornamento riuscito secondo il server. Messaggio:", data.message);
-                if (data.updatedPlan) {
-                    const serverPlan = data.updatedPlan;
-                    // Aggiorna l'oggetto planObjectFromState NELL'ARRAY destinations con i dati dal server
-                    planObjectFromState.startDate = new Date(serverPlan.startDate);
-                    planObjectFromState.endDate = new Date(serverPlan.endDate);
-                    planObjectFromState.notes = serverPlan.notes;
-                    planObjectFromState.completionPercentage = serverPlan.completionPercentage;
-                    planObjectFromState.checklist = (serverPlan.checklist || []).map(serverItem => ({
-                        id: serverItem.id,
-                        title: serverItem.title,
-                        category: serverItem.category,
-                        dueDate: serverItem.dueDate ? new Date(serverItem.dueDate) : null,
-                        isCompleted: serverItem.isCompleted
-                    }));
-                    console.log("[JS updatePlanDetails] Dati piano NELL'ARRAY 'destinations' aggiornati con risposta server.");
-                } else {
-                    console.warn("[JS updatePlanDetails] AVVISO: Risposta server success=true ma 'updatedPlan' mancante. L'aggiornamento locale potrebbe essere incompleto.");
-                    // Aggiornamento parziale con dati inviati, se 'updatedPlan' non è presente
-                    planObjectFromState.startDate = new Date(startDateFromForm);
-                    planObjectFromState.endDate = new Date(endDateFromForm);
-                    planObjectFromState.notes = notesFromForm;
-                    // La checklist è già lo stato client corrente, ma gli ID potrebbero non essere aggiornati se nuovi.
-                    updateCompletionPercentage(planObjectFromState.id); // Ricalcola % basata su questa checklist
+                if (!startDateInputEl || !endDateInputEl || !notesInputEl) {
+                    console.error("[JS updatePlanDetails] ERRORE: Uno o più elementi del form (planStartDateInput, planEndDateInput, planNotes) non trovati nel DOM.");
+                    showToast('Errore Modulo', 'Campi del form mancanti. Impossibile salvare.', 'danger');
+                    return;
                 }
 
-                sincronizzaStatoApp();
+                // Leggi i valori CORRENTI dagli elementi del form
+                const startDateFromForm = startDateInputEl.value; // Formato YYYY-MM-DD
+                const endDateFromForm = endDateInputEl.value;     // Formato YYYY-MM-DD
+                const notesFromForm = notesInputEl.value;
 
-                const planDateRangeDisplaySpan = document.getElementById('planDateRange')?.querySelector('span');
-                if (planDateRangeDisplaySpan) {
-                    planDateRangeDisplaySpan.textContent = `${planObjectFromState.startDate.toLocaleDateString("it-IT")} - ${planObjectFromState.endDate.toLocaleDateString("it-IT")}`;
+                console.log("[JS updatePlanDetails] Valori LETTI DIRETTAMENTE DAL FORM:");
+                console.log("  - StartDate (dal form):", startDateFromForm);
+                console.log("  - EndDate (dal form):", endDateFromForm);
+                console.log("  - Notes (dal form):", notesFromForm);
+
+                // Validazione date
+                if (!startDateFromForm || !endDateFromForm) {
+                    console.error("[JS updatePlanDetails] ERRORE: Date di inizio o fine mancanti nel form.");
+                    showToast('Errore Input', 'Inserisci sia la data di inizio che quella di fine.', 'danger');
+                    return;
                 }
-                renderChecklistInModal(planObjectFromState.id);
-                showToast('Successo', data.message || 'Modifiche salvate!', 'success');
-            } else {
-                console.error("[JS updatePlanDetails] Errore logico restituito dal server:", data.message);
-                showToast('Errore Salvataggio', data.message || 'Salvataggio modifiche fallito.', 'danger');
-            }
-        })
-        .catch(error => {
-            hideLoadingOverlay();
-            console.error('[JS updatePlanDetails] Errore CRITICO durante fetch o elaborazione risposta:', error);
-            showToast('Errore Connessione', `Impossibile salvare: ${error.message}`, 'danger');
-        });
+                // Non è necessario creare oggetti Date qui se il backend si aspetta stringhe YYYY-MM-DD
+                // Ma la validazione che startDate non sia dopo endDate è utile:
+                if (new Date(startDateFromForm) > new Date(endDateFromForm)) {
+                    console.error("[JS updatePlanDetails] ERRORE: Data di inizio successiva a data di fine.");
+                    showToast('Errore Input', 'La data di inizio non può essere successiva alla data di fine.', 'danger');
+                    return;
+                }
 
-    } catch (error) {
-        console.error("[JS updatePlanDetails] Eccezione FATALE nel blocco try principale della funzione:", error);
-        hideLoadingOverlay();
-        showToast('Errore Critico JS', `Errore imprevisto nel JavaScript: ${error.message}`, 'danger');
-    }
-}
+                // Prepara l'oggetto checklist da inviare
+                // Questa si basa sullo stato corrente di `planObjectFromState.checklist`
+                const checklistToSend = (planObjectFromState.checklist || []).map(item => ({
+                    id: String(item.id),
+                    title: item.title,
+                    category: item.category,
+                    dueDate: item.dueDate ? formatDateForInput(new Date(item.dueDate)) : null,
+                    isCompleted: item.isCompleted
+                }));
+                console.log("[JS updatePlanDetails] Checklist attuale (dall'oggetto 'planObjectFromState' in memoria) preparata per l'invio:", JSON.parse(JSON.stringify(checklistToSend)));
+
+
+                // --- Prepara l'oggetto dati da inviare al server ---
+                // USA I VALORI LETTI DIRETTAMENTE DAL FORM per date e note
+                const updateData = {
+                    planId: planObjectFromState.id,      // ID originale del piano (stringa)
+                    startDate: startDateFromForm,        // Data letta dal form (stringa YYYY-MM-DD)
+                    endDate: endDateFromForm,          // Data letta dal form (stringa YYYY-MM-DD)
+                    notes: notesFromForm,              // Note lette dal form
+                    checklist: checklistToSend           // Checklist basata sullo stato client-side
+                };
+
+                console.log("[JS updatePlanDetails] Dati FINALI pronti per invio al server (con valori dal form):", JSON.stringify(updateData, null, 2));
+
+                if (!updateData.planId || String(updateData.planId).trim() === '') {
+                    console.error("[JS updatePlanDetails] ERRORE CRITICO: planId in updateData è nullo o vuoto PRIMA della chiamata fetch!");
+                    showToast('Errore Critico JS', 'ID Piano nullo o vuoto prima dell\'invio (JS). Controlla console.', 'danger');
+                    return;
+                }
+
+                showLoadingOverlay('Salvataggio modifiche in corso...');
+
+                fetch('/DreamMap?handler=UpdatePlanDetails', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': getAntiForgeryToken()
+                    },
+                    body: JSON.stringify(updateData)
+                })
+                    .then(response => {
+                        console.log("[JS updatePlanDetails] Risposta Fetch ricevuta - Status:", response.status, response.statusText);
+                        if (!response.ok) {
+                            return response.text().then(text => {
+                                console.error("[JS updatePlanDetails] Errore HTTP dal server:", response.status, text);
+                                throw new Error(`Errore server (${response.status}): ${text.substring(0, 250)}...`);
+                            });
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        hideLoadingOverlay();
+                        console.log("[JS updatePlanDetails] Risposta JSON dal server:", JSON.parse(JSON.stringify(data)));
+                        if (data.success) {
+                            console.log("[JS updatePlanDetails] Aggiornamento riuscito secondo il server. Messaggio:", data.message);
+                            if (data.updatedPlan) {
+                                const serverPlan = data.updatedPlan;
+                                // Aggiorna l'oggetto planObjectFromState NELL'ARRAY destinations con i dati dal server
+                                planObjectFromState.startDate = new Date(serverPlan.startDate);
+                                planObjectFromState.endDate = new Date(serverPlan.endDate);
+                                planObjectFromState.notes = serverPlan.notes;
+                                planObjectFromState.completionPercentage = serverPlan.completionPercentage;
+                                planObjectFromState.checklist = (serverPlan.checklist || []).map(serverItem => ({
+                                    id: serverItem.id,
+                                    title: serverItem.title,
+                                    category: serverItem.category,
+                                    dueDate: serverItem.dueDate ? new Date(serverItem.dueDate) : null,
+                                    isCompleted: serverItem.isCompleted
+                                }));
+                                console.log("[JS updatePlanDetails] Dati piano NELL'ARRAY 'destinations' aggiornati con risposta server.");
+                            } else {
+                                console.warn("[JS updatePlanDetails] AVVISO: Risposta server success=true ma 'updatedPlan' mancante. L'aggiornamento locale potrebbe essere incompleto.");
+                                // Aggiornamento parziale con dati inviati, se 'updatedPlan' non è presente
+                                planObjectFromState.startDate = new Date(startDateFromForm);
+                                planObjectFromState.endDate = new Date(endDateFromForm);
+                                planObjectFromState.notes = notesFromForm;
+                                // La checklist è già lo stato client corrente, ma gli ID potrebbero non essere aggiornati se nuovi.
+                                updateCompletionPercentage(planObjectFromState.id); // Ricalcola % basata su questa checklist
+                            }
+
+                            sincronizzaStatoApp();
+
+                            const planDateRangeDisplaySpan = document.getElementById('planDateRange')?.querySelector('span');
+                            if (planDateRangeDisplaySpan) {
+                                planDateRangeDisplaySpan.textContent = `${planObjectFromState.startDate.toLocaleDateString("it-IT")} - ${planObjectFromState.endDate.toLocaleDateString("it-IT")}`;
+                            }
+                            renderChecklistInModal(planObjectFromState.id);
+                            showToast('Successo', data.message || 'Modifiche salvate!', 'success');
+                        } else {
+                            console.error("[JS updatePlanDetails] Errore logico restituito dal server:", data.message);
+                            showToast('Errore Salvataggio', data.message || 'Salvataggio modifiche fallito.', 'danger');
+                        }
+                    })
+                    .catch(error => {
+                        hideLoadingOverlay();
+                        console.error('[JS updatePlanDetails] Errore CRITICO durante fetch o elaborazione risposta:', error);
+                        showToast('Errore Connessione', `Impossibile salvare: ${error.message}`, 'danger');
+                    });
+
+            } catch (error) {
+                console.error("[JS updatePlanDetails] Eccezione FATALE nel blocco try principale della funzione:", error);
+                hideLoadingOverlay();
+                showToast('Errore Critico JS', `Errore imprevisto nel JavaScript: ${error.message}`, 'danger');
+            }
+        }
+
 
 
 
@@ -3297,84 +3461,84 @@ function updatePlanDetails(planId) { // planId dovrebbe essere già una stringa 
                 // Invia l'ID normalizzato come stringa nel corpo JSON
                 body: JSON.stringify({ dreamId: dreamIdStr })
             })
-            .then(response => {
-                console.log('[moveToPlanningPhase] Risposta Fetch - Status:', response.status, response.statusText);
-                if (!response.ok) {
-                    // Se la risposta non è OK (es. 400, 404, 500), leggi il corpo come testo
-                    return response.text().then(text => {
-                        console.error('[moveToPlanningPhase] Errore HTTP:', response.status, text);
-                        // Crea un errore più descrittivo per il blocco catch
-                        throw new Error(`Errore server (${response.status}): ${text.substring(0, 150)}...`);
-                    });
-                }
-                // Se la risposta è OK (es. 200), procedi a leggerla come JSON
-                return response.json();
-            })
-            .then(data => {
-                hideLoadingOverlay();
-                console.log('[moveToPlanningPhase] Risposta JSON dal server:', data);
-
-                if (data.success) {
-                    console.log('[moveToPlanningPhase] Spostamento riuscito secondo il server.');
-
-                    // Chiudi il modal dei dettagli se era aperto
-                    const dreamDetailsModalEl = document.getElementById('dreamDetailsModal');
-                    if (dreamDetailsModalEl) {
-                         const dreamDetailsModal = bootstrap.Modal.getInstance(dreamDetailsModalEl);
-                         if (dreamDetailsModal) {
-                              dreamDetailsModal.hide();
-                              // Rimuovi il backdrop manualmente se necessario dopo la chiusura forzata
-                              const backdrop = document.querySelector('.modal-backdrop');
-                              if (backdrop) backdrop.remove();
-                         }
+                .then(response => {
+                    console.log('[moveToPlanningPhase] Risposta Fetch - Status:', response.status, response.statusText);
+                    if (!response.ok) {
+                        // Se la risposta non è OK (es. 400, 404, 500), leggi il corpo come testo
+                        return response.text().then(text => {
+                            console.error('[moveToPlanningPhase] Errore HTTP:', response.status, text);
+                            // Crea un errore più descrittivo per il blocco catch
+                            throw new Error(`Errore server (${response.status}): ${text.substring(0, 150)}...`);
+                        });
                     }
+                    // Se la risposta è OK (es. 200), procedi a leggerla come JSON
+                    return response.json();
+                })
+                .then(data => {
+                    hideLoadingOverlay();
+                    console.log('[moveToPlanningPhase] Risposta JSON dal server:', data);
 
+                    if (data.success) {
+                        console.log('[moveToPlanningPhase] Spostamento riuscito secondo il server.');
 
-                    // Rimuovi l'elemento dalla wishlist locale
-                    const initialWishlistLength = destinations.wishlist.length;
-                    destinations.wishlist = destinations.wishlist.filter(dream => dream && dream.id && String(dream.id).trim() !== dreamIdStr);
-                    console.log(`[moveToPlanningPhase] Wishlist locale aggiornata. Rimossi ${initialWishlistLength - destinations.wishlist.length} elementi.`);
-
-                    // Aggiungi alla pianificazione locale usando i dati *restituiti dal server*
-                    const newPlan = data.plannedTrip;
-                    if (newPlan && newPlan.id) { // Verifica che il nuovo piano e il suo ID esistano
-                        // Assicura che la checklist sia un array nel nuovo oggetto
-                        newPlan.checklist = newPlan.checklist || [];
-                        // Assicurati che le date siano oggetti Date se necessario (dipende da come le usi dopo)
-                        // newPlan.startDate = new Date(newPlan.startDate);
-                        // newPlan.endDate = new Date(newPlan.endDate);
-
-                        // Controlla se il piano esiste già (improbabile ma sicuro)
-                        const planExists = destinations.plannedTrips.some(p => p && p.id && String(p.id).trim() === String(newPlan.id).trim());
-                        if (!planExists) {
-                            destinations.plannedTrips.push(newPlan);
-                            console.log('[moveToPlanningPhase] Nuovo piano aggiunto ai dati locali:', newPlan);
-                        } else {
-                             console.warn(`[moveToPlanningPhase] Il piano con ID ${newPlan.id} esisteva già nei dati locali. Non aggiunto di nuovo.`);
+                        // Chiudi il modal dei dettagli se era aperto
+                        const dreamDetailsModalEl = document.getElementById('dreamDetailsModal');
+                        if (dreamDetailsModalEl) {
+                            const dreamDetailsModal = bootstrap.Modal.getInstance(dreamDetailsModalEl);
+                            if (dreamDetailsModal) {
+                                dreamDetailsModal.hide();
+                                // Rimuovi il backdrop manualmente se necessario dopo la chiusura forzata
+                                const backdrop = document.querySelector('.modal-backdrop');
+                                if (backdrop) backdrop.remove();
+                            }
                         }
 
+
+                        // Rimuovi l'elemento dalla wishlist locale
+                        const initialWishlistLength = destinations.wishlist.length;
+                        destinations.wishlist = destinations.wishlist.filter(dream => dream && dream.id && String(dream.id).trim() !== dreamIdStr);
+                        console.log(`[moveToPlanningPhase] Wishlist locale aggiornata. Rimossi ${initialWishlistLength - destinations.wishlist.length} elementi.`);
+
+                        // Aggiungi alla pianificazione locale usando i dati *restituiti dal server*
+                        const newPlan = data.plannedTrip;
+                        if (newPlan && newPlan.id) { // Verifica che il nuovo piano e il suo ID esistano
+                            // Assicura che la checklist sia un array nel nuovo oggetto
+                            newPlan.checklist = newPlan.checklist || [];
+                            // Assicurati che le date siano oggetti Date se necessario (dipende da come le usi dopo)
+                            // newPlan.startDate = new Date(newPlan.startDate);
+                            // newPlan.endDate = new Date(newPlan.endDate);
+
+                            // Controlla se il piano esiste già (improbabile ma sicuro)
+                            const planExists = destinations.plannedTrips.some(p => p && p.id && String(p.id).trim() === String(newPlan.id).trim());
+                            if (!planExists) {
+                                destinations.plannedTrips.push(newPlan);
+                                console.log('[moveToPlanningPhase] Nuovo piano aggiunto ai dati locali:', newPlan);
+                            } else {
+                                console.warn(`[moveToPlanningPhase] Il piano con ID ${newPlan.id} esisteva già nei dati locali. Non aggiunto di nuovo.`);
+                            }
+
+                        } else {
+                            console.error('[moveToPlanningPhase] Errore: Spostamento riuscito secondo il server, ma i dati del nuovo piano sono mancanti o incompleti nella risposta!', data);
+                            showToast('Errore Dati', 'Errore nel ricevere i dati del nuovo piano.', 'danger');
+                            // Nonostante l'errore dati, procedi con la sincronizzazione parziale
+                        }
+
+                        sincronizzaStatoApp(); // Aggiorna l'interfaccia utente (sidebar e mappa)
+                        document.getElementById('planning-tab')?.click(); // Vai alla tab pianificazione
+                        showToast('Successo', `${newPlan?.cityName || 'Destinazione'} spostata in pianificazione!`, 'success');
+
                     } else {
-                        console.error('[moveToPlanningPhase] Errore: Spostamento riuscito secondo il server, ma i dati del nuovo piano sono mancanti o incompleti nella risposta!', data);
-                        showToast('Errore Dati', 'Errore nel ricevere i dati del nuovo piano.', 'danger');
-                         // Nonostante l'errore dati, procedi con la sincronizzazione parziale
+                        // Mostra il messaggio di errore specifico restituito dal server
+                        console.error('[moveToPlanningPhase] Errore logico restituito dal server:', data.message);
+                        showToast('Errore Spostamento', data.message || 'Impossibile spostare la destinazione.', 'danger');
                     }
-
-                    sincronizzaStatoApp(); // Aggiorna l'interfaccia utente (sidebar e mappa)
-                    document.getElementById('planning-tab')?.click(); // Vai alla tab pianificazione
-                    showToast('Successo', `${newPlan?.cityName || 'Destinazione'} spostata in pianificazione!`, 'success');
-
-                } else {
-                    // Mostra il messaggio di errore specifico restituito dal server
-                    console.error('[moveToPlanningPhase] Errore logico restituito dal server:', data.message);
-                    showToast('Errore Spostamento', data.message || 'Impossibile spostare la destinazione.', 'danger');
-                }
-            })
-            .catch(error => {
-                hideLoadingOverlay();
-                console.error('[moveToPlanningPhase] Errore durante la chiamata Fetch o elaborazione:', error);
-                // Mostra un messaggio generico o quello dall'errore lanciato nel blocco .then
-                showToast('Errore Connessione', `Impossibile completare lo spostamento: ${error.message}`, 'danger');
-            });
+                })
+                .catch(error => {
+                    hideLoadingOverlay();
+                    console.error('[moveToPlanningPhase] Errore durante la chiamata Fetch o elaborazione:', error);
+                    // Mostra un messaggio generico o quello dall'errore lanciato nel blocco .then
+                    showToast('Errore Connessione', `Impossibile completare lo spostamento: ${error.message}`, 'danger');
+                });
         }
 
         function populateCountryInfo(countryName) {
@@ -3454,6 +3618,20 @@ function updatePlanDetails(planId) { // planId dovrebbe essere già una stringa 
         function initializeApp() {
             console.log('Initializing WanderGlobe app...');
 
+            // Initialize recommendations
+            loadRecommendations('tutte');
+
+            // Set up recommendation tab click handlers
+            document.querySelectorAll('#recommendationsTabs button').forEach(button => {
+                button.addEventListener('click', function () {
+                    document.querySelectorAll('#recommendationsTabs button').forEach(btn => {
+                        btn.classList.remove('active');
+                    });
+                    this.classList.add('active');
+                    const type = this.getAttribute('data-type');
+                    loadRecommendations(type);
+                });
+            });
             configuraPulsantiModal(); // CHIAMATA CRUCIALE
             setupChecklistSubModalSave();
 
@@ -3483,6 +3661,185 @@ function updatePlanDetails(planId) { // planId dovrebbe essere già una stringa 
 
             console.log('App initialized successfully');
         }
+
+        function setupCardButtons() {
+            // Set up "Add to Wishlist" buttons
+            document.querySelectorAll('.recommendation-card .add-to-wishlist').forEach(button => {
+                // Clone button to remove any existing event listeners
+                const newButton = button.cloneNode(true);
+                button.parentNode.replaceChild(newButton, button);
+
+                newButton.addEventListener('click', function (event) {
+                    event.stopPropagation(); // Prevent card click from triggering
+
+                    const recommendationId = this.getAttribute('data-id');
+                    console.log('Adding recommendation to wishlist:', recommendationId);
+
+                    if (recommendationId) {
+                        // Show loading overlay
+                        showLoadingOverlay('Aggiunta alla wishlist...');
+
+                        // Call the add to wishlist function with the ID
+                        addToWishlist(recommendationId);
+                    } else {
+                        showToast('Errore', 'ID destinazione mancante', 'danger');
+                    }
+                });
+            });
+
+            // Set up "Fly to" buttons
+            document.querySelectorAll('.recommendation-card .fly-to-btn').forEach(button => {
+                // Clone button to remove any existing event listeners
+                const newButton = button.cloneNode(true);
+                button.parentNode.replaceChild(newButton, button);
+
+                newButton.addEventListener('click', function (event) {
+                    event.stopPropagation(); // Prevent card click from triggering
+
+                    const lat = parseFloat(this.getAttribute('data-lat'));
+                    const lng = parseFloat(this.getAttribute('data-lng'));
+
+                    if (isValidLatitude(lat) && isValidLongitude(lng)) {
+                        flyToDestination(lat, lng);
+                    } else {
+                        showToast('Errore', 'Coordinate non valide', 'danger');
+                    }
+                });
+            });
+
+            // Optional: Add click event on the entire card to show details
+            document.querySelectorAll('.recommendation-card').forEach(card => {
+                card.addEventListener('click', function () {
+                    const recommendationId = this.getAttribute('data-id');
+                    if (recommendationId) {
+                        // You could add a function to show recommendation details if needed
+                        console.log('Showing details for recommendation:', recommendationId);
+                        // Could call something like: showRecommendationDetails(recommendationId);
+                    }
+                });
+            });
+        }
+
+        function renderRecommendations(recommendations) {
+            const container = document.getElementById('recommendationsGrid');
+            if (!container) {
+                console.error('Recommendations container not found');
+                return;
+            }
+
+            // Clear existing content
+            container.innerHTML = '';
+
+            // Generate HTML for each recommendation
+            recommendations.forEach(recommendation => {
+                const cardElement = document.createElement('div');
+                cardElement.className = 'recommendation-card';
+                cardElement.dataset.id = recommendation.id;
+
+                // Format recommendation image with fallback
+                const imageUrl = recommendation.imageUrl || '/images/placeholder-destination.jpg';
+                const countryCode = recommendation.countryCode ? recommendation.countryCode.toLowerCase() : 'unknown';
+
+                // Create recommendation card HTML
+                cardElement.innerHTML = `
+                            <div class="recommendation-image">
+                                <img src="${imageUrl}" alt="${recommendation.cityName}"
+                                    onerror="this.src='/images/placeholder-destination.jpg'">
+                                ${recommendation.isAiGenerated ? '<span class="ai-badge">AI Pick</span>' : ''}
+                            </div>
+                            <div class="recommendation-content">
+                                <h3 class="recommendation-title">${recommendation.cityName}</h3>
+                                <h4 class="recommendation-subtitle">${recommendation.countryName}</h4>
+                                <p class="recommendation-description">${recommendation.description || 'Explore this beautiful destination'}</p>
+                                <div class="recommendation-reason">
+                                    <i class="fas fa-star me-1"></i>
+                                    <span>${recommendation.reasonToVisit || `${recommendation.matchPercentage || 95}% match with your preferences`}</span>
+                                </div>
+                            </div>
+                            <div class="recommendation-actions">
+                                <button class="btn btn-primary add-to-wishlist" data-id="${recommendation.id}"
+                                        data-city="${recommendation.cityName}" data-country="${recommendation.countryName}"
+                                        data-lat="${recommendation.latitude}" data-lng="${recommendation.longitude}">
+                                    <i class="fas fa-heart me-1"></i> Aggiungere
+                                </button>
+                                <button class="btn btn-outline-secondary fly-to-btn" data-lat="${recommendation.latitude}"
+                                        data-lng="${recommendation.longitude}">
+                                    <i class="fas fa-map-marker-alt me-1"></i> Mostra
+                                </button>
+                            </div>
+                        `;
+
+                container.appendChild(cardElement);
+            });
+
+            // Set up the buttons on the cards
+            setupCardButtons();
+        }
+
+        function loadRecommendations(type) {
+    console.log(`Loading recommendations of type: ${type}`);
+
+    // Show loading state
+    const container = document.getElementById('recommendationsGrid');
+    const loadingElement = document.getElementById('recommendationsLoading');
+    const emptyElement = document.getElementById('recommendationsEmpty');
+    const errorElement = document.getElementById('recommendationsError');
+
+    console.log('Found container:', container);
+    console.log('Found loadingElement:', loadingElement);
+    console.log('Found emptyElement:', emptyElement);
+    console.log('Found errorElement:', errorElement);
+
+    if (container) container.style.display = 'none';
+    if (loadingElement) loadingElement.style.display = 'flex';
+    if (emptyElement) emptyElement.style.display = 'none';
+    if (errorElement) errorElement.style.display = 'none';
+
+    // Make API call to get recommendations
+    fetch(`/DreamMap?handler=Recommendations&type=${encodeURIComponent(type)}`, {
+        headers: {
+            'RequestVerificationToken': getAntiForgeryToken()
+        }
+    })
+    .then(response => {
+        console.log(`Response status: ${response.status}`); // Log the response status
+        if (!response.ok) {
+            throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Received data:', data); // Log the entire data object
+        if (loadingElement) loadingElement.style.display = 'none';
+
+        if (data.success) {
+            // If we have recommendations, render them
+            if (data.recommendations && data.recommendations.length > 0) {
+                console.log('Recommendations received:', data.recommendations); // Log the recommendations array
+
+                renderRecommendations(data.recommendations);
+                if (container) container.style.display = 'grid';
+            } else {
+                // Show empty state if no recommendations
+                console.warn('No recommendations received.');
+                if (emptyElement) emptyElement.style.display = 'flex';
+            }
+        } else {
+            // Show error message
+            console.error('Error loading recommendations:', data.message);
+            if (errorElement) {
+                errorElement.style.display = 'flex';
+                const errorMsg = errorElement.querySelector('p');
+                if (errorMsg) errorMsg.textContent = data.message || 'Error loading recommendations';
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Failed to load recommendations:', error);
+        if (loadingElement) loadingElement.style.display = 'none';
+        if (errorElement) errorElement.style.display = 'flex';
+    });
+}
 
         function setupCityValidation() {
             const submitButton = document.querySelector('#dreamForm button[type="submit"]');

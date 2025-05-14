@@ -18,6 +18,7 @@ using System.IO;
 using System.ComponentModel.DataAnnotations;
 using Microsoft.EntityFrameworkCore; // Necessario per Entity Framework Core
 using WanderGlobe.Data; // Necessario per ApplicationDbContext
+using Newtonsoft.Json.Linq;
 
 namespace WanderGlobe.Pages
 {
@@ -29,7 +30,7 @@ namespace WanderGlobe.Pages
         private readonly ICountryService _countryService;
         private readonly IDreamService _dreamService;
         private readonly IHttpClientFactory _clientFactory;
-        private readonly string _geminiApiKey;
+        private readonly string _geminiApiKey; // <- Keep this one
         private readonly IWebHostEnvironment _webHostEnvironment;
         private readonly ApplicationDbContext _dbContext;
         private readonly ICityService _cityService;
@@ -37,8 +38,10 @@ namespace WanderGlobe.Pages
         public List<DreamDestination> Wishlist { get; set; } = new List<DreamDestination>();
         public List<PlannedTrip> PlannedTrips { get; set; } = new List<PlannedTrip>();
         public List<RecommendedDestination> Recommendations { get; set; } = new List<RecommendedDestination>();
-        public List<Country> Countries { get; set; } = new List<Country>();
-        public MapDestinationsViewModel AllDestinations { get; set; } = new MapDestinationsViewModel();
+        // ADD THIS PROPERTY for AI recommendations
+        public List<RecommendedDestination> RecommendedDestinations { get; set; } = new List<RecommendedDestination>();
+        public List<Country> Countries { get; set; } = new List<Country>(); // Added missing property
+        public MapDestinationsViewModel AllDestinations { get; set; } = new MapDestinationsViewModel(); // Added missing property
 
         [BindProperty]
         public WishlistItemViewModel WishlistForm { get; set; } = new WishlistItemViewModel();
@@ -146,6 +149,9 @@ namespace WanderGlobe.Pages
                     {
                         AvailableCities = await GetAvailableCapitalsAsync() // Assumi che questo funzioni
                     };
+
+                    // ADD THIS LINE to load AI recommendations
+                    RecommendedDestinations = await _dreamService.GetAIRecommendationsAsync(user.Id, "tutte");
                 }
             }
             catch (Exception ex)
@@ -153,6 +159,80 @@ namespace WanderGlobe.Pages
                 // Log dell'errore
                 System.Diagnostics.Debug.WriteLine($"Errore in OnGetAsync: {ex.Message}");
                 TempData["ErrorMessage"] = "Si è verificato un errore durante il caricamento della pagina.";
+            }
+        }
+
+                private async Task<List<RecommendationItem>> CallGeminiForRecommendationsAsync(string prompt)
+        {
+            using var httpClient = _clientFactory.CreateClient();
+            string apiUrl = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key={_geminiApiKey}";
+        
+            var requestData = new
+            {
+                contents = new[] { new { parts = new[] { new { text = prompt } } } }
+            };
+        
+            var content = new StringContent(
+                JsonConvert.SerializeObject(requestData),
+                System.Text.Encoding.UTF8,
+                "application/json");
+        
+            System.Diagnostics.Debug.WriteLine($"Sending request to Gemini API: {apiUrl.Substring(0, apiUrl.IndexOf('?'))}?key=API_KEY_HIDDEN");
+            System.Diagnostics.Debug.WriteLine($"Prompt: {prompt.Substring(0, Math.Min(prompt.Length, 100))}...");
+            
+            var response = await httpClient.PostAsync(apiUrl, content);
+            var responseContent = await response.Content.ReadAsStringAsync();
+        
+            if (response.IsSuccessStatusCode)
+            {
+                try
+                {
+                    // First extract the text from the response structure
+                    JObject responseJson = JsonConvert.DeserializeObject<JObject>(responseContent);
+                    string responseText = responseJson?["candidates"]?[0]?["content"]?["parts"]?[0]?["text"]?.ToString();
+        
+                    if (string.IsNullOrEmpty(responseText))
+                    {
+                        System.Diagnostics.Debug.WriteLine("Empty or missing recommendations text in Gemini response.");
+                        return new List<RecommendationItem>();
+                    }
+        
+                    // Clean up any markdown code delimiters
+                    if (responseText.StartsWith("```json") || responseText.StartsWith("```"))
+                    {
+                        responseText = responseText
+                            .Replace("```json", "")
+                            .Replace("```", "")
+                            .Trim();
+                    }
+        
+                    System.Diagnostics.Debug.WriteLine($"Cleaned response text: {responseText.Substring(0, Math.Min(responseText.Length, 200))}...");
+        
+                    // Parse the cleaned text as JSON
+                    try
+                    {
+                        var recommendations = JsonConvert.DeserializeObject<List<RecommendationItem>>(responseText);
+                        System.Diagnostics.Debug.WriteLine($"Successfully parsed {recommendations.Count} recommendations.");
+                        return recommendations ?? new List<RecommendationItem>();
+                    }
+                    catch (JsonReaderException jsonEx)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"JSON parsing error: {jsonEx.Message}");
+                        System.Diagnostics.Debug.WriteLine($"Content that failed to parse: {responseText}");
+                        return new List<RecommendationItem>();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Error processing Gemini response: {ex.Message}\n{ex.StackTrace}");
+                    return new List<RecommendationItem>();
+                }
+            }
+            else
+            {
+                System.Diagnostics.Debug.WriteLine($"Gemini API Error: {response.StatusCode}");
+                System.Diagnostics.Debug.WriteLine($"Error Response: {responseContent}");
+                return new List<RecommendationItem>();
             }
         }
 
@@ -1117,9 +1197,99 @@ namespace WanderGlobe.Pages
             {
                 System.Diagnostics.Debug.WriteLine($"Errore nella verifica delle immagini: {ex.Message}");
             }
+}
+        
+        // Nuovo handler per ottenere consigli in base alla categoria
+          [HttpGet]
+[IgnoreAntiforgeryToken]
+public async Task<IActionResult> OnGetRecommendationsAsync(string type)
+{
+    try
+    {
+        var user = await _userManager.GetUserAsync(User);
+        if (user == null) 
+            return new JsonResult(new { success = false, error = "Utente non autenticato." });
+        
+        if (string.IsNullOrEmpty(_geminiApiKey))
+        {
+            return new JsonResult(new { success = false, error = "Chiave API Gemini non configurata" });
         }
-
-        // --- Handler Get per Suggerimenti AI (presumibilmente invariato) ---
+        
+        // Build a prompt for recommendations based on type
+        string prompt = $"Fornisci 5 suggerimenti di viaggio per la categoria '{type}'. " +
+                       "Restituisci solo un array JSON di destinazioni con id, cityName, countryName, description, " +
+                       "reasonToVisit, latitude, longitude e imageUrl. " +
+                       "Non aggiungere altro testo o commenti, solo JSON.";
+        
+        // Call the dedicated method to handle Gemini API request
+        var recommendations = await CallGeminiForRecommendationsAsync(prompt);
+        
+        if (recommendations.Any())
+        {
+            //***  ADD LOGGING HERE  ***
+            System.Diagnostics.Debug.WriteLine($"[OnGetRecommendationsAsync] Dati ottenuti da CallGeminiForRecommendationsAsync");
+            foreach (var rec in recommendations)
+            {
+                System.Diagnostics.Debug.WriteLine($"[OnGetRecommendationsAsync] ---- {rec.ToString()}");
+            }
+                
+            return new JsonResult(new { 
+                success = true, 
+                recommendations = recommendations 
+            });
+        }
+        else
+        {
+            // Use a fallback set of recommendations if the API returns nothing
+            var fallbackRecommendations = GetFallbackRecommendations();
+            return new JsonResult(new { 
+                success = true, 
+                recommendations = fallbackRecommendations,
+                message = "Using fallback recommendations due to API issue" 
+            });
+        }
+    }
+    catch (Exception ex) 
+    {
+        System.Diagnostics.Debug.WriteLine($"Error in recommendations handler: {ex.Message}");
+        return new JsonResult(new { 
+            success = false, 
+            message = $"Error processing recommendations: {ex.Message}"
+        });
+    }
+}  
+                // Helper method for fallback recommendations
+                private List<RecommendationItem> GetFallbackRecommendations()
+                {
+                    return new List<RecommendationItem>
+                    {
+                        new RecommendationItem 
+                        { 
+                            Id = "fallback1",
+                            CityName = "Roma", 
+                            CountryName = "Italia", 
+                            Description = "La città eterna con una storia millenaria",
+                            ReasonToVisit = "Perfetta per gli amanti della storia e della cultura",
+                            ImageUrl = "/images/destinations/rome.jpg",
+                            Latitude = 41.9028,
+                            Longitude = 12.4964
+                        },
+                        new RecommendationItem 
+                        { 
+                            Id = "fallback2",
+                            CityName = "Parigi", 
+                            CountryName = "Francia", 
+                            Description = "La città dell'amore e delle luci",
+                            ReasonToVisit = "Romantica e piena di arte",
+                            ImageUrl = "/images/destinations/paris.jpg",
+                            Latitude = 48.8566,
+                            Longitude = 2.3522
+                        },
+                        // Add a few more fallback recommendations if you wish
+                    };
+                }
+        
+        
         [HttpGet]
         [IgnoreAntiforgeryToken]
         public async Task<IActionResult> OnGetTravelsuggestionsAsync(string cityName, string suggestionType)
@@ -1257,6 +1427,18 @@ namespace WanderGlobe.Pages
 
             return content.Trim();
         }
+
+        public class RecommendationItem
+{
+    public string Id { get; set; } = Guid.NewGuid().ToString();
+    public string CityName { get; set; } = string.Empty;
+    public string CountryName { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
+    public string ReasonToVisit { get; set; } = string.Empty;
+    public double Latitude { get; set; }
+    public double Longitude { get; set; }
+    public string ImageUrl { get; set; } = "/images/placeholder-destination.jpg";
+}
 
     } // Chiusura classe DreamMapModel
 } // Chiusura namespace
