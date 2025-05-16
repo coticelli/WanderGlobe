@@ -2177,9 +2177,10 @@
                 maxBounds: [[-90, -180], [90, 180]], // Limita i confini della mappa
                 maxBoundsViscosity: 1.0, // Mantiene la mappa all'interno dei limiti
                 worldCopyJump: true, // Gestisce meglio la navigazione ai bordi della mappa
+                zoomControl: false // <-- MODIFICA QUI: Disabilita il controllo zoom di default
             });
 
-            // Aggiungi i controlli di zoom nella posizione desiderata
+            // Aggiungi i controlli di zoom nella posizione desiderata (questo è il tuo controllo personalizzato)
             L.control.zoom({
                 position: 'topleft'
             }).addTo(map);
@@ -2344,6 +2345,13 @@
                     const lat = parseFloat(planItem.getAttribute('data-lat'));
                     const lng = parseFloat(planItem.getAttribute('data-lng'));
                     if (isValidLatitude(lat) && isValidLongitude(lng)) flyToDestination(lat, lng);
+                }
+            });
+
+            // <-- MODIFICA QUI: Aggiungi listener per il resize della finestra -->
+            window.addEventListener('resize', function() {
+                if (map) {
+                    map.invalidateSize();
                 }
             });
         }
