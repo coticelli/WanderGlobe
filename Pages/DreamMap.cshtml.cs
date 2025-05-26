@@ -145,9 +145,15 @@ namespace WanderGlobe.Pages
                     };
 
                     // Inizializza il form per l'aggiunta alla wishlist con le città disponibili
+                    var allCitiesWithCountry = await _cityService.GetAllCitiesWithCountryAsync();
                     WishlistForm = new WishlistItemViewModel
                     {
-                        AvailableCities = await GetAvailableCapitalsAsync() // Assumi che questo funzioni
+                        AvailableCities = allCitiesWithCountry.Select(city => new CityInfo
+                        {
+                            Name = city.Name,
+                            Country = city.Country.Name,
+                            CountryCode = city.Country.Code
+                        }).ToList()
                     };
 
                     // ADD THIS LINE to load AI recommendations
@@ -310,6 +316,16 @@ namespace WanderGlobe.Pages
                     if (!System.IO.File.Exists(Path.Combine(_webHostEnvironment.WebRootPath, imageUrl.TrimStart('/'))))
                     {
                         imageUrl = "/images/placeholder-destination.jpg";
+                    }
+
+                    // TODO: Implement actual external image API call here if a more specific local image isn't found.
+                    // This could involve a service that searches for city images based on city and country name.
+                    // Example: imageUrl = await _externalImageService.FetchCityImageAsync(WishlistForm.City, WishlistForm.Country);
+                    // Make sure to handle API keys securely, possibly through IConfiguration.
+                    // For now, using a generic placeholder if no local image is available:
+                    if (imageUrl == "/images/placeholder-destination.jpg")
+                    {
+                        imageUrl = $"https://via.placeholder.com/800x600.png?text={System.Net.WebUtility.UrlEncode(WishlistForm.City)}";
                     }
                 }
 
@@ -1092,38 +1108,6 @@ namespace WanderGlobe.Pages
             {
                 System.Diagnostics.Debug.WriteLine($"Errore salvataggio immagine wishlist: {ex.Message}");
                 return null; // O restituisci un'immagine di default
-            }
-        }
-
-        private async Task<List<CityInfo>> GetAvailableCapitalsAsync()
-        {
-            try
-            {
-                // Ottieni tutte le città che sono capitali, includendo il paese
-                var capitalCities = await _dbContext.Cities
-                   .Where(c => c.IsCapital == true) // Filtra per capitali
-                   .Include(c => c.Country) // Carica i dati del paese associato
-                   .OrderBy(c => c.Country.Name).ThenBy(c => c.Name) // Ordina per paese, poi per città
-                   .ToListAsync();
-
-                // Mappa le città trovate nel formato CityInfo
-                var cityInfoList = capitalCities
-                   .Where(city => city.Country != null) // Assicurati che il paese esista
-                   .Select(city => new CityInfo
-                   {
-                       Name = city.Name,
-                       Country = city.Country.Name,
-                       CountryCode = city.Country.Code
-                   })
-                   .ToList();
-
-                System.Diagnostics.Debug.WriteLine($"Trovate {cityInfoList.Count} capitali per il dropdown.");
-                return cityInfoList;
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Errore in GetAvailableCapitalsAsync: {ex.Message}");
-                return new List<CityInfo>(); // Restituisci lista vuota in caso di errore
             }
         }
 

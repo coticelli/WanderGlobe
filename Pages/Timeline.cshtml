@@ -330,11 +330,822 @@
 @section Styles {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css">
-    <style>
-        /* ===== VARIABILI E IMPOSTAZIONI GLOBALI ===== */
-        :root {
-            /* Colori principali con una palette più vivace e profonda */
-            --primary: #1e88e5;
+    <link rel="stylesheet" href="~/css/timeline.css" asp-append-version="true" />
+}
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Inizializza AOS (Animate On Scroll)
+            AOS.init({
+                duration: 800,
+                offset: 100,
+                once: false,
+                mirror: true,
+                easing: 'ease-out-cubic'
+            });
+            
+            // Genera stelle animate casuali
+            createStars();
+            
+            // Attiva il primo anno per default
+            setTimeout(() => {
+                const firstYearTab = document.querySelector('.year-tab');
+                if (firstYearTab) {
+                    firstYearTab.classList.add('active');
+                    scrollToYear(firstYearTab.getAttribute('data-year'));
+                }
+            }, 500);
+            
+            // Gestione effetto glare sulle card
+            document.querySelectorAll('.event-card').forEach(card => {
+                card.addEventListener('mousemove', handleGlareEffect);
+                card.addEventListener('mouseleave', function(e) {
+                    const glare = this.querySelector('.card-glare');
+                    if (glare) glare.style.opacity = "0";
+                });
+            });
+            
+            // Aereo volante che segue lo scroll
+            window.addEventListener('scroll', handleFlyingPlane);
+            
+            // Gestione tab degli anni
+            document.querySelectorAll('.year-tab').forEach(tab => {
+                tab.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    // Rimuovi classe active da tutti i tab
+                    document.querySelectorAll('.year-tab').forEach(t => t.classList.remove('active'));
+                    
+                    // Aggiungi classe active a questo tab
+                    this.classList.add('active');
+                    
+                    // Scorri alla sezione dell'anno
+                    const year = this.getAttribute('data-year');
+                    scrollToYear(year);
+                });
+            });
+            
+            // Gestione filtro continenti
+            document.querySelectorAll('.filter-option').forEach(option => {
+                option.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    // Rimuovi active da tutte le opzioni
+                    document.querySelectorAll('.filter-option').forEach(o => o.classList.remove('active'));
+                    
+                    // Aggiungi active a questa opzione
+                    this.classList.add('active');
+                    
+                    // Applica il filtro
+                    const filter = this.getAttribute('data-filter');
+                    filterEvents(filter);
+                    
+                    // Aggiorna il testo del dropdown
+                    const dropdownButton = document.getElementById('filterDropdown');
+                    if (dropdownButton) {
+                        dropdownButton.innerHTML = `<i class="fas fa-filter"></i> ${this.textContent.trim()}`;
+                    }
+                });
+            });
+            
+
+
+            // Assicura che i dropdown siano posizionati correttamente
+document.addEventListener('DOMContentLoaded', function() {
+  const dropdowns = document.querySelectorAll('.dropdown');
+  
+  dropdowns.forEach(dropdown => {
+    const button = dropdown.querySelector('.dropdown-toggle');
+    const menu = dropdown.querySelector('.dropdown-menu');
+    
+    if (button && menu) {
+      button.addEventListener('click', function() {
+        // Forza il ricalcolo della posizione
+        setTimeout(() => {
+          const buttonRect = button.getBoundingClientRect();
+          menu.style.top = (buttonRect.bottom + window.scrollY) + 'px';
+          menu.style.left = (buttonRect.left + window.scrollX) + 'px';
+          menu.style.minWidth = buttonRect.width + 'px';
+          menu.style.zIndex = '1100';
+        }, 0);
+      });
+    }
+  });
+});
+
+
+            // Gestione ordinamento
+            document.querySelectorAll('.sort-option').forEach(option => {
+                option.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    // Rimuovi active da tutte le opzioni
+                    document.querySelectorAll('.sort-option').forEach(o => o.classList.remove('active'));
+                    
+                    // Aggiungi active a questa opzione
+                    this.classList.add('active');
+                    
+                    // Applica l'ordinamento
+                    const sort = this.getAttribute('data-sort');
+                    sortEvents(sort);
+                    
+                    // Aggiorna il testo del dropdown
+                    const dropdownButton = document.getElementById('sortDropdown');
+                    if (dropdownButton) {
+                        dropdownButton.innerHTML = `<i class="fas fa-sort"></i> ${this.textContent.trim()}`;
+                    }
+                });
+            });
+            
+            // Gestione progress indicator
+            const progressIndicator = document.querySelector('.journey-indicator');
+            if (progressIndicator) {
+                progressIndicator.addEventListener('click', function() {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                });
+            }
+            
+            // Animazioni sezioni all'entrata nel viewport
+            animateSections();
+            
+            // Evidenzia elemento se presente nell'URL
+            highlightFromUrl();
+        });
+        
+        // ===== FUNZIONI HELPER =====
+        
+        // Creazione stelle animate
+        function createStars() {
+            const starsContainer = document.getElementById('stars-container');
+            if (!starsContainer) return;
+            
+            const starsCount = Math.floor(window.innerWidth / 4);
+            
+            for (let i = 0; i < starsCount; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                
+                // Posizione casuale
+                const x = Math.random() * 100;
+                const y = Math.random() * 100;
+                star.style.left = x + '%';
+                star.style.top = y + '%';
+                
+                // Dimensione casuale
+                const size = Math.random() * 2.5;
+                star.style.width = size + 'px';
+                star.style.height = size + 'px';
+                
+                // Luminosità casuale
+                const opacity = Math.random() * 0.8 + 0.2;
+                star.style.opacity = opacity;
+                
+                // Ritardo animazione casuale
+                const delay = Math.random() * 4;
+                star.style.animationDelay = delay + 's';
+                
+                starsContainer.appendChild(star);
+            }
+        }
+
+                // Helper function to delete a photo
+        function deletePhoto(photoId, element) {
+            if (!confirm('Sei sicuro di voler eliminare questa foto?')) return;
+            
+            const formData = new FormData();
+            formData.append('photoId', photoId);
+            
+            fetch('?handler=DeletePhoto', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                }
+            })
+            .then(response => {
+                if (response.ok) return response.json();
+                throw new Error('Errore durante l\'eliminazione');
+            })
+            .then(data => {
+                if (data.success) {
+                    element.style.transform = 'scale(0)';
+                    element.style.opacity = '0';
+                    setTimeout(() => {
+                        element.remove();
+                    }, 300);
+                } else {
+                    alert('Errore durante l\'eliminazione della foto: ' + (data.message || 'Errore sconosciuto'));
+                }
+            })
+            .catch(error => {
+                console.error('Error deleting photo:', error);
+                alert('Errore durante l\'eliminazione della foto.');
+            });
+        }
+        
+        // Helper function to open photo gallery
+        function openPhotoGallery(visitId, activePhotoId = null) {
+            fetch(`?handler=VisitPhotos&countryId=${visitId}`)
+            .then(response => response.json())
+            .then(photos => {
+                // Get the gallery modal
+                const galleryModal = document.getElementById('galleryModal');
+                const carousel = galleryModal.querySelector('.carousel-inner');
+                
+                // Clear existing items
+                carousel.innerHTML = '';
+                
+                // Add photos to carousel
+                photos.forEach((photo, index) => {
+                    const isActive = activePhotoId ? (photo.id == activePhotoId) : (index === 0);
+                    const item = document.createElement('div');
+                    item.className = isActive ? 'carousel-item active' : 'carousel-item';
+                    
+                    item.innerHTML = `
+                        <img src="${photo.url}" class="d-block w-100" alt="${photo.caption || ''}">
+                        <div class="carousel-caption d-none d-md-block">
+                            <p>${photo.caption || ''}</p>
+                        </div>
+                    `;
+                    
+                    carousel.appendChild(item);
+                });
+                
+                // Open the modal
+                const bsGalleryModal = new bootstrap.Modal(galleryModal);
+                bsGalleryModal.show();
+            })
+            .catch(error => {
+                console.error('Error fetching photos:', error);
+                alert('Errore nel caricamento delle foto');
+            });
+        }
+        
+        // Gestione effetto glare sulle card
+        function handleGlareEffect(e) {
+            const card = this;
+            const glare = card.querySelector('.card-glare');
+            if (!glare) return;
+            
+            const rect = card.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            const mouseX = Math.floor((x / rect.width) * 100);
+            const mouseY = Math.floor((y / rect.height) * 100);
+            
+            glare.style.setProperty('--mouse-x', mouseX + '%');
+            glare.style.setProperty('--mouse-y', mouseY + '%');
+            glare.style.opacity = "1";
+        }
+        
+        // Aereo volante che segue lo scroll
+        function handleFlyingPlane() {
+            const plane = document.getElementById('flying-plane');
+            if (!plane) return;
+            
+            const scrollY = window.scrollY || window.pageYOffset;
+            const documentHeight = document.documentElement.scrollHeight - window.innerHeight;
+            const scrollPercentage = (scrollY / documentHeight) * 100;
+            
+            // Posiziona l'aereo in base allo scroll
+            const planeY = Math.min(Math.max(scrollPercentage, 5), 95);
+            plane.style.top = planeY + '%';
+            
+            // Effetto oscillazione
+            const oscillation = Math.sin(scrollY * 0.01) * 15;
+            plane.style.transform = `translateX(${oscillation}px)`;
+            
+            // Effetto turbulenza
+            if (scrollY > lastScrollPosition) {
+                plane.style.animation = 'turbulence 0.2s ease-in-out';
+                setTimeout(() => {
+                    plane.style.animation = '';
+                }, 200);
+            }
+            
+            lastScrollPosition = scrollY;
+        }
+        let lastScrollPosition = 0;
+        
+        // Scroll to year section
+        function scrollToYear(year) {
+            const yearSection = document.getElementById(`year-${year}`);
+            if (yearSection) {
+                yearSection.scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+        
+        // Filtra eventi per continente
+        function filterEvents(filter) {
+            const events = document.querySelectorAll('.timeline-event');
+            events.forEach(event => {
+                if (filter === 'all') {
+                    event.style.display = 'block';
+                    setTimeout(() => {
+                        event.style.opacity = '1';
+                    }, 100);
+                } else {
+                    const continent = event.getAttribute('data-continent');
+                    if (continent === filter) {
+                        event.style.display = 'block';
+                        setTimeout(() => {
+                            event.style.opacity = '1';
+                        }, 100);
+                    } else {
+                        event.style.opacity = '0';
+                        setTimeout(() => {
+                            event.style.display = 'none';
+                        }, 300);
+                    }
+                }
+            });
+            
+            // Re-inizializza AOS
+            setTimeout(() => {
+                AOS.refresh();
+            }, 500);
+        }
+        
+        // Ordina eventi
+        function sortEvents(sort) {
+            const yearSections = document.querySelectorAll('.timeline-year');
+            const yearsContainer = document.querySelector('.timeline-content');
+            
+            const yearsArray = Array.from(yearSections);
+            
+            if (sort === 'newest') {
+                yearsArray.sort((a, b) => {
+                    const yearA = parseInt(a.id.replace('year-', ''));
+                    const yearB = parseInt(b.id.replace('year-', ''));
+                    return yearB - yearA;
+                });
+            } else {
+                yearsArray.sort((a, b) => {
+                    const yearA = parseInt(a.id.replace('year-', ''));
+                    const yearB = parseInt(b.id.replace('year-', ''));
+                    return yearA - yearB;
+                });
+            }
+            
+            // Rimuovi elementi esistenti
+            yearSections.forEach(section => section.remove());
+            
+            // Aggiungi elementi ordinati
+            yearsArray.forEach(section => {
+                yearsContainer.appendChild(section);
+            });
+            
+            // Re-inizializza AOS
+            setTimeout(() => {
+                AOS.refresh();
+            }, 500);
+        }
+        
+        // Animazioni sezioni
+        function animateSections() {
+            const sections = document.querySelectorAll('.animated-section');
+            
+            const observer = new IntersectionObserver(entries => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.style.opacity = '1';
+                        entry.target.style.transform = 'translateY(0)';
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, {
+                threshold: 0.1
+            });
+            
+            sections.forEach(section => {
+                section.style.transition = 'opacity 0.8s ease, transform 0.8s ease';
+                observer.observe(section);
+            });
+        }
+        
+        // Evidenzia elemento da URL
+        function highlightFromUrl() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const highlightId = urlParams.get('highlight');
+            
+            if (highlightId) {
+                const eventToHighlight = document.querySelector(`.timeline-event[data-visit-id="${highlightId}"]`);
+                if (eventToHighlight) {
+                    setTimeout(() => {
+                        eventToHighlight.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        eventToHighlight.classList.add('highlight-event');
+                        
+                        // Nascondi l'evidenziazione dopo un po'
+                        setTimeout(() => {
+                            eventToHighlight.classList.remove('highlight-event');
+                        }, 3000);
+                    }, 1000);
+                }
+            }
+        }
+        
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Attiva tab dell'anno quando viene scrollato in vista
+            const yearTabs = document.querySelectorAll('.year-tab');
+            const yearSections = document.querySelectorAll('.timeline-year');
+            
+            // Smooth scroll quando si clicca su un anno
+            yearTabs.forEach(tab => {
+                tab.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('href');
+                    const targetElement = document.querySelector(targetId);
+                    
+                    if (targetElement) {
+                        window.scrollTo({
+                            top: targetElement.offsetTop - 100,
+                            behavior: 'smooth'
+                        });
+                        
+                        // Evidenzia il tab
+                        yearTabs.forEach(t => t.classList.remove('active'));
+                        this.classList.add('active');
+                    }
+                });
+            });
+            
+            // Scroll spy per evidenziare l'anno corrente durante lo scorrimento
+            window.addEventListener('scroll', function() {
+                const scrollPosition = window.scrollY + 150;
+                
+                // Trova la sezione anno visibile
+                let activeYear = null;
+                yearSections.forEach(section => {
+                    if (section.offsetTop <= scrollPosition && 
+                        section.offsetTop + section.offsetHeight > scrollPosition) {
+                        activeYear = section.getAttribute('id');
+                    }
+                });
+                
+                if (activeYear) {
+                    // Aggiorna il tab attivo
+                    yearTabs.forEach(tab => {
+                        tab.classList.remove('active');
+                        if (tab.getAttribute('href') === '#' + activeYear) {
+                            tab.classList.add('active');
+                        }
+                    });
+                }
+            });
+            
+            // Filtri
+            const filterOptions = document.querySelectorAll('.filter-option');
+            filterOptions.forEach(option => {
+                option.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    filterOptions.forEach(opt => opt.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    const filter = this.dataset.filter;
+                    filterEvents(filter);
+                });
+            });
+            
+            // Ordinamento
+            const sortOptions = document.querySelectorAll('.sort-option');
+            sortOptions.forEach(option => {
+                option.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    sortOptions.forEach(opt => opt.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    const sortBy = this.dataset.sort;
+                    sortEvents(sortBy);
+                });
+            });
+            
+            // Funzioni
+            function filterEvents(filter) {
+                const events = document.querySelectorAll('.timeline-event');
+                
+                events.forEach(event => {
+                    if (filter === 'all' || event.dataset.continent === filter) {
+                        event.style.display = '';
+                    } else {
+                        event.style.display = 'none';
+                    }
+                });
+                
+                // Nascondi i mesi senza eventi visibili
+                document.querySelectorAll('.timeline-month').forEach(month => {
+                    const hasVisibleEvents = Array.from(month.querySelectorAll('.timeline-event'))
+                        .some(event => event.style.display !== 'none');
+                    
+                    month.style.display = hasVisibleEvents ? '' : 'none';
+                });
+                
+                // Se non ci sono eventi visibili in un anno, mostra un messaggio
+                document.querySelectorAll('.timeline-year').forEach(year => {
+                    const hasVisibleEvents = Array.from(year.querySelectorAll('.timeline-event'))
+                        .some(event => event.style.display !== 'none');
+                    
+                    if (!hasVisibleEvents) {
+                        // Aggiungi messaggio "Nessun evento" se non esiste già
+                        if (!year.querySelector('.empty-year-message')) {
+                            const emptyMessage = document.createElement('div');
+                            emptyMessage.className = 'empty-year-message';
+                            emptyMessage.style.padding = '20px';
+                            emptyMessage.style.textAlign = 'center';
+                            emptyMessage.style.backgroundColor = '#f8f9fa';
+                            emptyMessage.style.borderRadius = '8px';
+                            emptyMessage.style.margin = '20px 0';
+                            emptyMessage.innerHTML = '<p>Nessun viaggio in questo anno con i filtri applicati</p>';
+                            year.querySelector('.timeline-events').appendChild(emptyMessage);
+                        }
+                    } else {
+                        // Rimuovi messaggio "Nessun evento" se esiste
+                        const emptyMessage = year.querySelector('.empty-year-message');
+                        if (emptyMessage) {
+                            emptyMessage.remove();
+                        }
+                    }
+                });
+            }
+            
+            function sortEvents(sortBy) {
+                const yearSections = document.querySelectorAll('.timeline-year');
+                
+                if (sortBy === 'oldest') {
+                    // Riordina gli anni (dal più vecchio al più recente)
+                    const timelineContent = document.querySelector('.timeline-content');
+                    const years = Array.from(yearSections);
+                    
+                    years.sort((a, b) => {
+                        const aYear = parseInt(a.id.replace('year-', ''));
+                        const bYear = parseInt(b.id.replace('year-', ''));
+                        return aYear - bYear;
+                    });
+                    
+                    // Rimuovi la linea verticale durante il riordinamento
+                    const timelineLine = document.querySelector('.timeline-line');
+                    if (timelineLine) timelineLine.remove();
+                    
+                    // Riappendi gli anni ordinati
+                    years.forEach(year => {
+                        timelineContent.appendChild(year);
+                    });
+                    
+                    // Ricrea la linea verticale
+                    const newLine = document.createElement('div');
+                    newLine.className = 'timeline-line';
+                    timelineContent.insertBefore(newLine, timelineContent.firstChild);
+                    
+                } else {
+                    // Riordina gli anni (dal più recente al più vecchio)
+                    const timelineContent = document.querySelector('.timeline-content');
+                    const years = Array.from(yearSections);
+                    
+                    years.sort((a, b) => {
+                        const aYear = parseInt(a.id.replace('year-', ''));
+                        const bYear = parseInt(b.id.replace('year-', ''));
+                        return bYear - aYear;
+                    });
+                    
+                    // Rimuovi la linea verticale durante il riordinamento
+                    const timelineLine = document.querySelector('.timeline-line');
+                    if (timelineLine) timelineLine.remove();
+                    
+                    // Riappendi gli anni ordinati
+                    years.forEach(year => {
+                        timelineContent.appendChild(year);
+                    });
+                    
+                    // Ricrea la linea verticale
+                    const newLine = document.createElement('div');
+                    newLine.className = 'timeline-line';
+                    timelineContent.insertBefore(newLine, timelineContent.firstChild);
+                }
+                
+                // Riordina anche i mesi all'interno di ogni anno
+                yearSections.forEach(yearSection => {
+                    const months = Array.from(yearSection.querySelectorAll('.timeline-month'));
+                    const events = yearSection.querySelector('.timeline-events');
+                    
+                    if (sortBy === 'oldest') {
+                        months.sort((a, b) => {
+                            return parseInt(a.dataset.month) - parseInt(b.dataset.month);
+                        });
+                    } else {
+                        months.sort((a, b) => {
+                            return parseInt(b.dataset.month) - parseInt(a.dataset.month);
+                        });
+                    }
+                    
+                    // Riappendi i mesi ordinati
+                    months.forEach(month => {
+                        events.appendChild(month);
+                    });
+                });
+            }
+            
+            // Controlla se c'è un parametro "highlight" nell'URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const highlightParam = urlParams.get('highlight');
+            if (highlightParam) {
+                setTimeout(() => {
+                    const highlightElement = document.querySelector(`[data-visit-id="${highlightParam}"]`);
+                    if (highlightElement) {
+                        highlightElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        highlightElement.classList.add('highlight-event');
+                        
+                        // Evidenzia anche il tab dell'anno corrispondente
+                        const yearSection = highlightElement.closest('.timeline-year');
+                        if (yearSection) {
+                            const yearId = yearSection.id;
+                            const yearTab = document.querySelector(`[href="#${yearId}"]`);
+                            if (yearTab) {
+                                yearTabs.forEach(t => t.classList.remove('active'));
+                                yearTab.classList.add('active');
+                            }
+                        }
+                    }
+                }, 500);
+            }
+        });
+
+        // Camera button functionality
+        document.querySelectorAll('.memory-btn').forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                // Find the closest visit element to get the country ID
+                const eventCard = this.closest('.timeline-event');
+                if (!eventCard) return;
+                
+                // Get the country ID from the edit button's data attribute
+                const editButton = eventCard.querySelector('button[data-bs-target]');
+                if (!editButton) return;
+                
+                const modalId = editButton.getAttribute('data-bs-target');
+                const countryId = modalId.replace('#visitModal', '');
+                
+                // Open the corresponding modal
+                const visitModal = new bootstrap.Modal(document.getElementById(`visitModal${countryId}`));
+                visitModal.show();
+                
+                // Focus on the photo section
+                setTimeout(() => {
+                    const photoSection = document.querySelector(`#visitModal${countryId} .memory-gallery`);
+                    if (photoSection) {
+                        photoSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        // Add a brief highlight effect
+                        photoSection.classList.add('highlight-section');
+                        setTimeout(() => {
+                            photoSection.classList.remove('highlight-section');
+                        }, 2000);
+                    }
+                }, 300);
+            });
+        });
+
+        // Add photo functionality in modals
+        document.querySelectorAll('.add-photo').forEach(addPhotoBtn => {
+            addPhotoBtn.addEventListener('click', function() {
+                // Create a hidden file input
+                const fileInput = document.createElement('input');
+                fileInput.type = 'file';
+                fileInput.accept = 'image/*';
+                fileInput.style.display = 'none';
+                document.body.appendChild(fileInput);
+                
+                // Trigger click on the file input
+                fileInput.click();
+                
+                // Handle file selection
+                fileInput.addEventListener('change', function() {
+                    if (this.files && this.files[0]) {
+                        const file = this.files[0];
+                        
+                        // Get the visit ID from the modal
+                        const modal = addPhotoBtn.closest('.modal');
+                        const visitId = modal.querySelector('input[name="visitId"]').value;
+                        
+                        // Create FormData for file upload
+                        const formData = new FormData();
+                        formData.append('photo', file);
+                        formData.append('countryId', visitId); // Changed from visitId to countryId to match API
+                        
+                        // Display preview of the photo
+                        const photoPreview = document.createElement('div');
+                        photoPreview.className = 'memory-photo';
+                        photoPreview.style.position = 'relative';
+                        
+                        const img = document.createElement('img');
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            img.src = e.target.result;
+                        };
+                        reader.readAsDataURL(file);
+                        
+                        photoPreview.appendChild(img);
+                        
+                        // Add loading indicator
+                        const loadingOverlay = document.createElement('div');
+                        loadingOverlay.className = 'loading-overlay';
+                        loadingOverlay.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i>';
+                        photoPreview.appendChild(loadingOverlay);
+                        
+                        // Add to the photo container before the "add" button
+                        const memoryPhotos = addPhotoBtn.closest('.memory-photos');
+                        memoryPhotos.insertBefore(photoPreview, addPhotoBtn);
+                        
+                        // Upload the photo using fetch
+                        fetch('?handler=UploadPhoto', {
+                            method: 'POST',
+                            body: formData,
+                            headers: {
+                                'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                            }
+                        })
+                        .then(response => {
+                            if (response.ok) return response.json();
+                            throw new Error('Errore nel caricamento');
+                        })
+                        .then(data => {
+                            // Remove loading indicator
+                            loadingOverlay.remove();
+                            
+                            // Add success indicator
+                            const successIndicator = document.createElement('div');
+                            successIndicator.className = 'success-indicator';
+                            successIndicator.innerHTML = '<i class="fas fa-check"></i>';
+                            photoPreview.appendChild(successIndicator);
+                            
+                            // Add delete button
+                            const deleteBtn = document.createElement('button');
+                            deleteBtn.className = 'photo-delete-btn';
+                            deleteBtn.innerHTML = '<i class="fas fa-trash"></i>';
+                            deleteBtn.setAttribute('data-photo-id', data.photoId);
+                            photoPreview.appendChild(deleteBtn);
+                            
+                            // Add click handler to the delete button
+                            deleteBtn.addEventListener('click', function() {
+                                const photoId = this.getAttribute('data-photo-id');
+                                deletePhoto(photoId, photoPreview);
+                            });
+                            
+                            // Store photo ID in the element
+                            photoPreview.setAttribute('data-photo-id', data.photoId);
+                            
+                            // Add click to view larger
+                            photoPreview.addEventListener('click', function(e) {
+                                if (e.target !== deleteBtn && !deleteBtn.contains(e.target)) {
+                                    openPhotoGallery(visitId, data.photoId);
+                                }
+                            });
+                            
+                            setTimeout(() => {
+                                successIndicator.style.opacity = '0';
+                                setTimeout(() => {
+                                    successIndicator.remove();
+                                }, 300);
+                            }, 2000);
+                        })
+                        .catch(error => {
+                            console.error('Error uploading photo:', error);
+                            photoPreview.classList.add('upload-error');
+                            loadingOverlay.innerHTML = '<i class="fas fa-exclamation-triangle"></i>';
+                            
+                            setTimeout(() => {
+                                photoPreview.remove();
+                            }, 3000);
+                        })
+                        .finally(() => {
+                            // Clean up
+                            document.body.removeChild(fileInput);
+                        });
+                    }
+                });
+            });
+        });
+    </script>
+    }
+    @functions {
+    string GetContinentIcon(string continent) {
+        if (string.IsNullOrEmpty(continent)) return "fas fa-globe";
+        
+        switch (continent.ToLower()) {
+            case "europa": return "fas fa-landmark";
+            case "asia": return "fas fa-dragon";
+            case "africa": return "fas fa-tree";
+            case "nord america": return "fas fa-mountain";
+            case "sud america": return "fas fa-umbrella-beach";
+            case "oceania": return "fas fa-water";
+            default: return "fas fa-globe";
+        }
+    }
+}
             --primary-dark: #1565c0;
             --primary-light: #64b5f6;
             --primary-gradient: linear-gradient(135deg, #42a5f5, #1976d2);
@@ -2027,7 +2838,820 @@
 }
 
 
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Inizializza AOS (Animate On Scroll)
+            AOS.init({
+                duration: 800,
+                offset: 100,
+                once: false,
+                mirror: true,
+                easing: 'ease-out-cubic'
+            });
             
+            // Genera stelle animate casuali
+            createStars();
+            
+            // Attiva il primo anno per default
+            setTimeout(() => {
+                const firstYearTab = document.querySelector('.year-tab');
+                if (firstYearTab) {
+                    firstYearTab.classList.add('active');
+                    scrollToYear(firstYearTab.getAttribute('data-year'));
+                }
+            }, 500);
+            
+            // Gestione effetto glare sulle card
+            document.querySelectorAll('.event-card').forEach(card => {
+                card.addEventListener('mousemove', handleGlareEffect);
+                card.addEventListener('mouseleave', function(e) {
+                    const glare = this.querySelector('.card-glare');
+                    if (glare) glare.style.opacity = "0";
+                });
+            });
+            
+            // Aereo volante che segue lo scroll
+            window.addEventListener('scroll', handleFlyingPlane);
+            
+            // Gestione tab degli anni
+            document.querySelectorAll('.year-tab').forEach(tab => {
+                tab.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    // Rimuovi classe active da tutti i tab
+                    document.querySelectorAll('.year-tab').forEach(t => t.classList.remove('active'));
+                    
+                    // Aggiungi classe active a questo tab
+                    this.classList.add('active');
+                    
+                    // Scorri alla sezione dell'anno
+                    const year = this.getAttribute('data-year');
+                    scrollToYear(year);
+                });
+            });
+            
+            // Gestione filtro continenti
+            document.querySelectorAll('.filter-option').forEach(option => {
+                option.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    // Rimuovi active da tutte le opzioni
+                    document.querySelectorAll('.filter-option').forEach(o => o.classList.remove('active'));
+                    
+                    // Aggiungi active a questa opzione
+                    this.classList.add('active');
+                    
+                    // Applica il filtro
+                    const filter = this.getAttribute('data-filter');
+                    filterEvents(filter);
+                    
+                    // Aggiorna il testo del dropdown
+                    const dropdownButton = document.getElementById('filterDropdown');
+                    if (dropdownButton) {
+                        dropdownButton.innerHTML = `<i class="fas fa-filter"></i> ${this.textContent.trim()}`;
+                    }
+                });
+            });
+            
+
+
+            // Assicura che i dropdown siano posizionati correttamente
+document.addEventListener('DOMContentLoaded', function() {
+  const dropdowns = document.querySelectorAll('.dropdown');
+  
+  dropdowns.forEach(dropdown => {
+    const button = dropdown.querySelector('.dropdown-toggle');
+    const menu = dropdown.querySelector('.dropdown-menu');
+    
+    if (button && menu) {
+      button.addEventListener('click', function() {
+        // Forza il ricalcolo della posizione
+        setTimeout(() => {
+          const buttonRect = button.getBoundingClientRect();
+          menu.style.top = (buttonRect.bottom + window.scrollY) + 'px';
+          menu.style.left = (buttonRect.left + window.scrollX) + 'px';
+          menu.style.minWidth = buttonRect.width + 'px';
+          menu.style.zIndex = '1100';
+        }, 0);
+      });
+    }
+  });
+});
+
+
+            // Gestione ordinamento
+            document.querySelectorAll('.sort-option').forEach(option => {
+                option.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    // Rimuovi active da tutte le opzioni
+                    document.querySelectorAll('.sort-option').forEach(o => o.classList.remove('active'));
+                    
+                    // Aggiungi active a questa opzione
+                    this.classList.add('active');
+                    
+                    // Applica l'ordinamento
+                    const sort = this.getAttribute('data-sort');
+                    sortEvents(sort);
+                    
+                    // Aggiorna il testo del dropdown
+                    const dropdownButton = document.getElementById('sortDropdown');
+                    if (dropdownButton) {
+                        dropdownButton.innerHTML = `<i class="fas fa-sort"></i> ${this.textContent.trim()}`;
+                    }
+                });
+            });
+            
+            // Gestione progress indicator
+            const progressIndicator = document.querySelector('.journey-indicator');
+            if (progressIndicator) {
+                progressIndicator.addEventListener('click', function() {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                });
+            }
+            
+            // Animazioni sezioni all'entrata nel viewport
+            animateSections();
+            
+            // Evidenzia elemento se presente nell'URL
+            highlightFromUrl();
+        });
+        
+        // ===== FUNZIONI HELPER =====
+        
+        // Creazione stelle animate
+        function createStars() {
+            const starsContainer = document.getElementById('stars-container');
+            if (!starsContainer) return;
+            
+            const starsCount = Math.floor(window.innerWidth / 4);
+            
+            for (let i = 0; i < starsCount; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                
+                // Posizione casuale
+                const x = Math.random() * 100;
+                const y = Math.random() * 100;
+                star.style.left = x + '%';
+                star.style.top = y + '%';
+                
+                // Dimensione casuale
+                const size = Math.random() * 2.5;
+                star.style.width = size + 'px';
+                star.style.height = size + 'px';
+                
+                // Luminosità casuale
+                const opacity = Math.random() * 0.8 + 0.2;
+                star.style.opacity = opacity;
+                
+                // Ritardo animazione casuale
+                const delay = Math.random() * 4;
+                star.style.animationDelay = delay + 's';
+                
+                starsContainer.appendChild(star);
+            }
+        }
+
+                // Helper function to delete a photo
+        function deletePhoto(photoId, element) {
+            if (!confirm('Sei sicuro di voler eliminare questa foto?')) return;
+            
+            const formData = new FormData();
+            formData.append('photoId', photoId);
+            
+            fetch('?handler=DeletePhoto', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                }
+            })
+            .then(response => {
+                if (response.ok) return response.json();
+                throw new Error('Errore durante l\'eliminazione');
+            })
+            .then(data => {
+                if (data.success) {
+                    element.style.transform = 'scale(0)';
+                    element.style.opacity = '0';
+                    setTimeout(() => {
+                        element.remove();
+                    }, 300);
+                } else {
+                    alert('Errore durante l\'eliminazione della foto: ' + (data.message || 'Errore sconosciuto'));
+                }
+            })
+            .catch(error => {
+                console.error('Error deleting photo:', error);
+                alert('Errore durante l\'eliminazione della foto.');
+            });
+        }
+        
+        // Helper function to open photo gallery
+        function openPhotoGallery(visitId, activePhotoId = null) {
+            fetch(`?handler=VisitPhotos&countryId=${visitId}`)
+            .then(response => response.json())
+            .then(photos => {
+                // Get the gallery modal
+                const galleryModal = document.getElementById('galleryModal');
+                const carousel = galleryModal.querySelector('.carousel-inner');
+                
+                // Clear existing items
+                carousel.innerHTML = '';
+                
+                // Add photos to carousel
+                photos.forEach((photo, index) => {
+                    const isActive = activePhotoId ? (photo.id == activePhotoId) : (index === 0);
+                    const item = document.createElement('div');
+                    item.className = isActive ? 'carousel-item active' : 'carousel-item';
+                    
+                    item.innerHTML = `
+                        <img src="${photo.url}" class="d-block w-100" alt="${photo.caption || ''}">
+                        <div class="carousel-caption d-none d-md-block">
+                            <p>${photo.caption || ''}</p>
+                        </div>
+                    `;
+                    
+                    carousel.appendChild(item);
+                });
+                
+                // Open the modal
+                const bsGalleryModal = new bootstrap.Modal(galleryModal);
+                bsGalleryModal.show();
+            })
+            .catch(error => {
+                console.error('Error fetching photos:', error);
+                alert('Errore nel caricamento delle foto');
+            });
+        }
+        
+        // Gestione effetto glare sulle card
+        function handleGlareEffect(e) {
+            const card = this;
+            const glare = card.querySelector('.card-glare');
+            if (!glare) return;
+            
+            const rect = card.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            const mouseX = Math.floor((x / rect.width) * 100);
+            const mouseY = Math.floor((y / rect.height) * 100);
+            
+            glare.style.setProperty('--mouse-x', mouseX + '%');
+            glare.style.setProperty('--mouse-y', mouseY + '%');
+            glare.style.opacity = "1";
+        }
+        
+        // Aereo volante che segue lo scroll
+        function handleFlyingPlane() {
+            const plane = document.getElementById('flying-plane');
+            if (!plane) return;
+            
+            const scrollY = window.scrollY || window.pageYOffset;
+            const documentHeight = document.documentElement.scrollHeight - window.innerHeight;
+            const scrollPercentage = (scrollY / documentHeight) * 100;
+            
+            // Posiziona l'aereo in base allo scroll
+            const planeY = Math.min(Math.max(scrollPercentage, 5), 95);
+            plane.style.top = planeY + '%';
+            
+            // Effetto oscillazione
+            const oscillation = Math.sin(scrollY * 0.01) * 15;
+            plane.style.transform = `translateX(${oscillation}px)`;
+            
+            // Effetto turbulenza
+            if (scrollY > lastScrollPosition) {
+                plane.style.animation = 'turbulence 0.2s ease-in-out';
+                setTimeout(() => {
+                    plane.style.animation = '';
+                }, 200);
+            }
+            
+            lastScrollPosition = scrollY;
+        }
+        let lastScrollPosition = 0;
+        
+        // Scroll to year section
+        function scrollToYear(year) {
+            const yearSection = document.getElementById(`year-${year}`);
+            if (yearSection) {
+                yearSection.scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+        
+        // Filtra eventi per continente
+        function filterEvents(filter) {
+            const events = document.querySelectorAll('.timeline-event');
+            events.forEach(event => {
+                if (filter === 'all') {
+                    event.style.display = 'block';
+                    setTimeout(() => {
+                        event.style.opacity = '1';
+                    }, 100);
+                } else {
+                    const continent = event.getAttribute('data-continent');
+                    if (continent === filter) {
+                        event.style.display = 'block';
+                        setTimeout(() => {
+                            event.style.opacity = '1';
+                        }, 100);
+                    } else {
+                        event.style.opacity = '0';
+                        setTimeout(() => {
+                            event.style.display = 'none';
+                        }, 300);
+                    }
+                }
+            });
+            
+            // Re-inizializza AOS
+            setTimeout(() => {
+                AOS.refresh();
+            }, 500);
+        }
+        
+        // Ordina eventi
+        function sortEvents(sort) {
+            const yearSections = document.querySelectorAll('.timeline-year');
+            const yearsContainer = document.querySelector('.timeline-content');
+            
+            const yearsArray = Array.from(yearSections);
+            
+            if (sort === 'newest') {
+                yearsArray.sort((a, b) => {
+                    const yearA = parseInt(a.id.replace('year-', ''));
+                    const yearB = parseInt(b.id.replace('year-', ''));
+                    return yearB - yearA;
+                });
+            } else {
+                yearsArray.sort((a, b) => {
+                    const yearA = parseInt(a.id.replace('year-', ''));
+                    const yearB = parseInt(b.id.replace('year-', ''));
+                    return yearA - yearB;
+                });
+            }
+            
+            // Rimuovi elementi esistenti
+            yearSections.forEach(section => section.remove());
+            
+            // Aggiungi elementi ordinati
+            yearsArray.forEach(section => {
+                yearsContainer.appendChild(section);
+            });
+            
+            // Re-inizializza AOS
+            setTimeout(() => {
+                AOS.refresh();
+            }, 500);
+        }
+        
+        // Animazioni sezioni
+        function animateSections() {
+            const sections = document.querySelectorAll('.animated-section');
+            
+            const observer = new IntersectionObserver(entries => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.style.opacity = '1';
+                        entry.target.style.transform = 'translateY(0)';
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, {
+                threshold: 0.1
+            });
+            
+            sections.forEach(section => {
+                section.style.transition = 'opacity 0.8s ease, transform 0.8s ease';
+                observer.observe(section);
+            });
+        }
+        
+        // Evidenzia elemento da URL
+        function highlightFromUrl() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const highlightId = urlParams.get('highlight');
+            
+            if (highlightId) {
+                const eventToHighlight = document.querySelector(`.timeline-event[data-visit-id="${highlightId}"]`);
+                if (eventToHighlight) {
+                    setTimeout(() => {
+                        eventToHighlight.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        eventToHighlight.classList.add('highlight-event');
+                        
+                        // Nascondi l'evidenziazione dopo un po'
+                        setTimeout(() => {
+                            eventToHighlight.classList.remove('highlight-event');
+                        }, 3000);
+                    }, 1000);
+                }
+            }
+        }
+        
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Attiva tab dell'anno quando viene scrollato in vista
+            const yearTabs = document.querySelectorAll('.year-tab');
+            const yearSections = document.querySelectorAll('.timeline-year');
+            
+            // Smooth scroll quando si clicca su un anno
+            yearTabs.forEach(tab => {
+                tab.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('href');
+                    const targetElement = document.querySelector(targetId);
+                    
+                    if (targetElement) {
+                        window.scrollTo({
+                            top: targetElement.offsetTop - 100,
+                            behavior: 'smooth'
+                        });
+                        
+                        // Evidenzia il tab
+                        yearTabs.forEach(t => t.classList.remove('active'));
+                        this.classList.add('active');
+                    }
+                });
+            });
+            
+            // Scroll spy per evidenziare l'anno corrente durante lo scorrimento
+            window.addEventListener('scroll', function() {
+                const scrollPosition = window.scrollY + 150;
+                
+                // Trova la sezione anno visibile
+                let activeYear = null;
+                yearSections.forEach(section => {
+                    if (section.offsetTop <= scrollPosition && 
+                        section.offsetTop + section.offsetHeight > scrollPosition) {
+                        activeYear = section.getAttribute('id');
+                    }
+                });
+                
+                if (activeYear) {
+                    // Aggiorna il tab attivo
+                    yearTabs.forEach(tab => {
+                        tab.classList.remove('active');
+                        if (tab.getAttribute('href') === '#' + activeYear) {
+                            tab.classList.add('active');
+                        }
+                    });
+                }
+            });
+            
+            // Filtri
+            const filterOptions = document.querySelectorAll('.filter-option');
+            filterOptions.forEach(option => {
+                option.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    filterOptions.forEach(opt => opt.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    const filter = this.dataset.filter;
+                    filterEvents(filter);
+                });
+            });
+            
+            // Ordinamento
+            const sortOptions = document.querySelectorAll('.sort-option');
+            sortOptions.forEach(option => {
+                option.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    sortOptions.forEach(opt => opt.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    const sortBy = this.dataset.sort;
+                    sortEvents(sortBy);
+                });
+            });
+            
+            // Funzioni
+            function filterEvents(filter) {
+                const events = document.querySelectorAll('.timeline-event');
+                
+                events.forEach(event => {
+                    if (filter === 'all' || event.dataset.continent === filter) {
+                        event.style.display = '';
+                    } else {
+                        event.style.display = 'none';
+                    }
+                });
+                
+                // Nascondi i mesi senza eventi visibili
+                document.querySelectorAll('.timeline-month').forEach(month => {
+                    const hasVisibleEvents = Array.from(month.querySelectorAll('.timeline-event'))
+                        .some(event => event.style.display !== 'none');
+                    
+                    month.style.display = hasVisibleEvents ? '' : 'none';
+                });
+                
+                // Se non ci sono eventi visibili in un anno, mostra un messaggio
+                document.querySelectorAll('.timeline-year').forEach(year => {
+                    const hasVisibleEvents = Array.from(year.querySelectorAll('.timeline-event'))
+                        .some(event => event.style.display !== 'none');
+                    
+                    if (!hasVisibleEvents) {
+                        // Aggiungi messaggio "Nessun evento" se non esiste già
+                        if (!year.querySelector('.empty-year-message')) {
+                            const emptyMessage = document.createElement('div');
+                            emptyMessage.className = 'empty-year-message';
+                            emptyMessage.style.padding = '20px';
+                            emptyMessage.style.textAlign = 'center';
+                            emptyMessage.style.backgroundColor = '#f8f9fa';
+                            emptyMessage.style.borderRadius = '8px';
+                            emptyMessage.style.margin = '20px 0';
+                            emptyMessage.innerHTML = '<p>Nessun viaggio in questo anno con i filtri applicati</p>';
+                            year.querySelector('.timeline-events').appendChild(emptyMessage);
+                        }
+                    } else {
+                        // Rimuovi messaggio "Nessun evento" se esiste
+                        const emptyMessage = year.querySelector('.empty-year-message');
+                        if (emptyMessage) {
+                            emptyMessage.remove();
+                        }
+                    }
+                });
+            }
+            
+            function sortEvents(sortBy) {
+                const yearSections = document.querySelectorAll('.timeline-year');
+                
+                if (sortBy === 'oldest') {
+                    // Riordina gli anni (dal più vecchio al più recente)
+                    const timelineContent = document.querySelector('.timeline-content');
+                    const years = Array.from(yearSections);
+                    
+                    years.sort((a, b) => {
+                        const aYear = parseInt(a.id.replace('year-', ''));
+                        const bYear = parseInt(b.id.replace('year-', ''));
+                        return aYear - bYear;
+                    });
+                    
+                    // Rimuovi la linea verticale durante il riordinamento
+                    const timelineLine = document.querySelector('.timeline-line');
+                    if (timelineLine) timelineLine.remove();
+                    
+                    // Riappendi gli anni ordinati
+                    years.forEach(year => {
+                        timelineContent.appendChild(year);
+                    });
+                    
+                    // Ricrea la linea verticale
+                    const newLine = document.createElement('div');
+                    newLine.className = 'timeline-line';
+                    timelineContent.insertBefore(newLine, timelineContent.firstChild);
+                    
+                } else {
+                    // Riordina gli anni (dal più recente al più vecchio)
+                    const timelineContent = document.querySelector('.timeline-content');
+                    const years = Array.from(yearSections);
+                    
+                    years.sort((a, b) => {
+                        const aYear = parseInt(a.id.replace('year-', ''));
+                        const bYear = parseInt(b.id.replace('year-', ''));
+                        return bYear - aYear;
+                    });
+                    
+                    // Rimuovi la linea verticale durante il riordinamento
+                    const timelineLine = document.querySelector('.timeline-line');
+                    if (timelineLine) timelineLine.remove();
+                    
+                    // Riappendi gli anni ordinati
+                    years.forEach(year => {
+                        timelineContent.appendChild(year);
+                    });
+                    
+                    // Ricrea la linea verticale
+                    const newLine = document.createElement('div');
+                    newLine.className = 'timeline-line';
+                    timelineContent.insertBefore(newLine, timelineContent.firstChild);
+                }
+                
+                // Riordina anche i mesi all'interno di ogni anno
+                yearSections.forEach(yearSection => {
+                    const months = Array.from(yearSection.querySelectorAll('.timeline-month'));
+                    const events = yearSection.querySelector('.timeline-events');
+                    
+                    if (sortBy === 'oldest') {
+                        months.sort((a, b) => {
+                            return parseInt(a.dataset.month) - parseInt(b.dataset.month);
+                        });
+                    } else {
+                        months.sort((a, b) => {
+                            return parseInt(b.dataset.month) - parseInt(a.dataset.month);
+                        });
+                    }
+                    
+                    // Riappendi i mesi ordinati
+                    months.forEach(month => {
+                        events.appendChild(month);
+                    });
+                });
+            }
+            
+            // Controlla se c'è un parametro "highlight" nell'URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const highlightParam = urlParams.get('highlight');
+            if (highlightParam) {
+                setTimeout(() => {
+                    const highlightElement = document.querySelector(`[data-visit-id="${highlightParam}"]`);
+                    if (highlightElement) {
+                        highlightElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        highlightElement.classList.add('highlight-event');
+                        
+                        // Evidenzia anche il tab dell'anno corrispondente
+                        const yearSection = highlightElement.closest('.timeline-year');
+                        if (yearSection) {
+                            const yearId = yearSection.id;
+                            const yearTab = document.querySelector(`[href="#${yearId}"]`);
+                            if (yearTab) {
+                                yearTabs.forEach(t => t.classList.remove('active'));
+                                yearTab.classList.add('active');
+                            }
+                        }
+                    }
+                }, 500);
+            }
+        });
+
+        // Camera button functionality
+        document.querySelectorAll('.memory-btn').forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                // Find the closest visit element to get the country ID
+                const eventCard = this.closest('.timeline-event');
+                if (!eventCard) return;
+                
+                // Get the country ID from the edit button's data attribute
+                const editButton = eventCard.querySelector('button[data-bs-target]');
+                if (!editButton) return;
+                
+                const modalId = editButton.getAttribute('data-bs-target');
+                const countryId = modalId.replace('#visitModal', '');
+                
+                // Open the corresponding modal
+                const visitModal = new bootstrap.Modal(document.getElementById(`visitModal${countryId}`));
+                visitModal.show();
+                
+                // Focus on the photo section
+                setTimeout(() => {
+                    const photoSection = document.querySelector(`#visitModal${countryId} .memory-gallery`);
+                    if (photoSection) {
+                        photoSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        // Add a brief highlight effect
+                        photoSection.classList.add('highlight-section');
+                        setTimeout(() => {
+                            photoSection.classList.remove('highlight-section');
+                        }, 2000);
+                    }
+                }, 300);
+            });
+        });
+
+        // Add photo functionality in modals
+        document.querySelectorAll('.add-photo').forEach(addPhotoBtn => {
+            addPhotoBtn.addEventListener('click', function() {
+                // Create a hidden file input
+                const fileInput = document.createElement('input');
+                fileInput.type = 'file';
+                fileInput.accept = 'image/*';
+                fileInput.style.display = 'none';
+                document.body.appendChild(fileInput);
+                
+                // Trigger click on the file input
+                fileInput.click();
+                
+                // Handle file selection
+                fileInput.addEventListener('change', function() {
+                    if (this.files && this.files[0]) {
+                        const file = this.files[0];
+                        
+                        // Get the visit ID from the modal
+                        const modal = addPhotoBtn.closest('.modal');
+                        const visitId = modal.querySelector('input[name="visitId"]').value;
+                        
+                        // Create FormData for file upload
+                        const formData = new FormData();
+                        formData.append('photo', file);
+                        formData.append('countryId', visitId); // Changed from visitId to countryId to match API
+                        
+                        // Display preview of the photo
+                        const photoPreview = document.createElement('div');
+                        photoPreview.className = 'memory-photo';
+                        photoPreview.style.position = 'relative';
+                        
+                        const img = document.createElement('img');
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            img.src = e.target.result;
+                        };
+                        reader.readAsDataURL(file);
+                        
+                        photoPreview.appendChild(img);
+                        
+                        // Add loading indicator
+                        const loadingOverlay = document.createElement('div');
+                        loadingOverlay.className = 'loading-overlay';
+                        loadingOverlay.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i>';
+                        photoPreview.appendChild(loadingOverlay);
+                        
+                        // Add to the photo container before the "add" button
+                        const memoryPhotos = addPhotoBtn.closest('.memory-photos');
+                        memoryPhotos.insertBefore(photoPreview, addPhotoBtn);
+                        
+                        // Upload the photo using fetch
+                        fetch('?handler=UploadPhoto', {
+                            method: 'POST',
+                            body: formData,
+                            headers: {
+                                'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                            }
+                        })
+                        .then(response => {
+                            if (response.ok) return response.json();
+                            throw new Error('Errore nel caricamento');
+                        })
+                        .then(data => {
+                            // Remove loading indicator
+                            loadingOverlay.remove();
+                            
+                            // Add success indicator
+                            const successIndicator = document.createElement('div');
+                            successIndicator.className = 'success-indicator';
+                            successIndicator.innerHTML = '<i class="fas fa-check"></i>';
+                            photoPreview.appendChild(successIndicator);
+                            
+                            // Add delete button
+                            const deleteBtn = document.createElement('button');
+                            deleteBtn.className = 'photo-delete-btn';
+                            deleteBtn.innerHTML = '<i class="fas fa-trash"></i>';
+                            deleteBtn.setAttribute('data-photo-id', data.photoId);
+                            photoPreview.appendChild(deleteBtn);
+                            
+                            // Add click handler to the delete button
+                            deleteBtn.addEventListener('click', function() {
+                                const photoId = this.getAttribute('data-photo-id');
+                                deletePhoto(photoId, photoPreview);
+                            });
+                            
+                            // Store photo ID in the element
+                            photoPreview.setAttribute('data-photo-id', data.photoId);
+                            
+                            // Add click to view larger
+                            photoPreview.addEventListener('click', function(e) {
+                                if (e.target !== deleteBtn && !deleteBtn.contains(e.target)) {
+                                    openPhotoGallery(visitId, data.photoId);
+                                }
+                            });
+                            
+                            setTimeout(() => {
+                                successIndicator.style.opacity = '0';
+                                setTimeout(() => {
+                                    successIndicator.remove();
+                                }, 300);
+                            }, 2000);
+                        })
+                        .catch(error => {
+                            console.error('Error uploading photo:', error);
+                            photoPreview.classList.add('upload-error');
+                            loadingOverlay.innerHTML = '<i class="fas fa-exclamation-triangle"></i>';
+                            
+                            setTimeout(() => {
+                                photoPreview.remove();
+                            }, 3000);
+                        })
+                        .finally(() => {
+                            // Clean up
+                            document.body.removeChild(fileInput);
+                        });
+                    }
+                });
+            });
+        });
+    </script>
+    }
+    @functions {
+    string GetContinentIcon(string continent) {
+        if (string.IsNullOrEmpty(continent)) return "fas fa-globe";
+        
+        switch (continent.ToLower()) {
+            case "europa": return "fas fa-landmark";
+            case "asia": return "fas fa-dragon";
+            case "africa": return "fas fa-tree";
+            case "nord america": return "fas fa-mountain";
+            case "sud america": return "fas fa-umbrella-beach";
+            case "oceania": return "fas fa-water";
+            default: return "fas fa-globe";
+        }
+    }
+}
 
 @section Scripts {
     <script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
