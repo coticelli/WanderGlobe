@@ -173,7 +173,7 @@ body {
     box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
 
-/* Media queries */
+/* Media queries from original site.css */
 @media (max-width: 768px) {
     #globe-container {
         height: 50vh !important;
@@ -181,5 +181,430 @@ body {
 
     .timeline::before {
         left: 30px;
+    }
+}
+
+/* General responsive rule for embedded media */
+img, svg, video, canvas, iframe {
+    max-width: 100%;
+    height: auto;
+    /* Consider adding 'box-sizing: border-box;' if not globally set 
+       (Bootstrap usually includes this globally) */
+}
+
+/* Responsive adjustments for Pages/Index.cshtml */
+
+@media (max-width: 991px) { /* Medium devices (tablets, less than 992px) */
+    .hero h1 {
+        font-size: 3.5rem; /* Scale down hero title */
+    }
+    .hero .tagline {
+        font-size: 1.3rem;
+    }
+    .map-content h2 {
+        font-size: 2.5rem;
+    }
+    .cta-content h2 {
+        font-size: 1.8rem;
+    }
+    .inspiration-quote blockquote {
+        font-size: 1.5rem;
+    }
+}
+
+@media (max-width: 767px) { /* Small devices (landscape phones, less than 768px) */
+    .hero h1 {
+        font-size: 2.8rem; /* Further scale down hero title */
+        margin-bottom: 0.5rem; /* Adjust margin for title */
+    }
+    .hero h1 span {
+        margin: 0 0.5rem; /* Reduce margin for span in title */
+    }
+    .hero .tagline {
+        font-size: 1.1rem;
+    }
+    .stats-container {
+        flex-direction: column; /* Stack world completion and stats */
+        align-items: center;
+    }
+    .world-completion {
+        margin-bottom: 2rem;
+    }
+    .travel-stats {
+        gap: 10px; /* Reduce gap for stats items */
+    }
+    .stat-item {
+        padding: 1rem;
+        min-width: 100px; /* Allow more flexibility */
+        flex-basis: calc(50% - 10px); /* Two items per row */
+    }
+    .stat-value {
+        font-size: 2rem;
+    }
+    .hero-actions {
+        display: flex;
+        flex-direction: column; /* Stack buttons */
+        align-items: center; /* Center-align stacked buttons */
+        gap: 1rem;
+    }
+    .hero-actions .btn-primary,
+    .hero-actions .btn-secondary {
+        width: 100%; /* Make buttons full width */
+        max-width: 320px; /* Optional: constrain max width */
+        margin-left: 0; /* Remove margin from secondary button */
+    }
+
+    .map-inspiration .col-md-6 {
+        flex: 0 0 100%; /* Ensure columns stack */
+        max-width: 100%;
+    }
+    .inspiration-map {
+        height: 400px; /* Reduce map height */
+    }
+    .map-content {
+        padding: 2rem 1rem;
+        text-align: center; /* Center content on smaller screens */
+    }
+    .map-content h2 {
+        font-size: 2.2rem;
+    }
+    .action-cards {
+        align-items: center; /* Center action cards when stacked */
+    }
+    .action-card {
+        text-align: left; /* Keep text left-aligned within cards */
+    }
+
+    .features-grid {
+        grid-template-columns: 1fr; /* Stack feature cards */
+    }
+    .section-title {
+        font-size: 2.2rem;
+        margin-bottom: 2rem;
+    }
+
+    .country-card {
+        flex: 0 0 280px; /* Adjust card width for smaller carousels */
+    }
+
+    .inspiration-quote blockquote {
+        font-size: 1.3rem;
+    }
+    .destination-card {
+        flex: 0 0 240px; /* Adjust card width */
+    }
+
+    .cta-content {
+        padding: 2.5rem 1.5rem;
+        text-align: center;
+    }
+    .cta-content .row > div {
+        text-align: center !important; /* Override Bootstrap's text-md-end */
+    }
+    .cta-content .col-md-5 {
+         margin-top: 1.5rem; /* Add space between text and buttons when stacked */
+    }
+    .cta-content .btn-primary,
+    .cta-content .btn-outline {
+        width: 100%;
+        max-width: 280px; /* Optional: constrain max width */
+        margin-bottom: 0.5rem;
+    }
+     .cta-content .btn-outline {
+        margin-left: 0;
+    }
+}
+
+@media (max-width: 575px) { /* Extra small devices (portrait phones, less than 576px) */
+    .hero h1 {
+        font-size: 2rem;
+        letter-spacing: 1px;
+    }
+    .hero .tagline {
+        font-size: 1rem;
+    }
+    .world-completion {
+        width: 150px;
+        height: 150px;
+    }
+    .completion-circle {
+        width: 120px;
+        height: 120px;
+    }
+    .world-completion span {
+        font-size: 0.9rem;
+    }
+    .stat-item {
+        min-width: 90px; /* Further reduce min-width */
+        padding: 0.8rem;
+    }
+    .stat-value {
+        font-size: 1.8rem;
+    }
+    .stat-label {
+        font-size: 0.8rem;
+    }
+
+    .map-content h2 {
+        font-size: 1.8rem;
+    }
+    .map-content p {
+        font-size: 1rem;
+    }
+    .section-title {
+        font-size: 1.8rem;
+    }
+    .feature-card h3 {
+        font-size: 1.2rem;
+    }
+    .feature-card p {
+        font-size: 0.9rem;
+    }
+
+    .country-card {
+        flex: 0 0 250px; 
+    }
+    .country-info h3 { font-size: 1.1rem; }
+
+    .inspiration-quote blockquote {
+        font-size: 1.1rem;
+    }
+    .destination-card {
+        flex: 0 0 200px; 
+        height: 300px;
+    }
+    .destination-overlay h3 { font-size: 1.2rem; }
+
+    .cta-content h2 { font-size: 1.5rem; }
+    .cta-content p { font-size: 1rem; }
+    .btn-lg {
+        padding: 1rem 1.8rem;
+        font-size: 1rem;
+    }
+}
+
+/* Responsive adjustments for Pages/DreamMap.cshtml */
+
+@media (max-width: 991px) { /* Matches the existing stacking breakpoint for sidebar/map */
+    .dreammap-sidebar {
+        height: auto; /* Allow sidebar to grow if content is long when stacked */
+        max-height: 60vh; /* But limit its height and allow internal scroll */
+        overflow-y: auto;
+    }
+    .dreammap-container {
+        grid-template-rows: auto 1fr; /* Adjust row sizing for stacked layout */
+    }
+}
+
+@media (max-width: 767px) { /* Small devices */
+    .dreammap-header h2 {
+        font-size: 1.3rem;
+    }
+    .dreammap-header p {
+        font-size: 0.85rem;
+    }
+    .nav-tabs .nav-link { /* Targeting sidebar tabs */
+        padding: 10px 8px; /* Reduce padding for smaller tabs */
+        font-size: 0.85rem;
+        margin-right: 10px;
+    }
+    .dream-item-content, .plan-item-content, .discover-content {
+        padding: 12px; /* Reduce padding in list items */
+    }
+    .dream-name, .plan-name, .discover-content h4 {
+        font-size: 1.1rem;
+    }
+
+    /* Modal adjustments */
+    .modal-dialog {
+        margin: 0.5rem; /* Add some margin for very small screens */
+    }
+    .modal-body, .modal-footer, .modal-header {
+        padding: 1rem; /* Reduce padding in modals */
+    }
+    .dream-details-banner, .plan-details-banner {
+        height: 200px; /* Reduce banner height in modals */
+    }
+    .dream-details-overlay h2, .plan-details-overlay h2 {
+        font-size: 1.5rem;
+    }
+    .detail-item {
+        flex-basis: 100%; /* Stack detail items in modals */
+    }
+    .info-cards {
+        grid-template-columns: 1fr; /* Stack info cards in plan details modal */
+    }
+    .explore-buttons .btn {
+        flex-basis: 100%; /* Stack explore buttons */
+    }
+    .ai-recommendations-section .section-title {
+        font-size: 1.5rem;
+    }
+    .recommendations-tabs .nav-link {
+        padding: 0.4rem 1rem;
+        font-size: 0.9rem;
+    }
+}
+
+@media (max-width: 575px) {
+    .dreammap-sidebar {
+        /* Further adjustments if the 992px stacking isn't enough for very small screens */
+    }
+    #dreamMap {
+        /* Ensure map controls are usable if they become too small */
+    }
+    .dream-item-image, .plan-item-image {
+        height: 100px; /* Reduce image height in lists */
+    }
+    .dream-name, .plan-name, .discover-content h4 {
+        font-size: 1rem;
+    }
+
+    .recommendations-grid {
+        grid-template-columns: 1fr; /* Ensure recommendation cards stack */
+    }
+    .recommendation-card {
+        margin-bottom: 1rem;
+    }
+    .ai-recommendations-section .section-description {
+        font-size: 0.9rem;
+    }
+     .recommendations-tabs {
+        flex-direction: column; /* Stack tabs if horizontal space is very limited */
+        align-items: stretch;
+    }
+    .recommendations-tabs .nav-pills {
+        width: 100%;
+        display: flex;
+        flex-direction: column; /* Stack pills */
+    }
+    .recommendations-tabs .nav-link {
+        margin-right: 0;
+        margin-bottom: 0.5rem;
+        text-align: center;
+    }
+    #refreshRecommendationsBtn {
+        width: 100%;
+        margin-top: 0.5rem;
+    }
+}
+
+/* Responsive adjustments for Pages/Globe.cshtml */
+
+@media (max-width: 991px) { /* Matches the existing stacking breakpoint for sidebar/map */
+    .explorer-sidebar { /* This is the sidebar in Globe.cshtml */
+        height: auto; 
+        max-height: 50vh; 
+        overflow-y: auto;
+    }
+    .globe-container { /* This is the main container in Globe.cshtml */
+         grid-template-rows: auto 1fr; /* Sidebar first, then globe */
+    }
+     .main-globe-container { /* The actual globe visualization area in Globe.cshtml */
+        order: 1; 
+    }
+    .explorer-sidebar { /* This is the sidebar in Globe.cshtml */
+        order: 2;
+    }
+}
+
+@media (max-width: 767px) { /* Small devices */
+    .explorer-sidebar .nav-tabs .nav-link {
+        padding: 12px 8px; 
+        font-size: 0.8rem; 
+    }
+    .explorer-sidebar .nav-tabs .nav-link .tab-text {
+        display: none; 
+    }
+    .explorer-sidebar .nav-tabs .nav-link i {
+        margin-right: 0; 
+    }
+
+    .stats-grid { /* From Globe.cshtml, #stats tab */
+        grid-template-columns: 1fr; 
+    }
+    .stat-value { /* From Globe.cshtml, #stats tab */
+        font-size: 1.8rem;
+    }
+    .stat-label { /* From Globe.cshtml, #stats tab */
+        font-size: 0.85rem;
+    }
+    .visited-cities-grid { /* From Globe.cshtml, #cities tab */
+        grid-template-columns: 1fr; 
+    }
+    .city-card-body { /* From Globe.cshtml, #cities tab */
+        padding: 12px;
+    }
+    .city-name { /* From Globe.cshtml, #cities tab */
+        font-size: 1rem;
+    }
+    .add-city-card h5 { /* From Globe.cshtml, #add tab */
+        font-size: 1.1rem;
+    }
+    .globe-controls { /* From Globe.cshtml */
+        bottom: 10px; 
+        left: 10px;
+        gap: 8px;
+    }
+    .globe-control-btn { /* From Globe.cshtml */
+        width: 35px;
+        height: 35px;
+        font-size: 0.9rem;
+    }
+    .globe-legend { /* From Globe.cshtml */
+        bottom: 10px;
+        right: 10px;
+        padding: 8px;
+        font-size: 0.8rem;
+    }
+}
+
+@media (max-width: 575px) {
+    .explorer-sidebar { /* From Globe.cshtml */
+        max-height: 45vh; 
+    }
+     .profile-info h4 { /* From Globe.cshtml */
+        font-size: 1rem;
+    }
+    .badge-traveler { /* From Globe.cshtml */
+        font-size: 0.7rem;
+        padding: 2px 8px;
+    }
+    .tab-content { /* From Globe.cshtml, general tab content */
+        padding: 10px; 
+    }
+    .stats-card, .add-city-card { /* From Globe.cshtml */
+        padding: 10px;
+    }
+    .progress-lg { /* From Globe.cshtml, #stats tab */
+        height: 20px;
+    }
+    .progress-label { /* From Globe.cshtml, #stats tab */
+        line-height: 20px;
+        font-size: 0.8rem;
+    }
+    .continents-stats h5, .next-badges h5 { /* From Globe.cshtml, #stats tab */
+        font-size: 1rem;
+        margin-bottom: 10px;
+    }
+    .visited-cities-grid { /* From Globe.cshtml, #cities tab */
+        gap: 10px;
+    }
+    .city-card-header { /* From Globe.cshtml, #cities tab */
+        height: 100px;
+    }
+     .city-actions .btn-sm { /* From Globe.cshtml, #cities tab */
+        padding: 0.2rem 0.4rem;
+        font-size: 0.75rem;
+    }
+    .form-label { /* From Globe.cshtml, #add tab */
+        font-size: 0.9rem;
+    }
+    .form-control, .form-select { /* From Globe.cshtml, #add tab */
+        font-size: 0.9rem;
+        padding: 0.3rem 0.6rem;
+    }
+    .input-group-text { /* From Globe.cshtml, #add tab */
+        padding: 0.3rem 0.6rem;
     }
 }

@@ -13,6 +13,7 @@ using WanderGlobe.Services;
 using Microsoft.AspNetCore.Http;
 using System.IO;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Identity; // Added for UserManager
 
 namespace WanderGlobe.Pages
 {
@@ -23,19 +24,22 @@ namespace WanderGlobe.Pages
         private readonly IWeatherService _weatherService;
         private readonly IPhotoService _photoService;
         private readonly IWebHostEnvironment _environment;
+        private readonly UserManager<ApplicationUser> _userManager; // Added UserManager field
 
         public TimelineModel(
-            ApplicationDbContext context, 
+            ApplicationDbContext context,
             ICityService cityService,
             IWeatherService weatherService,
             IPhotoService photoService,
-            IWebHostEnvironment environment)
+            IWebHostEnvironment environment,
+            UserManager<ApplicationUser> userManager) // Added userManager to constructor
         {
             _context = context;
             _cityService = cityService;
             _weatherService = weatherService;
             _photoService = photoService;
             _environment = environment;
+            _userManager = userManager; // Assigned userManager
         }
 
         public List<VisitedCountry> Visits { get; set; } = new List<VisitedCountry>();
@@ -48,13 +52,23 @@ namespace WanderGlobe.Pages
 
         public async Task OnGetAsync()
         {
-            Visits = await _context.VisitedCountries
-                .Include(v => v.Country) 
-                .OrderByDescending(v => v.VisitDate)
-                .ToListAsync();
+            var user = await _userManager.GetUserAsync(User); // Get current user
+
+            if (user != null)
+            {
+                Visits = await _context.VisitedCountries
+                    .Where(v => v.UserId == user.Id) // Filter by UserId
+                    .Include(v => v.Country)
+                    .OrderByDescending(v => v.VisitDate)
+                    .ToListAsync();
+            }
+            else
+            {
+                Visits = new List<VisitedCountry>(); // Handle null user
+            }
 
             GroupedVisits = Visits
-                .Where(v => v.Country != null) 
+                .Where(v => v.Country != null)
                 .GroupBy(v => v.VisitDate.Year)
                 .ToDictionary(g => g.Key, g => g.ToList());
 
