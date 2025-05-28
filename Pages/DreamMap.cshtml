@@ -93,7 +93,7 @@
                                         <span class="dream-tag">@tag</span>
                                     }
                                 </div>
-                                <div class="dream-note">@(dream.Note?.Length > 100 ? dream.Note.Substring(0, 100) + "..." : dream.Note)</div>
+                                <div class="dream-note">@(dream.Notes?.Length > 100 ? dream.Notes.Substring(0, 100) + "..." : dream.Notes)</div>
                             </div>                            <div class="dream-item-actions">
                                 <!-- MODIFICATO: Aggiunta classe show-details-btn e data-id -->
                                 <button type="button" class="btn btn-sm btn-outline-info show-details-btn" data-id="@dream.Id">

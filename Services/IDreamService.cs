@@ -1,22 +1,22 @@
-﻿using System;
+﻿// Services/IDreamService.cs
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using WanderGlobe.Models.Custom;
+using WanderGlobe.Models; // Make sure this using statement is present and correct
 
 namespace WanderGlobe.Services
 {
     public interface IDreamService
     {
         Task<List<DreamDestination>> GetUserWishlistAsync(string userId);
-        Task<List<PlannedTrip>> GetUserPlannedTripsAsync(string userId);
-        Task<List<RecommendedDestination>> GetRecommendationsAsync(string userId);
-        Task<DreamDestination> AddToWishlistAsync(DreamDestination destination);
-        Task<bool> RemoveFromWishlistAsync(int dreamId, string userId);
-        Task<PlannedTrip> CreatePlannedTripAsync(PlannedTrip trip);
-        Task<bool> UpdatePlannedTripAsync(PlannedTrip trip);
-        Task<bool> DeletePlannedTripAsync(string tripId, string userId);
-        Task<bool> MarkTripAsVisitedAsync(string tripId, string userId);
+        Task AddToWishlistAsync(DreamDestination dream);
+        Task RemoveFromWishlistAsync(int dreamId, string userId);
         Task<bool> IsCityInUserWishlistAsync(int cityId, string userId);
-        Task<List<RecommendedDestination>> GetAIRecommendationsAsync(string userId, string recommendationType);
+        Task<DreamDestination?> GetDreamByIdAsync(int dreamId); // Added for completeness
+        Task UpdateDreamAsync(DreamDestination dream); // Added for completeness
+        // Add other methods as needed, e.g., for DreamCountry
+        Task<List<DreamCountry>> GetUserDreamCountriesAsync(string userId);
+        Task AddDreamCountryAsync(DreamCountry dreamCountry);
+        Task RemoveDreamCountryAsync(int dreamCountryId, string userId);
+
     }
 }

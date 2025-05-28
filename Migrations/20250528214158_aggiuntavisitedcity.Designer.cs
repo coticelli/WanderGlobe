@@ -11,8 +11,8 @@ using WanderGlobe.Data;
 namespace WanderGlobe.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250528104829_UnNomeDescrittivoPerLaMigrazione")]
-    partial class UnNomeDescrittivoPerLaMigrazione
+    [Migration("20250528214158_aggiuntavisitedcity")]
+    partial class aggiuntavisitedcity
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -233,8 +233,12 @@ namespace WanderGlobe.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("CriteriaType")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Description")
                         .IsRequired()
+                        .HasMaxLength(500)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("ImageUrl")
@@ -243,7 +247,11 @@ namespace WanderGlobe.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
+                        .HasMaxLength(100)
                         .HasColumnType("TEXT");
+
+                    b.Property<int?>("RequiredCount")
+                        .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
 
@@ -621,6 +629,15 @@ namespace WanderGlobe.Migrations
                         new
                         {
                             Id = 38,
+                            CountryId = 5,
+                            IsCapital = false,
+                            Latitude = 41.385100000000001,
+                            Longitude = 2.1734,
+                            Name = "Barcellona"
+                        },
+                        new
+                        {
+                            Id = 39,
                             CountryId = 1,
                             IsCapital = false,
                             Latitude = 43.769599999999997,
@@ -629,7 +646,7 @@ namespace WanderGlobe.Migrations
                         },
                         new
                         {
-                            Id = 39,
+                            Id = 40,
                             CountryId = 1,
                             IsCapital = false,
                             Latitude = 45.440800000000003,
@@ -638,7 +655,7 @@ namespace WanderGlobe.Migrations
                         },
                         new
                         {
-                            Id = 40,
+                            Id = 41,
                             CountryId = 1,
                             IsCapital = false,
                             Latitude = 44.494900000000001,
@@ -647,7 +664,7 @@ namespace WanderGlobe.Migrations
                         },
                         new
                         {
-                            Id = 41,
+                            Id = 42,
                             CountryId = 1,
                             IsCapital = false,
                             Latitude = 45.070300000000003,
@@ -656,7 +673,7 @@ namespace WanderGlobe.Migrations
                         },
                         new
                         {
-                            Id = 42,
+                            Id = 43,
                             CountryId = 1,
                             IsCapital = false,
                             Latitude = 38.115699999999997,
@@ -665,7 +682,7 @@ namespace WanderGlobe.Migrations
                         },
                         new
                         {
-                            Id = 43,
+                            Id = 44,
                             CountryId = 2,
                             IsCapital = false,
                             Latitude = 43.296500000000002,
@@ -674,7 +691,7 @@ namespace WanderGlobe.Migrations
                         },
                         new
                         {
-                            Id = 44,
+                            Id = 45,
                             CountryId = 2,
                             IsCapital = false,
                             Latitude = 45.764000000000003,
@@ -683,7 +700,7 @@ namespace WanderGlobe.Migrations
                         },
                         new
                         {
-                            Id = 45,
+                            Id = 46,
                             CountryId = 2,
                             IsCapital = false,
                             Latitude = 43.7102,
@@ -692,7 +709,7 @@ namespace WanderGlobe.Migrations
                         },
                         new
                         {
-                            Id = 46,
+                            Id = 47,
                             CountryId = 2,
                             IsCapital = false,
                             Latitude = 44.837800000000001,
@@ -701,7 +718,7 @@ namespace WanderGlobe.Migrations
                         },
                         new
                         {
-                            Id = 47,
+                            Id = 48,
                             CountryId = 2,
                             IsCapital = false,
                             Latitude = 43.604700000000001,
@@ -710,7 +727,7 @@ namespace WanderGlobe.Migrations
                         },
                         new
                         {
-                            Id = 48,
+                            Id = 49,
                             CountryId = 2,
                             IsCapital = false,
                             Latitude = 48.573399999999999,
@@ -719,7 +736,7 @@ namespace WanderGlobe.Migrations
                         },
                         new
                         {
-                            Id = 49,
+                            Id = 50,
                             CountryId = 3,
                             IsCapital = false,
                             Latitude = 40.712800000000001,
@@ -728,7 +745,7 @@ namespace WanderGlobe.Migrations
                         },
                         new
                         {
-                            Id = 50,
+                            Id = 51,
                             CountryId = 3,
                             IsCapital = false,
                             Latitude = 34.052199999999999,
@@ -737,7 +754,7 @@ namespace WanderGlobe.Migrations
                         },
                         new
                         {
-                            Id = 51,
+                            Id = 52,
                             CountryId = 3,
                             IsCapital = false,
                             Latitude = 41.878100000000003,
@@ -746,7 +763,7 @@ namespace WanderGlobe.Migrations
                         },
                         new
                         {
-                            Id = 52,
+                            Id = 53,
                             CountryId = 3,
                             IsCapital = false,
                             Latitude = 25.761700000000001,
@@ -755,7 +772,7 @@ namespace WanderGlobe.Migrations
                         },
                         new
                         {
-                            Id = 53,
+                            Id = 54,
                             CountryId = 3,
                             IsCapital = false,
                             Latitude = 37.774900000000002,
@@ -764,7 +781,7 @@ namespace WanderGlobe.Migrations
                         },
                         new
                         {
-                            Id = 54,
+                            Id = 55,
                             CountryId = 3,
                             IsCapital = false,
                             Latitude = 36.169899999999998,
@@ -773,7 +790,7 @@ namespace WanderGlobe.Migrations
                         },
                         new
                         {
-                            Id = 55,
+                            Id = 56,
                             CountryId = 3,
                             IsCapital = false,
                             Latitude = 42.360100000000003,
@@ -782,7 +799,7 @@ namespace WanderGlobe.Migrations
                         },
                         new
                         {
-                            Id = 56,
+                            Id = 57,
                             CountryId = 4,
                             IsCapital = false,
                             Latitude = 48.135100000000001,
@@ -791,7 +808,7 @@ namespace WanderGlobe.Migrations
                         },
                         new
                         {
-                            Id = 57,
+                            Id = 58,
                             CountryId = 4,
                             IsCapital = false,
                             Latitude = 53.551099999999998,
@@ -800,7 +817,7 @@ namespace WanderGlobe.Migrations
                         },
                         new
                         {
-                            Id = 58,
+                            Id = 59,
                             CountryId = 4,
                             IsCapital = false,
                             Latitude = 50.110900000000001,
@@ -809,7 +826,7 @@ namespace WanderGlobe.Migrations
                         },
                         new
                         {
-                            Id = 59,
+                            Id = 60,
                             CountryId = 4,
                             IsCapital = false,
                             Latitude = 50.9375,
@@ -818,21 +835,12 @@ namespace WanderGlobe.Migrations
                         },
                         new
                         {
-                            Id = 60,
+                            Id = 61,
                             CountryId = 4,
                             IsCapital = false,
                             Latitude = 51.227699999999999,
                             Longitude = 6.7735000000000003,
                             Name = "Düsseldorf"
-                        },
-                        new
-                        {
-                            Id = 61,
-                            CountryId = 5,
-                            IsCapital = false,
-                            Latitude = 41.385100000000001,
-                            Longitude = 2.1734,
-                            Name = "Barcellona"
                         },
                         new
                         {
@@ -1491,7 +1499,6 @@ namespace WanderGlobe.Migrations
 
                     b.Property<string>("PlannedTripId")
                         .IsRequired()
-                        .HasMaxLength(50)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Title")
@@ -1505,62 +1512,9 @@ namespace WanderGlobe.Migrations
                     b.ToTable("ChecklistItems");
                 });
 
-            modelBuilder.Entity("WanderGlobe.Models.Custom.DreamDestination", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("ApplicationUserId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("CityName")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("CountryCode")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("CountryName")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("ImageUrl")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<double>("Latitude")
-                        .HasColumnType("REAL");
-
-                    b.Property<double>("Longitude")
-                        .HasColumnType("REAL");
-
-                    b.Property<string>("Notes")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<int>("Priority")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ApplicationUserId");
-
-                    b.ToTable("DreamDestinations");
-                });
-
             modelBuilder.Entity("WanderGlobe.Models.Custom.PlannedTrip", b =>
                 {
                     b.Property<string>("Id")
-                        .HasMaxLength(50)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("CityName")
@@ -1579,6 +1533,10 @@ namespace WanderGlobe.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("DestinationName")
+                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime>("EndDate")
@@ -1601,6 +1559,9 @@ namespace WanderGlobe.Migrations
                     b.Property<DateTime>("StartDate")
                         .HasColumnType("TEXT");
 
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("UserId")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -1617,7 +1578,6 @@ namespace WanderGlobe.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("ApplicationUserId")
-                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<int>("CountryId")
@@ -1632,13 +1592,70 @@ namespace WanderGlobe.Migrations
                     b.Property<string>("Notes")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
                     b.HasKey("Id");
 
                     b.HasIndex("ApplicationUserId");
 
                     b.HasIndex("CountryId");
 
+                    b.HasIndex("UserId", "CountryId")
+                        .IsUnique();
+
                     b.ToTable("DreamCountries");
+                });
+
+            modelBuilder.Entity("WanderGlobe.Models.DreamDestination", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("AddedDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("CityId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("CountryId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("DestinationName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsAchieved")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Priority")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("TargetDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CityId");
+
+                    b.HasIndex("CountryId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("DreamDestinations");
                 });
 
             modelBuilder.Entity("WanderGlobe.Models.Photo", b =>
@@ -1648,7 +1665,6 @@ namespace WanderGlobe.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Caption")
-                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<string>("FileName")
@@ -1659,14 +1675,13 @@ namespace WanderGlobe.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("TravelJournalCountryId")
+                    b.Property<int?>("TravelJournalCountryId")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("TravelJournalUserId")
-                        .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTime>("TravelJournalVisitDate")
+                    b.Property<DateTime?>("TravelJournalVisitDate")
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime>("UploadDate")
@@ -1681,6 +1696,8 @@ namespace WanderGlobe.Migrations
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("UserId");
 
                     b.HasIndex("TravelJournalUserId", "TravelJournalCountryId", "TravelJournalVisitDate");
 
@@ -1698,12 +1715,27 @@ namespace WanderGlobe.Migrations
                     b.Property<DateTime>("VisitDate")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Notes")
                         .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<int>("Rating")
                         .HasColumnType("INTEGER");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("TEXT");
 
                     b.HasKey("UserId", "CountryId", "VisitDate");
 
@@ -1728,6 +1760,40 @@ namespace WanderGlobe.Migrations
                     b.HasIndex("BadgeId");
 
                     b.ToTable("UserBadges");
+                });
+
+            modelBuilder.Entity("WanderGlobe.Models.VisitedCity", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("CityId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("VisitDate")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CityId");
+
+                    b.HasIndex("UserId", "CityId", "VisitDate");
+
+                    b.ToTable("VisitedCities");
                 });
 
             modelBuilder.Entity("WanderGlobe.Models.VisitedCountry", b =>
@@ -1831,20 +1897,11 @@ namespace WanderGlobe.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("WanderGlobe.Models.Custom.DreamDestination", b =>
-                {
-                    b.HasOne("WanderGlobe.Models.ApplicationUser", null)
-                        .WithMany("DreamDestinations")
-                        .HasForeignKey("ApplicationUserId");
-                });
-
             modelBuilder.Entity("WanderGlobe.Models.DreamCountry", b =>
                 {
-                    b.HasOne("WanderGlobe.Models.ApplicationUser", "ApplicationUser")
-                        .WithMany()
-                        .HasForeignKey("ApplicationUserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                    b.HasOne("WanderGlobe.Models.ApplicationUser", null)
+                        .WithMany("DreamedCountries")
+                        .HasForeignKey("ApplicationUserId");
 
                     b.HasOne("WanderGlobe.Models.Country", "Country")
                         .WithMany()
@@ -1852,20 +1909,55 @@ namespace WanderGlobe.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("ApplicationUser");
+                    b.HasOne("WanderGlobe.Models.ApplicationUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Country");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("WanderGlobe.Models.DreamDestination", b =>
+                {
+                    b.HasOne("WanderGlobe.Models.City", "City")
+                        .WithMany()
+                        .HasForeignKey("CityId");
+
+                    b.HasOne("WanderGlobe.Models.Country", "Country")
+                        .WithMany()
+                        .HasForeignKey("CountryId");
+
+                    b.HasOne("WanderGlobe.Models.ApplicationUser", "User")
+                        .WithMany("DreamDestinations")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("City");
+
+                    b.Navigation("Country");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("WanderGlobe.Models.Photo", b =>
                 {
-                    b.HasOne("WanderGlobe.Models.TravelJournal", "TravelJournal")
+                    b.HasOne("WanderGlobe.Models.ApplicationUser", "User")
                         .WithMany()
-                        .HasForeignKey("TravelJournalUserId", "TravelJournalCountryId", "TravelJournalVisitDate")
+                        .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("WanderGlobe.Models.TravelJournal", "TravelJournal")
+                        .WithMany("Photos")
+                        .HasForeignKey("TravelJournalUserId", "TravelJournalCountryId", "TravelJournalVisitDate");
+
                     b.Navigation("TravelJournal");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("WanderGlobe.Models.TravelJournal", b =>
@@ -1890,18 +1982,37 @@ namespace WanderGlobe.Migrations
             modelBuilder.Entity("WanderGlobe.Models.UserBadge", b =>
                 {
                     b.HasOne("WanderGlobe.Models.Badge", "Badge")
-                        .WithMany("Users")
+                        .WithMany("UserBadges")
                         .HasForeignKey("BadgeId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("WanderGlobe.Models.ApplicationUser", "User")
-                        .WithMany("Badges")
+                        .WithMany("UserBadges")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Badge");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("WanderGlobe.Models.VisitedCity", b =>
+                {
+                    b.HasOne("WanderGlobe.Models.City", "City")
+                        .WithMany("Visits")
+                        .HasForeignKey("CityId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("WanderGlobe.Models.ApplicationUser", "User")
+                        .WithMany("VisitedCities")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("City");
 
                     b.Navigation("User");
                 });
@@ -1927,18 +2038,27 @@ namespace WanderGlobe.Migrations
 
             modelBuilder.Entity("WanderGlobe.Models.ApplicationUser", b =>
                 {
-                    b.Navigation("Badges");
-
                     b.Navigation("DreamDestinations");
 
+                    b.Navigation("DreamedCountries");
+
                     b.Navigation("TravelJournals");
+
+                    b.Navigation("UserBadges");
+
+                    b.Navigation("VisitedCities");
 
                     b.Navigation("VisitedCountries");
                 });
 
             modelBuilder.Entity("WanderGlobe.Models.Badge", b =>
                 {
-                    b.Navigation("Users");
+                    b.Navigation("UserBadges");
+                });
+
+            modelBuilder.Entity("WanderGlobe.Models.City", b =>
+                {
+                    b.Navigation("Visits");
                 });
 
             modelBuilder.Entity("WanderGlobe.Models.Country", b =>
@@ -1953,6 +2073,11 @@ namespace WanderGlobe.Migrations
             modelBuilder.Entity("WanderGlobe.Models.Custom.PlannedTrip", b =>
                 {
                     b.Navigation("Checklist");
+                });
+
+            modelBuilder.Entity("WanderGlobe.Models.TravelJournal", b =>
+                {
+                    b.Navigation("Photos");
                 });
 #pragma warning restore 612, 618
         }

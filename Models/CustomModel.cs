@@ -42,22 +42,6 @@ namespace WanderGlobe.Models.Custom
         public DateTime CreatedAt { get; set; }
     }
 
-    // Modelli dedicati per le funzionalità DreamMap
-    public class DreamDestination
-    {
-        public int Id { get; set; }
-        public string UserId { get; set; }
-        public string CityName { get; set; }
-        public string CountryName { get; set; }
-        public string CountryCode { get; set; }
-        public double Latitude { get; set; }
-        public double Longitude { get; set; }
-        public DreamPriority Priority { get; set; }
-        public string ImageUrl { get; set; }
-        public string Note { get; set; }
-        public DateTime CreatedAt { get; set; }
-        public List<string> Tags { get; set; } = new List<string>();
-    }
 
  public class PlannedTrip
     {
@@ -74,6 +58,8 @@ namespace WanderGlobe.Models.Custom
         public string Notes { get; set; } = string.Empty;
         public int CompletionPercentage { get; set; }
         public DateTime CreatedAt { get; set; }
+        public string DestinationName { get; set; } = string.Empty;
+        public DateTime UpdatedAt { get; set; }
         
         // Relazione con ChecklistItem
         public List<ChecklistItem> Checklist { get; set; } = new List<ChecklistItem>();
@@ -120,18 +106,19 @@ namespace WanderGlobe.Models.Custom
         public List<MapDestinationItem> VisitedCities { get; set; } = new List<MapDestinationItem>();
     }
 
-    public class MapDestinationItem
-    {
-        public string Id { get; set; }
-        public string CityName { get; set; }
-        public string CountryName { get; set; }
-        public string CountryCode { get; set; }
-        public double Latitude { get; set; }
-        public double Longitude { get; set; }
-        public int? Priority { get; set; }
-        public int? CompletionPercentage { get; set; }
-        public string Type { get; set; }
-    }
+public class MapDestinationItem
+{
+    public string Id { get; set; } = string.Empty;
+    public string? CityName { get; set; }
+    public string? CountryName { get; set; }
+    public string? CountryCode { get; set; }
+    public double Latitude { get; set; }
+    public double Longitude { get; set; }
+    public string Type { get; set; } = string.Empty;
+    public DreamPriority Priority { get; set; } // << CAMBIATO A DreamPriority
+    public int CompletionPercentage { get; set; }
+    public string? ImageUrl { get; set; }
+}
 
     public enum DreamPriority
     {

@@ -3,68 +3,50 @@
 @{
     ViewData["Title"] = "World Explorer - Le Tue Avventure";
 
-    // Calcoli preliminari basati su Model.VisitedCities
-    bool hasVisitedCities = Model.VisitedCities?.Any() == true;
-    int visitedCitiesCount = Model.VisitedCities?.Count ?? 0;
+    // Calculations based on Model.VisitedCityPins (the ViewModel for display)
+    bool hasVisitedSpecificCities = Model.VisitedCityPins?.Any() == true;
+    int visitedSpecificCitiesCount = Model.VisitedCityPins?.Count ?? 0;
 
-    // Calcolare continenti distinti dalle città visitate
-    // Assicurati che VisitedCityViewModel abbia la proprietà Continent popolata correttamente nel backend
-    int distinctContinentsCount = hasVisitedCities
-        ? Model.VisitedCities.Select(c => c.Continent).Where(c => !string.IsNullOrEmpty(c)).Distinct().Count()
+    // Distinct continents from the specifically visited cities
+    int distinctContinentsFromCitiesCount = hasVisitedSpecificCities
+        ? Model.VisitedCityPins.Select(c => c.Continent).Where(c => !string.IsNullOrEmpty(c)).Distinct().Count()
         : 0;
 
-    DateTime? firstVisitDate = hasVisitedCities
-        ? Model.VisitedCities.Min(c => c.VisitDate)
+    DateTime? firstCityVisitDate = hasVisitedSpecificCities
+        ? Model.VisitedCityPins.Min(c => c.VisitDate)
         : (DateTime?)null;
 
-    int? firstVisitYear = firstVisitDate?.Year;
-    int yearsOfTraveling = hasVisitedCities && firstVisitYear.HasValue
-        ? DateTime.Now.Year - firstVisitYear.Value
+    int? firstCityVisitYear = firstCityVisitDate?.Year;
+    int yearsOfTravelingBasedOnCities = hasVisitedSpecificCities && firstCityVisitYear.HasValue
+        ? DateTime.Now.Year - firstCityVisitYear.Value
         : 0;
 
-    // Dati per la UI dei continenti (colore, conteggio)
-    // Il conteggio verrà aggiornato dinamicamente
+    // UI data for continents, based on specific city visits
     var continentUiData = new Dictionary<string, (string color, int count)>()
     {
-        { "Europa", ("#4374e0", 0) },
-        { "Nord America", ("#5cb85c", 0) },
-        { "Sud America", ("#f0ad4e", 0) },
-        { "Asia", ("#d9534f", 0) },
-        { "Africa", ("#5bc0de", 0) },
-        { "Oceania", ("#337ab7", 0) },
+        { "Europa", ("#4374e0", 0) }, { "Nord America", ("#5cb85c", 0) },
+        { "Sud America", ("#f0ad4e", 0) }, { "Asia", ("#d9534f", 0) },
+        { "Africa", ("#5bc0de", 0) }, { "Oceania", ("#337ab7", 0) },
         { "Antartide", ("#777777", 0) }
-        // Potresti aggiungere "Altro" se ci sono continenti non mappati e vuoi gestirli
     };
 
-    if (hasVisitedCities)
+    if (hasVisitedSpecificCities)
     {
-        var countsByContinent = Model.VisitedCities
-            .Where(c => !string.IsNullOrEmpty(c.Continent)) // Assicurati che il continente non sia nullo o vuoto
+        var countsByContinent = Model.VisitedCityPins
+            .Where(c => !string.IsNullOrEmpty(c.Continent))
             .GroupBy(c => c.Continent)
             .ToDictionary(g => g.Key, g => g.Count());
 
         var updatedContinentUiData = new Dictionary<string, (string color, int count)>();
-        // Aggiorna i conteggi per i continenti predefiniti
         foreach (var predefinedContinent in continentUiData.Keys.ToList())
         {
-            if (countsByContinent.TryGetValue(predefinedContinent, out int currentCount))
-            {
-                updatedContinentUiData[predefinedContinent] = (continentUiData[predefinedContinent].color, currentCount);
-            }
-            else
-            {
-                // Mantiene il colore predefinito con conteggio 0 se non ci sono visite
-                updatedContinentUiData[predefinedContinent] = (continentUiData[predefinedContinent].color, 0);
-            }
+            updatedContinentUiData[predefinedContinent] = (continentUiData[predefinedContinent].color, countsByContinent.TryGetValue(predefinedContinent, out int currentCount) ? currentCount : 0);
         }
-        // Aggiungi eventuali continenti visitati non presenti nella lista predefinita
-        // (ad es. se Model.VisitedCities contiene un continente non in continentUiData.Keys)
         foreach (var visitedCont in countsByContinent)
         {
             if (!updatedContinentUiData.ContainsKey(visitedCont.Key))
             {
-                // Assegna un colore di fallback se il continente non è predefinito
-                updatedContinentUiData[visitedCont.Key] = ("#A9A9A9", visitedCont.Value);
+                updatedContinentUiData[visitedCont.Key] = ("#A9A9A9", visitedCont.Value); // Fallback color
             }
         }
         continentUiData = updatedContinentUiData.OrderBy(kvp => kvp.Key).ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
@@ -95,12 +77,12 @@
             </li>
             <li class="nav-item" role="presentation">
                 <button class="nav-link" id="cities-tab" data-bs-toggle="tab" data-bs-target="#cities" type="button" role="tab" aria-controls="cities" aria-selected="false">
-                    <i class="fas fa-city"></i> <span class="tab-text">Città</span>
+                    <i class="fas fa-city"></i> <span class="tab-text">Città Visitate</span> @* Testo aggiornato *@
                 </button>
             </li>
             <li class="nav-item" role="presentation">
                 <button class="nav-link" id="add-tab" data-bs-toggle="tab" data-bs-target="#add" type="button" role="tab" aria-controls="add" aria-selected="false">
-                    <i class="fas fa-plus-circle"></i> <span class="tab-text">Aggiungi</span>
+                    <i class="fas fa-plus-circle"></i> <span class="tab-text">Aggiungi Visita</span> @* Testo aggiornato *@
                 </button>
             </li>
         </ul>
@@ -117,45 +99,43 @@
                     <div class="progress-container">
                         <div class="progress progress-lg" style="height: 25px">
                             <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary"
-                                 style="width: @(Model.VisitedPercentage)%"
+                                 style="width: @(Model.VisitedPercentageOfWorldCountries)%" @* Usa la nuova proprietà del modello *@
                                  role="progressbar"
-                                 aria-valuenow="@Model.VisitedPercentage"
+                                 aria-valuenow="@Model.VisitedPercentageOfWorldCountries"
                                  aria-valuemin="0"
                                  aria-valuemax="100">
-                                <span class="progress-label">@Model.VisitedPercentage.ToString("0.0")%</span>
+                                <span class="progress-label">@Model.VisitedPercentageOfWorldCountries.ToString("0.0")%</span>
                             </div>
                         </div>
-                        <p class="text-muted mt-2">Hai esplorato @Model.VisitedPercentage.ToString("0.0")% dei paesi del mondo</p>
+                        <p class="text-muted mt-2">Hai esplorato @Model.VisitedPercentageOfWorldCountries.ToString("0.0")% dei paesi del mondo</p>
                     </div>
 
                     <div class="stats-grid">
                         <div class="stat-item">
-                            <div class="stat-value">@visitedCitiesCount</div>
-                            <div class="stat-label">Città Visitate</div>
+                            <div class="stat-value">@visitedSpecificCitiesCount</div> @* Conteggio delle visite a città specifiche *@
+                            <div class="stat-label">Visite Città Registrate</div>
                         </div>
                         <div class="stat-item">
-                            <div class="stat-value">@distinctContinentsCount</div>
-                            <div class="stat-label">Continenti</div>
+                            <div class="stat-value">@distinctContinentsFromCitiesCount</div> @* Continenti basati su città specifiche *@
+                            <div class="stat-label">Continenti (da Città)</div>
                         </div>
                         <div class="stat-item">
-                            <div class="stat-value">@(firstVisitYear?.ToString() ?? "N/A")</div>
-                            <div class="stat-label">Prima visita</div>
+                            <div class="stat-value">@(firstCityVisitYear?.ToString() ?? "N/A")</div> @* Basato sulla prima visita a una città specifica *@
+                            <div class="stat-label">Prima visita (città)</div>
                         </div>
                         <div class="stat-item">
-                            <div class="stat-value">@yearsOfTraveling</div>
-                            <div class="stat-label">Anni di viaggi</div>
+                            <div class="stat-value">@yearsOfTravelingBasedOnCities</div> @* Basato su visite a città specifiche *@
+                            <div class="stat-label">Anni di viaggi (città)</div>
                         </div>
                     </div>
 
                     <div class="continents-stats mt-4">
-                        <h5 class="mb-3">Esplorazione Continenti</h5>
+                        <h5 class="mb-3">Esplorazione Continenti (da Città)</h5>
                         @if (continentUiData.Any(c => c.Value.count > 0))
                         {
-                            foreach (var continent in continentUiData.Where(c => c.Value.count > 0)) // Mostra solo quelli con visite
+                            foreach (var continent in continentUiData.Where(c => c.Value.count > 0))
                             {
-                                // Calcola una percentuale per la barra di avanzamento (esempio semplice)
-                                // Potresti voler basare 'maxExpectedVisitsPerContinent' su dati reali o obiettivi
-                                int maxExpectedVisitsPerContinent = 10; // Esempio: obiettivo di 10 visite per continente
+                                int maxExpectedVisitsPerContinent = 10;
                                 int progressBarValue = continent.Value.count > 0
                                 ? Math.Min(100, Math.Max(8, (continent.Value.count * 100) / maxExpectedVisitsPerContinent))
                                 : 0;
@@ -179,7 +159,7 @@
                         }
                         else
                         {
-                            <p class="text-muted">Non hai ancora registrato visite per continente.</p>
+                            <p class="text-muted">Non hai ancora registrato visite per continente basate sulle città.</p>
                         }
                     </div>
 
@@ -187,46 +167,47 @@
                         <h5 class="mb-3">Prossimi Traguardi</h5>
                         <div class="badge-progress mb-3">
                             <div class="badge-icon unlocked">
+                                @* Logica badge semplice, da adattare *@
                                 <i class="fas fa-map-marker-alt"></i>
                             </div>
                             <div class="badge-info">
                                 <span class="badge-name">Esploratore Principiante</span>
                                 <div class="progress">
-                                    <div class="progress-bar bg-success" role="progressbar" style="width: 100%" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
+                                    <div class="progress-bar bg-success" role="progressbar" style="width: @(visitedSpecificCitiesCount > 0 ? 100 : 0)%" aria-valuenow="@(visitedSpecificCitiesCount > 0 ? 100 : 0)" aria-valuemin="0" aria-valuemax="100"></div>
                                 </div>
-                                <span class="badge-desc">Visita 1 città - Completato!</span>
+                                <span class="badge-desc">Visita 1 città - @(visitedSpecificCitiesCount > 0 ? "Completato!" : $"{visitedSpecificCitiesCount}/1")</span>
                             </div>
                         </div>
 
                         <div class="badge-progress mb-3">
-                            <div class="badge-icon @(visitedCitiesCount >= 5 ? "unlocked" : "locked")">
+                            <div class="badge-icon @(visitedSpecificCitiesCount >= 5 ? "unlocked" : "locked")">
                                 <i class="fas fa-passport"></i>
                             </div>
                             <div class="badge-info">
                                 <span class="badge-name">Viaggiatore Esperto</span>
                                 <div class="progress">
                                     <div class="progress-bar bg-info" role="progressbar"
-                                         style="width: @(Math.Min(100, visitedCitiesCount * 100 / 5))%"
-                                         aria-valuenow="@(Math.Min(100, visitedCitiesCount * 100 / 5))"
+                                         style="width: @(Math.Min(100, visitedSpecificCitiesCount * 100 / 5))%"
+                                         aria-valuenow="@(Math.Min(100, visitedSpecificCitiesCount * 100 / 5))"
                                          aria-valuemin="0" aria-valuemax="100"></div>
                                 </div>
-                                <span class="badge-desc">Visita 5 città - @visitedCitiesCount/5</span>
+                                <span class="badge-desc">Visita 5 città - @visitedSpecificCitiesCount/5</span>
                             </div>
                         </div>
 
                         <div class="badge-progress">
-                            <div class="badge-icon @(visitedCitiesCount >= 10 ? "unlocked" : "locked")">
+                            <div class="badge-icon @(visitedSpecificCitiesCount >= 10 ? "unlocked" : "locked")">
                                 <i class="fas fa-globe-americas"></i>
                             </div>
                             <div class="badge-info">
                                 <span class="badge-name">Cittadino del Mondo</span>
                                 <div class="progress">
                                     <div class="progress-bar bg-warning" role="progressbar"
-                                         style="width: @(Math.Min(100, visitedCitiesCount * 100 / 10))%"
-                                         aria-valuenow="@(Math.Min(100, visitedCitiesCount * 100 / 10))"
+                                         style="width: @(Math.Min(100, visitedSpecificCitiesCount * 100 / 10))%"
+                                         aria-valuenow="@(Math.Min(100, visitedSpecificCitiesCount * 100 / 10))"
                                          aria-valuemin="0" aria-valuemax="100"></div>
                                 </div>
-                                <span class="badge-desc">Visita 10 città - @visitedCitiesCount/10</span>
+                                <span class="badge-desc">Visita 10 città - @visitedSpecificCitiesCount/10</span>
                             </div>
                         </div>
                     </div>
@@ -236,52 +217,53 @@
             <!-- Scheda Città Visitate -->
             <div class="tab-pane fade" id="cities" role="tabpanel" aria-labelledby="cities-tab">
                 <div class="cities-header d-flex justify-content-between align-items-center">
-                    <h5><i class="fas fa-city"></i> Le Tue Città</h5>
+                    <h5><i class="fas fa-city"></i> Le Tue Visite alle Città</h5>
                     <div class="form-group mb-0">
                         <div class="input-group">
-                            <input type="text" class="form-control" id="searchCity" placeholder="Cerca città..." aria-label="Cerca città">
+                            <input type="text" class="form-control" id="searchCity" placeholder="Cerca città o paese..." aria-label="Cerca città">
                             <span class="input-group-text"><i class="fas fa-search"></i></span>
                         </div>
                     </div>
                 </div>
 
                 <div class="cities-container mt-3">
-                    @if (hasVisitedCities)
+                    @if (hasVisitedSpecificCities)
                     {
                         <div class="visited-cities-grid" id="citiesList">
-                            @foreach (var cityVm in Model.VisitedCities)
+                            @foreach (var cityPin in Model.VisitedCityPins) @* CAMBIATO: Itera su VisitedCityPins *@
                             {
                                 <div class="city-card"
-                             data-name="@(cityVm.CityName?.ToLowerInvariant() ?? "")"
-                             data-country="@(cityVm.CountryName?.ToLowerInvariant() ?? "")"
-                             data-continent="@(cityVm.Continent?.ToLowerInvariant() ?? "")">
+                             data-name="@(cityPin.CityName?.ToLowerInvariant() ?? "")"
+                             data-country="@(cityPin.CountryName?.ToLowerInvariant() ?? "")"
+                             data-continent="@(cityPin.Continent?.ToLowerInvariant() ?? "")">
                                     <div class="city-card-header">
-                                        <img src="~/images/cities/@(cityVm.CountryCode?.ToLowerInvariant() ?? "unknown")-city.jpg"
-                                     alt="Immagine di @cityVm.CityName"
+                                        <img src="~/images/cities/@(cityPin.CountryCode?.ToLowerInvariant() ?? "unknown")-city.jpg"
+                                     alt="Immagine di @cityPin.CityName"
                                      onerror="this.onerror=null; this.src='/images/city-placeholder.jpg';">
                                         <div class="city-flag">
-                                            <img src="~/images/flags/@(cityVm.CountryCode?.ToLowerInvariant() ?? "unknown").png"
-                                         alt="Bandiera di @cityVm.CountryName"
+                                            <img src="~/images/flags/@(cityPin.CountryCode?.ToLowerInvariant() ?? "unknown").png"
+                                         alt="Bandiera di @cityPin.CountryName"
                                          onerror="this.onerror=null; this.src='/images/flags/unknown.png';">
                                         </div>
                                     </div>
                                     <div class="city-card-body">
-                                        <h6 class="city-name">@cityVm.CityName</h6>
-                                        <p class="city-country">@cityVm.CountryName</p>
+                                        <h6 class="city-name">@cityPin.CityName</h6>
+                                        <p class="city-country">@cityPin.CountryName</p>
                                         <div class="city-visit-date">
-                                            <i class="far fa-calendar-alt"></i> @cityVm.VisitDate.ToString("dd/MM/yyyy")
+                                            <i class="far fa-calendar-alt"></i> @cityPin.VisitDate.ToString("dd/MM/yyyy")
                                         </div>
                                     </div>
                                     <div class="city-actions">
                                         <button type="button" class="btn btn-sm btn-outline-primary fly-to-btn"
-                                        data-lat="@cityVm.Latitude.ToString(System.Globalization.CultureInfo.InvariantCulture)"
-                                        data-lng="@cityVm.Longitude.ToString(System.Globalization.CultureInfo.InvariantCulture)"
-                                        aria-label="Vola a @cityVm.CityName">
+                                        data-lat="@cityPin.Latitude.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                                        data-lng="@cityPin.Longitude.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                                        aria-label="Vola a @cityPin.CityName">
                                             <i class="fas fa-plane"></i> Vola qui
                                         </button>
-                                        <form method="post" asp-page-handler="RemoveCountry" asp-route-cityId="@cityVm.CityId"
-                                      onsubmit="return confirm('Vuoi davvero rimuovere questa visita? L\'intera visita al paese associato a questa città potrebbe essere rimossa se questa è l\'unica città registrata per quel paese.');">
-                                            <button type="submit" class="btn btn-sm btn-outline-danger" aria-label="Rimuovi @cityVm.CityName">
+                                        @* CAMBIATO: Form per rimuovere una VisitedCity specifica *@
+                                        <form method="post" asp-page-handler="RemoveCityVisit" asp-route-visitedCityId="@cityPin.VisitedCityId"
+                                      onsubmit="return confirm('Vuoi davvero rimuovere questa specifica visita a @cityPin.CityName?');">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" aria-label="Rimuovi visita a @cityPin.CityName">
                                                 <i class="fas fa-trash"></i>
                                             </button>
                                         </form>
@@ -294,27 +276,26 @@
                     {
                         <div class="no-cities-message text-center py-5">
                             <i class="far fa-frown fa-4x mb-3 text-muted"></i>
-                            <p class="lead">Non hai ancora aggiunto città al tuo diario di viaggio</p>
-                            <button class="btn btn-primary mt-3" onclick="document.getElementById('add-tab').click()" aria-label="Aggiungi la tua prima città">
-                                <i class="fas fa-plus-circle mr-2"></i> Aggiungi la tua prima città
+                            <p class="lead">Non hai ancora aggiunto visite a città specifiche.</p>
+                            <button class="btn btn-primary mt-3" onclick="document.getElementById('add-tab').click()" aria-label="Aggiungi la tua prima visita a una città">
+                                <i class="fas fa-plus-circle mr-2"></i> Aggiungi la tua prima visita
                             </button>
                         </div>
                     }
                 </div>
             </div>
 
-            <!-- Scheda Aggiungi Città -->
+            <!-- Scheda Aggiungi Visita Città -->
             <div class="tab-pane fade" id="add" role="tabpanel" aria-labelledby="add-tab">
                 <div class="add-city-card">
-                    <h5 class="mb-3"><i class="fas fa-plus-circle"></i> Aggiungi Nuova Città</h5>
-
-                    <form method="post" asp-page-handler="AddCountry" class="add-city-form">
+                    <h5 class="mb-3"><i class="fas fa-plus-circle"></i> Aggiungi Nuova Visita a Città</h5>
+                    @* CAMBIATO: Handler del form *@
+                    <form method="post" asp-page-handler="AddCityVisit" class="add-city-form">
                         <div class="form-group mb-3">
-                            <label for="cityId" class="form-label">Seleziona una città</label>
+                            <label for="cityId" class="form-label">Seleziona una città da visitare</label>
                             <select class="form-select" id="cityId" name="cityId" required aria-describedby="cityHelp">
                                 <option value="">-- Seleziona una città --</option>
                                 @{
-                                    // Group cities by continent for the dropdown
                                     var cityContinentGroups = Model.AllCitiesForDropdown
                                     .GroupBy(c => c.Continent ?? "Altro")
                                     .OrderBy(g => g.Key == "Europa" ? 0 :
@@ -334,7 +315,7 @@
                                     </optgroup>
                                 }
                             </select>
-                            <div id="cityHelp" class="form-text">Seleziona la città che hai visitato</div>
+                            <div id="cityHelp" class="form-text">Seleziona la città specifica che hai visitato.</div>
                         </div>
 
                         <div class="city-preview" id="cityPreview" style="display:none;">
@@ -361,11 +342,11 @@
                             <label for="visitExperience" class="form-label">Esperienza di viaggio (opzionale)</label>
                             <textarea class="form-control" id="visitExperience" name="visitExperience"
                                       rows="3" placeholder="Racconta qualcosa sulla tua visita..." aria-describedby="experienceHelp"></textarea>
-                            <div id="experienceHelp" class="form-text">Condividi i tuoi ricordi e impressioni di questo viaggio</div>
+                            <div id="experienceHelp" class="form-text">Condividi i tuoi ricordi e impressioni di questo viaggio.</div>
                         </div>
 
                         <button type="submit" class="btn btn-primary w-100">
-                            <i class="fas fa-plus-circle me-2"></i> Aggiungi al Diario
+                            <i class="fas fa-plus-circle me-2"></i> Aggiungi Visita al Diario
                         </button>
                     </form>
                 </div>
@@ -875,48 +856,39 @@
         @@media (max-width: 992px) { /* Adjust breakpoint as needed */
             .globe-container {
                 grid-template-columns: 1fr; /* Stack sidebar and globe */
-                /* Set a fixed height for sidebar when stacked or let it take content height */
-                grid-template-rows: auto 1fr; /* Sidebar auto, globe takes rest */
+                grid-template-rows: auto 1fr;
             }
 
             .main-globe-container {
-                order: 1; /* Globe first visually if preferred */
-                min-height: 300px; /* Ensure globe has some height */
+                order: 1;
+                min-height: 300px;
             }
 
             .explorer-sidebar {
                 order: 2;
-                height: auto; /* Adjust height as needed, or make it scrollable */
-                max-height: 50vh; /* Example: limit height and make tab-content scroll */
+                height: auto;
+                max-height: 50vh;
                 border-right: none;
                 border-bottom: 1px solid rgba(0,0,0,0.1);
             }
 
-            .visited-cities-grid { /* Adjust for smaller screens */
+            .visited-cities-grid {
                 grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
             }
         }
 
         @@media (max-width: 768px) {
             .stats-grid {
-                grid-template-columns: 1fr; /* Stack stat items */
+                grid-template-columns: 1fr;
             }
 
             .profile-info {
                 flex-direction: column;
                 align-items: flex-start;
             }
-
-            .nav-tabs .nav-link .tab-text { /* Optionally hide text on very small screens */
-                /* display: none; */
-            }
-
-            .nav-tabs .nav-link i {
-                /* margin-right: 0; */
-            }
         }
 
-        /* Stili per i popup dei marker (dal file globe-popup.css) */
+        /* Stili per i popup dei marker */
         .country-popup {
             position: absolute !important;
             width: 300px;
@@ -926,8 +898,8 @@
             overflow: hidden;
             z-index: 2000;
             animation: popup-fade-in 0.3s ease;
-            pointer-events: auto; /* Crucial for interaction */
-            transform: none !important; /* Override any external transforms */
+            pointer-events: auto;
+            transform: none !important;
         }
 
         @@keyframes popup-fade-in {
@@ -942,7 +914,7 @@
             }
         }
 
-        .pin-button { /* Style for pin button inside popup */
+        .pin-button {
             transition: transform 0.3s ease, color 0.3s ease;
         }
 
@@ -951,38 +923,30 @@
             }
 
         .country-popup[data-pinned="true"] .pin-button {
-            color: var(--primary-color); /* Use theme color for pinned state */
+            color: var(--primary-color);
             transform: rotate(-45deg);
         }
 
         .country-popup[data-pinned="true"] {
-            box-shadow: 0 5px 25px rgba(var(--primary-color-rgb, 26, 115, 232), 0.4); /* Use theme color shadow */
+            box-shadow: 0 5px 25px rgba(var(--primary-color-rgb, 26, 115, 232), 0.4);
         }
     </style>
 }
 
     @section Scripts {
-    <!-- Three.js library -->
     <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/controls/OrbitControls.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.4/gsap.min.js"></script>
     <script>
-        // DOMContentLoaded ensures all HTML is parsed before scripts run
         document.addEventListener('DOMContentLoaded', function () {
-
-            // Search city functionality
             const searchCityInput = document.getElementById('searchCity');
             if (searchCityInput) {
                 searchCityInput.addEventListener('input', filterListedCities);
             }
-
-            // City preview in "Add City" tab
             const cityIdDropdown = document.getElementById('cityId');
             if (cityIdDropdown) {
                 cityIdDropdown.addEventListener('change', updateCityPreview);
             }
-
-            // "Fly to" button functionality
             document.querySelectorAll('.fly-to-btn').forEach(button => {
                 button.addEventListener('click', function () {
                     const lat = parseFloat(this.getAttribute('data-lat'));
@@ -992,8 +956,6 @@
                     }
                 });
             });
-
-            // Initialize Globe and its controls
             if (typeof initGlobe === 'function') initGlobe();
             if (typeof setupGlobeControls === 'function') setupGlobeControls();
         });
@@ -1002,12 +964,9 @@
             const searchTerm = document.getElementById('searchCity').value.toLowerCase();
             const cityCards = document.querySelectorAll('#citiesList .city-card');
             let visibleCount = 0;
-
             cityCards.forEach(card => {
                 const cityName = card.dataset.name || "";
                 const countryName = card.dataset.country || "";
-                // const continentName = card.dataset.continent || ""; // Optionally search by continent
-
                 if (cityName.includes(searchTerm) || countryName.includes(searchTerm)) {
                     card.style.display = '';
                     visibleCount++;
@@ -1015,8 +974,6 @@
                     card.style.display = 'none';
                 }
             });
-
-            // Handle "no results" message
             const citiesListContainer = document.getElementById('citiesList');
             let noResultsEl = document.getElementById('noResultsMessage');
             if (visibleCount === 0 && searchTerm.length > 0 && citiesListContainer) {
@@ -1035,49 +992,45 @@
         function updateCityPreview() {
             const cityPreviewDiv = document.getElementById('cityPreview');
             const selectedOption = this.options[this.selectedIndex];
-
             if (this.value && cityPreviewDiv) {
                 const cityInfoText = selectedOption.text;
                 const parts = cityInfoText.match(/(.+)\s\((.+)\)/);
                 const cityName = parts ? parts[1] : cityInfoText;
                 const countryName = parts ? parts[2] : "";
-
                 document.getElementById('previewCityName').textContent = cityName;
                 document.getElementById('previewCountryName').textContent = countryName;
-
                 const countryCode = selectedOption.getAttribute('data-country-code') || 'unknown';
                 const cityImageEl = document.getElementById('cityImage');
                 if (cityImageEl) {
                     cityImageEl.src = `/images/cities/${countryCode.toLowerCase()}-city.jpg`;
-                    // onerror is already in HTML
                 }
                 cityPreviewDiv.style.display = 'flex';
             } else if (cityPreviewDiv) {
                 cityPreviewDiv.style.display = 'none';
             }
         }
-
     </script>
     <script>
-        // Visited pins data from backend
-        window.visitedPins = @Html.Raw(Model.VisitedCountriesJson ?? "[]");
+        // CAMBIATO: Usa Model.VisitedCitiesJsonForMap
+        window.visitedPins = @Html.Raw(Model.VisitedCitiesJsonForMap ?? "[]");
 
-        console.log("Pin caricati (VisitedCityViewModel):", window.visitedPins ? window.visitedPins.length : 0, window.visitedPins);
+        console.log("Pin caricati (VisitedCityMapPinViewModel):", window.visitedPins ? window.visitedPins.length : 0, window.visitedPins);
 
         document.addEventListener('DOMContentLoaded', function () {
             if (window.visitedPins && window.visitedPins.length > 0) {
                 console.log(`Numero di pin (window.visitedPins): ${window.visitedPins.length}`);
                 window.visitedPins.forEach((pin, index) => {
-                    console.log(`Pin ${index}: ${pin.CityName} (${pin.CountryName}, ${pin.Continent}), Lat: ${pin.Latitude}, Lng: ${pin.Longitude}`);
+                    // Le proprietà di 'pin' qui devono corrispondere a VisitedCityMapPinViewModel
+                    console.log(`Pin ${index}: ${pin.CityName} (${pin.CountryName}, ${pin.Continent}), Lat: ${pin.Latitude}, Lng: ${pin.Longitude}, VisitedCityId: ${pin.VisitedCityId}`);
                 });
             } else {
-                console.warn("Nessun pin trovato nella variabile window.visitedPins all'interno del DOMContentLoaded.");
+                console.warn("Nessun pin trovato (window.visitedPins) dopo DOMContentLoaded.");
             }
         });
     </script>
 
     <script>
-        // Data transformation for map markers
+        // CAMBIATO: visitedMapMarkers ora riflette le proprietà di VisitedCityMapPinViewModel
         const visitedMapMarkers = (window.visitedPins || []).map(pin => {
             return {
                 name: pin.CityName,
@@ -1086,14 +1039,14 @@
                 continent: pin.Continent,
                 lat: pin.Latitude,
                 lng: pin.Longitude,
-                visitDate: new Date(pin.VisitDate).toLocaleDateString('it-IT', { year: 'numeric', month: 'long', day: 'numeric' })
+                visitDate: new Date(pin.VisitDate).toLocaleDateString('it-IT', { year: 'numeric', month: 'long', day: 'numeric' }),
+                visitedCityId: pin.VisitedCityId // Aggiungi l'ID della visita specifica
             };
         });
         console.log("Processed visitedMapMarkers for globe:", visitedMapMarkers);
 
-        // Three.js Globe Initialization and Functions
         let camera, scene, renderer, controls, earth, clouds, atmosphere;
-        const markersGroup = new THREE.Group(); // Define globally for access
+        const markersGroup = new THREE.Group();
 
         function initGlobe() {
             const container = document.getElementById('globe-container');
@@ -1101,22 +1054,17 @@
                 console.error("Globe container not found!");
                 return;
             }
-
             scene = new THREE.Scene();
-            scene.add(markersGroup); // Add markers group to scene
-
+            scene.add(markersGroup);
             camera = new THREE.PerspectiveCamera(60, container.offsetWidth / container.offsetHeight, 0.1, 1000);
-            camera.position.set(0, 5, 13); // Slightly elevated view
-
+            camera.position.set(0, 5, 13);
             renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
             renderer.setSize(container.offsetWidth, container.offsetHeight);
             renderer.setPixelRatio(window.devicePixelRatio);
-            // renderer.setClearColor(0x000000, 0); // Transparent background
-            container.innerHTML = ''; // Clear container before appending canvas
+            container.innerHTML = '';
             container.appendChild(renderer.domElement);
 
-            // Lighting
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.5); // Softer ambient
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
             scene.add(ambientLight);
             const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
             directionalLight.position.set(5, 10, 7);
@@ -1124,87 +1072,53 @@
 
             const textureLoader = new THREE.TextureLoader();
             textureLoader.crossOrigin = 'anonymous';
-
-            // Starfield
-            const stars = createStarfield(100); // Increased radius
+            const stars = createStarfield(100);
             scene.add(stars);
 
-            // Earth
             const earthGeometry = new THREE.SphereGeometry(5, 64, 64);
             const earthMaterial = new THREE.MeshPhongMaterial({
                 map: textureLoader.load('https://cdn.jsdelivr.net/gh/turban/webgl-earth@master/images/2_no_clouds_4k.jpg', undefined, handleTextureError),
                 bumpMap: textureLoader.load('https://cdn.jsdelivr.net/gh/turban/webgl-earth@master/images/elev_bump_4k.jpg', undefined, handleTextureError),
-                bumpScale: 0.01, // Slightly more pronounced bump
+                bumpScale: 0.01,
                 specularMap: textureLoader.load('https://cdn.jsdelivr.net/gh/turban/webgl-earth@master/images/water_4k.png', undefined, handleTextureError),
-                specular: new THREE.Color(0x333333), // Tuned specular
-                shininess: 10
+                specular: new THREE.Color(0x333333), shininess: 10
             });
             earth = new THREE.Mesh(earthGeometry, earthMaterial);
-            earth.rotation.y = Math.PI; // Align texture
+            earth.rotation.y = Math.PI;
             scene.add(earth);
 
-            // Clouds
-            const cloudsGeometry = new THREE.SphereGeometry(5.03, 64, 64); // Closer to surface
+            const cloudsGeometry = new THREE.SphereGeometry(5.03, 64, 64);
             const cloudsMaterial = new THREE.MeshPhongMaterial({
                 map: textureLoader.load('https://cdn.jsdelivr.net/gh/turban/webgl-earth@master/images/fair_clouds_4k.png', undefined, handleTextureError),
-                transparent: true,
-                opacity: 0.3, // Slightly more transparent
-                blending: THREE.AdditiveBlending // Softer blending
+                transparent: true, opacity: 0.3, blending: THREE.AdditiveBlending
             });
             clouds = new THREE.Mesh(cloudsGeometry, cloudsMaterial);
             clouds.rotation.y = Math.PI;
             scene.add(clouds);
 
-            // Atmosphere Glow (ShaderMaterial)
-            const atmosphereGeometry = new THREE.SphereGeometry(5.2, 64, 64); // Adjusted radius
+            const atmosphereGeometry = new THREE.SphereGeometry(5.2, 64, 64);
             const atmosphereShaderMaterial = new THREE.ShaderMaterial({
-                uniforms: {
-                    "c": { value: 0.5 }, // Fresnel coefficient
-                    "p": { value: 4.0 }, // Fresnel power
-                    glowColor: { value: new THREE.Color(0x5897d4) }, // Glow color (more blue)
-                },
-                vertexShader: `
-                            varying vec3 vNormal;
-                            void main() {
-                                vNormal = normalize( normalMatrix * normal );
-                                gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
-                            }`,
-                fragmentShader: `
-                            uniform vec3 glowColor;
-                            uniform float c;
-                            uniform float p;
-                            varying vec3 vNormal;
-                            void main() {
-                                float intensity = pow( c - dot( vNormal, vec3( 0.0, 0.0, 1.0 ) ), p );
-                                gl_FragColor = vec4( glowColor, intensity * 0.8 ); // Adjusted intensity and alpha
-                            }`,
-                side: THREE.BackSide,
-                blending: THREE.AdditiveBlending,
-                transparent: true,
-                depthWrite: false // Important for transparency
+                uniforms: { "c": { value: 0.5 }, "p": { value: 4.0 }, glowColor: { value: new THREE.Color(0x5897d4) }, },
+                vertexShader: `varying vec3 vNormal; void main() { vNormal = normalize( normalMatrix * normal ); gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 ); }`,
+                fragmentShader: `uniform vec3 glowColor; uniform float c; uniform float p; varying vec3 vNormal; void main() { float intensity = pow( c - dot( vNormal, vec3( 0.0, 0.0, 1.0 ) ), p ); gl_FragColor = vec4( glowColor, intensity * 0.8 ); }`,
+                side: THREE.BackSide, blending: THREE.AdditiveBlending, transparent: true, depthWrite: false
             });
             atmosphere = new THREE.Mesh(atmosphereGeometry, atmosphereShaderMaterial);
             scene.add(atmosphere);
 
-            // Add Markers
-            visitedMapMarkers.forEach((pinData, index) => {
+            visitedMapMarkers.forEach((pinData, index) => { // pinData ora include visitedCityId
                 addGlobeMarker(pinData, index, markersGroup);
             });
 
-            // Controls
             controls = new THREE.OrbitControls(camera, renderer.domElement);
-            controls.enableDamping = true;
-            controls.dampingFactor = 0.05;
-            controls.minDistance = 6.5; // Zoom limits
-            controls.maxDistance = 25;
-            controls.autoRotate = true;
-            controls.autoRotateSpeed = 0.15; // Slower auto-rotate
-            controls.target.set(0, 0, 0); // Ensure target is center
+            controls.enableDamping = true; controls.dampingFactor = 0.05;
+            controls.minDistance = 6.5; controls.maxDistance = 25;
+            controls.autoRotate = true; controls.autoRotateSpeed = 0.15;
+            controls.target.set(0, 0, 0);
 
-            // Raycasting for marker interaction
             const raycaster = new THREE.Raycaster();
             const mouse = new THREE.Vector2();
-            let activeMarkerGroup = null; // Stores the THREE.Group of the active marker
+            let activeMarkerGroup = null;
             let popupIsPinned = false;
             let popupCloseTimer = null;
 
@@ -1212,18 +1126,13 @@
                 const rect = renderer.domElement.getBoundingClientRect();
                 mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
                 mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-
                 raycaster.setFromCamera(mouse, camera);
-                const intersects = raycaster.intersectObjects(markersGroup.children, true); // true for recursive
+                const intersects = raycaster.intersectObjects(markersGroup.children, true);
                 const markerHit = intersects.find(hit => hit.object.userData.isMarkerMesh);
-
                 if (markerHit) {
-                    const markerGroup = markerHit.object.parent; // The THREE.Group
+                    const markerGroup = markerHit.object.parent;
                     renderer.domElement.style.cursor = 'pointer';
-                    if (controls.autoRotate) {
-                        controls._wasAutoRotating = true; // Store state
-                        controls.autoRotate = false;
-                    }
+                    if (controls.autoRotate) { controls._wasAutoRotating = true; controls.autoRotate = false; }
                     if (activeMarkerGroup !== markerGroup && !popupIsPinned) {
                         if (activeMarkerGroup) gsap.to(activeMarkerGroup.scale, { x: 1, y: 1, z: 1, duration: 0.2 });
                         activeMarkerGroup = markerGroup;
@@ -1236,11 +1145,10 @@
                         if (popupCloseTimer) clearTimeout(popupCloseTimer);
                         popupCloseTimer = setTimeout(() => {
                             gsap.to(activeMarkerGroup.scale, { x: 1, y: 1, z: 1, duration: 0.2 });
-                            hideAllGlobePopups();
-                            activeMarkerGroup = null;
+                            hideAllGlobePopups(); activeMarkerGroup = null;
                             if (controls._wasAutoRotating) controls.autoRotate = true;
                             popupCloseTimer = null;
-                        }, 200); // Shorter delay
+                        }, 200);
                     }
                 }
             });
@@ -1249,12 +1157,10 @@
                 raycaster.setFromCamera(mouse, camera);
                 const intersects = raycaster.intersectObjects(markersGroup.children, true);
                 const markerHit = intersects.find(hit => hit.object.userData.isMarkerMesh);
-
                 if (markerHit) {
                     const markerGroup = markerHit.object.parent;
                     const popupId = markerGroup.userData.popupId;
                     const popup = document.getElementById(popupId);
-
                     if (popup && popup.style.display === 'block') {
                         popupIsPinned = !popupIsPinned;
                         popup.dataset.pinned = popupIsPinned ? "true" : "false";
@@ -1265,11 +1171,9 @@
                         }
                         if (!popupIsPinned && controls._wasAutoRotating) controls.autoRotate = true;
                     } else {
-                        // If popup wasn't shown, show and pin it (or just show if you prefer)
                         showGlobePopup(markerGroup, event.clientX, event.clientY);
-                        // You might want to auto-pin on click or have separate logic
                     }
-                } else { // Clicked on globe, not a marker
+                } else {
                     if (!popupIsPinned) {
                         hideAllGlobePopups();
                         if (activeMarkerGroup) {
@@ -1284,14 +1188,14 @@
             function showGlobePopup(markerGroup, mouseX, mouseY) {
                 if (popupCloseTimer) clearTimeout(popupCloseTimer);
                 if (!popupIsPinned) hideAllGlobePopups();
-
                 const popupId = markerGroup.userData.popupId;
                 const popup = document.getElementById(popupId);
                 if (!popup) return;
-
                 popup.dataset.pinned = popupIsPinned ? "true" : "false";
 
-                const { name, countryName, countryCode, visitDate, index } = markerGroup.userData; // Ensure 'countryName' is used here from markerGroup.userData
+                // CAMBIATO: le proprietà di userData ora arrivano da VisitedCityMapPinViewModel
+                const { name, countryName, countryCode, visitDate, index, visitedCityId } = markerGroup.userData;
+
                 popup.innerHTML = `
                             <div style="padding: 12px; background-color: #fff; border-bottom: 1px solid #eee; display: flex; align-items: center; position: relative;">
                                 <img src="/images/cities/${countryCode?.toLowerCase()}-city.jpg" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" alt="${name}" style="width: 50px; height: 50px; border-radius: 4px; object-fit: cover; margin-right: 10px;">
@@ -1307,37 +1211,37 @@
                             <div style="padding: 15px;">
                                 <p style="margin: 0 0 12px; font-size: 0.85rem; line-height: 1.4; color: #555;">Hai visitato ${name}!</p>
                                 <div style="text-align: right;">
-                                    <button class="details-button btn btn-sm btn-primary" data-index="${index}">Vedi dettagli</button>
+        @* CAMBIATO: Passa visitedCityId se necessario, o l'indice per Timeline *@
+                                    <button class="details-button btn btn-sm btn-primary" data-visitedcityid="${visitedCityId}" data-index="${index}">Vedi dettagli</button>
                                 </div>
                             </div>`;
 
                 const pinBtn = popup.querySelector('.pin-button');
                 if (pinBtn) pinBtn.onclick = (e) => {
-                    e.stopPropagation();
-                    popupIsPinned = !popupIsPinned;
-                    popup.dataset.pinned = popupIsPinned;
+                    e.stopPropagation(); popupIsPinned = !popupIsPinned; popup.dataset.pinned = popupIsPinned;
                     pinBtn.style.transform = popupIsPinned ? 'rotate(-45deg)' : 'rotate(0)';
                     pinBtn.style.color = popupIsPinned ? 'var(--primary-color)' : '#999';
                     if (!popupIsPinned && controls._wasAutoRotating) controls.autoRotate = true;
                 };
                 const closeBtn = popup.querySelector('.popup-close');
                 if (closeBtn) closeBtn.onclick = () => {
-                    popup.style.display = 'none';
-                    popupIsPinned = false;
-                    if (activeMarkerGroup === markerGroup) activeMarkerGroup = null; // Clear if this was the active one
+                    popup.style.display = 'none'; popupIsPinned = false;
+                    if (activeMarkerGroup === markerGroup) activeMarkerGroup = null;
                     if (controls._wasAutoRotating) controls.autoRotate = true;
                 };
                 const detailsBtn = popup.querySelector('.details-button');
-                if (detailsBtn) detailsBtn.onclick = () => window.location.href = `/Timeline?highlight=${markerGroup.userData.index}`;
+                if (detailsBtn) {
+                    // Decidi a cosa deve portare "Vedi dettagli".
+                    // Se alla Timeline evidenziando l'indice, l'indice è ancora utile.
+                    // Se a una pagina di dettaglio della visita specifica, userai visitedCityId.
+                    detailsBtn.onclick = () => window.location.href = `/Timeline?highlightIndex=${markerGroup.userData.index}`; // O usa visitedCityId
+                }
 
-                let x = mouseX + 20;
-                let y = mouseY - popup.offsetHeight / 2; // Center vertically initially
+                let x = mouseX + 20; let y = mouseY - popup.offsetHeight / 2;
                 if (x + popup.offsetWidth > window.innerWidth) x = mouseX - popup.offsetWidth - 20;
                 if (y + popup.offsetHeight > window.innerHeight) y = window.innerHeight - popup.offsetHeight - 10;
                 if (y < 10) y = 10;
-
-                popup.style.left = `${x}px`;
-                popup.style.top = `${y}px`;
+                popup.style.left = `${x}px`; popup.style.top = `${y}px`;
                 popup.style.display = 'block';
                 gsap.fromTo(popup, { opacity: 0, transform: 'scale(0.95)' }, { opacity: 1, transform: 'scale(1)', duration: 0.2 });
             }
@@ -1348,28 +1252,22 @@
                     if (p.dataset.pinned !== "true") p.style.display = 'none';
                 });
             }
-
             function isMouseOverPopup(event) {
                 return event.target.closest('.country-popup') !== null;
             }
 
-            // Animation loop
             let lastCloudRotationTime = 0;
             function animate(time) {
                 requestAnimationFrame(animate);
                 controls.update();
-
-                // Animate clouds slowly
-                if (time - lastCloudRotationTime > 30) { // Update cloud rotation less frequently
+                if (time - lastCloudRotationTime > 30) {
                     clouds.rotation.y += 0.0001;
                     lastCloudRotationTime = time;
                 }
-
                 renderer.render(scene, camera);
             }
-            animate(0); // Start animation
+            animate(0);
 
-            // Handle window resize
             window.addEventListener('resize', () => {
                 camera.aspect = container.offsetWidth / container.offsetHeight;
                 camera.updateProjectionMatrix();
@@ -1379,12 +1277,11 @@
 
         function createStarfield(radius) {
             const vertices = [];
-            for (let i = 0; i < 15000; i++) { // More stars
+            for (let i = 0; i < 15000; i++) {
                 const x = THREE.MathUtils.randFloatSpread(radius * 2);
                 const y = THREE.MathUtils.randFloatSpread(radius * 2);
                 const z = THREE.MathUtils.randFloatSpread(radius * 2);
-                if (new THREE.Vector3(x, y, z).length() > radius / 2) // Ensure they are far enough
-                    vertices.push(x, y, z);
+                if (new THREE.Vector3(x, y, z).length() > radius / 2) vertices.push(x, y, z);
             }
             const geometry = new THREE.BufferGeometry();
             geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
@@ -1394,56 +1291,50 @@
 
         function handleTextureError(errorSource) {
             console.error("Errore caricamento texture:", errorSource.src);
-            // Return a placeholder texture (e.g., a 1x1 blue pixel)
-            const canvas = document.createElement('canvas');
-            canvas.width = 1; canvas.height = 1;
-            const context = canvas.getContext('2d');
-            context.fillStyle = '#0000FF'; // Blue
-            context.fillRect(0, 0, 1, 1);
+            const canvas = document.createElement('canvas'); canvas.width = 1; canvas.height = 1;
+            const context = canvas.getContext('2d'); context.fillStyle = '#0000FF'; context.fillRect(0, 0, 1, 1);
             return new THREE.CanvasTexture(canvas);
         }
 
         function addGlobeMarker(pinData, index, parentMarkersGroup) {
             const latRad = pinData.lat * (Math.PI / 180);
-            // Use -pinData.lng for lonRad as part of the intermediate calculation 
-            // that, when later adjusted by negating x and z, matches the previous working formula
-            const lonRad = -pinData.lng * (Math.PI / 180); 
+            const lonRad = -pinData.lng * (Math.PI / 180);
             const earthRadius = 5;
-
             const markerGroup = new THREE.Group();
-
-            // Calculate intermediate position based on current logic
             let xPos_calc = Math.cos(latRad) * Math.cos(lonRad) * earthRadius;
             let yPos_calc = Math.sin(latRad) * earthRadius;
             let zPos_calc = Math.cos(latRad) * Math.sin(lonRad) * earthRadius;
-
-            // Apply adjustment to match previous working formula: negate x and z
             markerGroup.position.set(-xPos_calc, yPos_calc, -zPos_calc);
-            
-            markerGroup.lookAt(0, 0, 0); // Orient towards center initially, then adjust
+            markerGroup.lookAt(0, 0, 0);
 
-            // Simple sphere marker
-            const markerGeometry = new THREE.SphereGeometry(0.05, 16, 16); // Smaller marker
+            const markerGeometry = new THREE.SphereGeometry(0.05, 16, 16);
             const markerMaterial = new THREE.MeshPhongMaterial({ color: 0xff5733, emissive: 0xff5733, emissiveIntensity: 0.6 });
             const markerMesh = new THREE.Mesh(markerGeometry, markerMaterial);
-            markerMesh.userData = { isMarkerMesh: true }; // For raycasting
+            markerMesh.userData = { isMarkerMesh: true };
             markerGroup.add(markerMesh);
 
-            // Pulsating glow (optional, can be performance intensive with many markers)
             const glowGeometry = new THREE.SphereGeometry(0.08, 16, 16);
             const glowMaterial = new THREE.MeshBasicMaterial({ color: 0xff5733, transparent: true, opacity: 0.3 });
             const glowMesh = new THREE.Mesh(glowGeometry, glowMaterial);
             markerGroup.add(glowMesh);
             gsap.to(glowMesh.scale, { x: 1.5, y: 1.5, z: 1.5, duration: 1, repeat: -1, yoyo: true, ease: "sine.inOut" });
 
-
-            markerGroup.userData = { ...pinData, index, popupId: `popup-globe-${index}` };
+            // CAMBIATO: Assicurati che userData includa tutte le proprietà necessarie da pinData
+            // pinData ora è un oggetto basato su VisitedCityMapPinViewModel
+            markerGroup.userData = {
+                name: pinData.name,
+                countryName: pinData.countryName,
+                countryCode: pinData.countryCode,
+                visitDate: pinData.visitDate,
+                visitedCityId: pinData.visitedCityId, // Importante per azioni specifiche
+                index: index, // Mantenuto per coerenza se la Timeline si basa su questo
+                popupId: `popup-globe-${index}`
+            };
             parentMarkersGroup.add(markerGroup);
 
-            // Create DOM element for popup (initially hidden)
             const popupEl = document.createElement('div');
             popupEl.id = markerGroup.userData.popupId;
-            popupEl.className = 'country-popup'; // From your CSS
+            popupEl.className = 'country-popup';
             popupEl.style.display = 'none';
             document.body.appendChild(popupEl);
         }
@@ -1452,12 +1343,7 @@
             const zoomInBtn = document.getElementById('zoomInBtn');
             const zoomOutBtn = document.getElementById('zoomOutBtn');
             const resetViewBtn = document.getElementById('resetViewBtn');
-
-            if (!controls) { // Check if controls are initialized
-                console.warn("OrbitControls not ready for setupGlobeControls.");
-                return;
-            }
-
+            if (!controls) { console.warn("OrbitControls not ready for setupGlobeControls."); return; }
             if (zoomInBtn) zoomInBtn.addEventListener('click', () => { controls.dollyOut(1.2); controls.update(); });
             if (zoomOutBtn) zoomOutBtn.addEventListener('click', () => { controls.dollyIn(1.2); controls.update(); });
             if (resetViewBtn) resetViewBtn.addEventListener('click', () => {
@@ -1466,41 +1352,20 @@
             });
         }
 
-        // Fly to specific coordinates on the globe
         function flyToLocation(lat, lng) {
-            if (!camera || !controls || !earth) {
-                console.warn("Cannot flyToLocation: Globe components not ready.");
-                return;
-            }
-
+            if (!camera || !controls || !earth) { console.warn("Cannot flyToLocation: Globe components not ready."); return; }
             controls.autoRotate = false;
-            const targetDistance = 7.5; // How close to fly
-
-            // Calculate target camera position using the same logic as markers for consistency
+            const targetDistance = 7.5;
             const latRad = lat * (Math.PI / 180);
-            const lonRad_intermediate = -lng * (Math.PI / 180); // Intermediate step
-
+            const lonRad_intermediate = -lng * (Math.PI / 180);
             let targetX_calc = Math.cos(latRad) * Math.cos(lonRad_intermediate) * targetDistance;
             let targetY_calc = Math.sin(latRad) * targetDistance;
             let targetZ_calc = Math.cos(latRad) * Math.sin(lonRad_intermediate) * targetDistance;
-            
-            // Apply the same adjustment as markers
             const targetPosition = new THREE.Vector3(-targetX_calc, targetY_calc, -targetZ_calc);
-
-
             gsap.to(camera.position, {
-                x: targetPosition.x,
-                y: targetPosition.y,
-                z: targetPosition.z,
-                duration: 1.5,
-                ease: "power2.inOut",
-                onUpdate: () => camera.lookAt(earth.position), // Keep looking at Earth's center
-                onComplete: () => {
-                    // Optional: resume auto-rotate after a delay
-                    // setTimeout(() => { if (controls && controls._wasAutoRotating) controls.autoRotate = true; }, 2000);
-                }
+                x: targetPosition.x, y: targetPosition.y, z: targetPosition.z, duration: 1.5, ease: "power2.inOut",
+                onUpdate: () => camera.lookAt(earth.position)
             });
-            // Also ensure controls target is updated if it moved
             gsap.to(controls.target, { x: 0, y: 0, z: 0, duration: 1.5, ease: "power2.inOut" });
         }
     </script>
