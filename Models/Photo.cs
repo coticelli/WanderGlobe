@@ -22,6 +22,8 @@ namespace WanderGlobe.Models
         public DateTime UploadDate { get; set; } = DateTime.UtcNow;
         
         public int TravelJournalCountryId { get; set; }
+
+        public DateTime TravelJournalVisitDate { get; set; } 
         
         public string TravelJournalUserId { get; set; } = string.Empty;
         

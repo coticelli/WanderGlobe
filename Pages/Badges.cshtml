@@ -1,0 +1,221 @@
+@page "/Badges"
+@model WanderGlobe.Pages.BadgesModel
+@{
+    ViewData["Title"] = "I Tuoi Trofei di Viaggio";
+    // Funzione per mappare la rarità a una classe CSS per il colore del bordo/glow
+    Func<BadgeRarity, string> GetRarityClass = rarity => {
+        return rarity switch {
+            BadgeRarity.NonComune => "rarity-non-comune",
+            BadgeRarity.Raro => "rarity-raro",
+            BadgeRarity.Epico => "rarity-epico",
+            BadgeRarity.Leggendario => "rarity-leggendario",
+            _ => "rarity-comune",
+        };
+    };
+     // Funzione per mappare la categoria a una classe CSS per il colore di accento
+    Func<string, string> GetCategoryColorClass = category => {
+        return category switch {
+            "Primi Passi" => "category-primi-passi",
+            "Esploratore Globale" => "category-esploratore",
+            "Conquistatore di Continenti" => "category-continenti",
+            "Pianificazione e Sogni" => "category-sogni",
+            "Maestria Fotografica" => "category-fotografia",
+            "Scrittore di Viaggi" => "category-scrittore",
+            "Collezionista" => "category-collezionista",
+            "Sfide Speciali" => "category-sfide",
+            _ => "category-default",
+        };
+    };
+}
+
+@section Styles {
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="~/css/badges.css" asp-append-version="true" />
+}
+
+<div class="badges-page-container">
+    <canvas id="confetti-canvas"></canvas>
+
+    <div class="badges-main-header">
+        <h1><i class="fas fa-award"></i> Le Tue Conquiste nel Mondo <i class="fas fa-award"></i></h1>
+        <p>Celebra ogni traguardo del tuo viaggio con WanderGlobe!</p>
+    </div>
+
+    <div class="overall-progress-section">
+        <h3>Progresso Totale Badge</h3>
+        <div class="overall-progress-bar-container">
+            <div class="overall-progress-bar-fill" style="width: @Model.OverallProgressPercentage%;">
+                <span>@Model.BadgesEarnedCount / @Model.TotalBadgesAvailable (@Model.OverallProgressPercentage%)</span>
+            </div>
+        </div>
+    </div>
+
+
+    @if (!Model.UserBadges.Any())
+    {
+        <p class="text-center empty-state-badges">
+            <i class="fas fa-map-signs fa-3x"></i><br>
+            La tua bacheca dei trofei è ancora vuota. <br>Inizia ad esplorare e a usare WanderGlobe per sbloccare i tuoi primi badge!
+        </p>
+    }
+    else
+    {
+        var groupedBadges = Model.UserBadges.GroupBy(b => b.Category)
+                                         .OrderBy(g => Model.GetCategoryOrder(g.Key)); // Usa il metodo del PageModel
+
+        foreach (var group in groupedBadges)
+        {
+            if (group.All(b => b.IsSecret && !b.IsEarned) && group.Key == "Sfide Speciali") // Non mostrare la categoria "Sfide Speciali" se tutti i suoi badge sono segreti e non sbloccati
+            {
+                continue;
+            }
+
+            <div class="badge-category-wrapper @GetCategoryColorClass(group.Key)">
+                <h2 class="category-title">
+                     @switch(group.Key) { // Icone per categorie
+                        case "Primi Passi": <i class="fas fa-shoe-prints"></i>; break;
+                        case "Esploratore Globale": <i class="fas fa-globe-americas"></i>; break;
+                        case "Conquistatore di Continenti": <i class="fas fa-flag-checkered"></i>; break;
+                        case "Pianificazione e Sogni": <i class="fas fa-cloud-moon-rain"></i>; break;
+                        case "Maestria Fotografica": <i class="fas fa-camera-retro"></i>; break;
+                        case "Scrittore di Viaggi": <i class="fas fa-pen-fancy"></i>; break;
+                        case "Collezionista": <i class="fas fa-gem"></i>; break;
+                        case "Sfide Speciali": <i class="fas fa-star-of-life"></i>; break;
+                        default: <i class="fas fa-stream"></i>; break;
+                     }
+                    @group.Key
+                </h2>
+                <div class="badges-grid-display">
+                    @foreach (var badge in group.OrderByDescending(b => b.IsEarned).ThenBy(b => b.Rarity).ThenBy(b => b.Name))
+                    {
+                        if (badge.IsSecret && !badge.IsEarned)
+                        {
+                            // Potresti mostrare un placeholder per i badge segreti non ancora sbloccati
+                            // o semplicemente saltarli. Per ora li salto.
+                            continue;
+                        }
+                        var rarityClass = GetRarityClass(badge.Rarity);
+                        var categoryColorClass = GetCategoryColorClass(badge.Category);
+
+                        <div class="badge-card-item @(badge.IsEarned ? "earned" : "locked") @rarityClass @categoryColorClass @(badge.IsSecret ? "secret-badge" : "")" 
+                             data-badge-id="@badge.Id" 
+                             data-earned="@badge.IsEarned.ToString().ToLower()">
+                            
+                            @if(badge.IsEarned) {
+                                <div class="badge-shine-effect"></div>
+                            }
+
+                            <div class="badge-icon-container">
+                                <i class="@badge.IconClass"></i>
+                                @if (badge.IsEarned)
+                                {
+                                    <span class="earned-checkmark-overlay"><i class="fas fa-check"></i></span>
+                                } else if (badge.IsSecret) {
+                                     <span class="secret-icon-overlay"><i class="fas fa-question"></i></span>
+                                }
+                                else
+                                {
+                                     <span class="lock-icon-overlay"><i class="fas fa-lock"></i></span>
+                                }
+                            </div>
+                            <div class="badge-details-content">
+                                <h3 class="badge-title">@badge.Name</h3>
+                                @if (badge.IsSecret && !badge.IsEarned)
+                                {
+                                    <p class="badge-desc">???</p>
+                                    <p class="badge-crit"><em>Sblocca questo badge misterioso per scoprirne i dettagli!</em></p>
+                                }
+                                else
+                                {
+                                    <p class="badge-desc">@badge.Description</p>
+                                    <p class="badge-crit"><em>Obiettivo: @badge.CriteriaDescription</em></p>
+                                }
+                                
+
+                                @if (!badge.IsEarned && badge.ProgressTarget > 1 && badge.ProgressCurrent < badge.ProgressTarget && !badge.IsSecret)
+                                {
+                                    <div class="badge-item-progress-container">
+                                        <div class="badge-item-progress-bar">
+                                            <div class="badge-item-progress-fill" style="width: @badge.ProgressPercentage%;" 
+                                                 title="@badge.ProgressCurrent / @badge.ProgressTarget"></div>
+                                        </div>
+                                        <span class="badge-item-progress-text">@badge.ProgressCurrent / @badge.ProgressTarget</span>
+                                    </div>
+                                }
+                                <div class="badge-rarity-tag @rarityClass">@badge.Rarity.ToString()</div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    }
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const earnedBadges = document.querySelectorAll('.badge-card-item[data-earned="true"]');
+            
+            // Animazione coriandoli per ogni badge sbloccato al caricamento della pagina
+            earnedBadges.forEach((badgeCard, index) => {
+                // Ritarda leggermente l'animazione per ogni card per un effetto scaglionato
+                setTimeout(() => {
+                    fireConfettiForBadge(badgeCard);
+                }, index * 200); // 200ms di ritardo tra un badge e l'altro
+
+                badgeCard.addEventListener('mouseenter', () => {
+                    badgeCard.style.transform = 'scale(1.03)';
+                });
+                badgeCard.addEventListener('mouseleave', () => {
+                    badgeCard.style.transform = 'scale(1)';
+                });
+            });
+
+            // Aggiungi un po' di interattività o animazioni extra se vuoi
+            const allBadgeCards = document.querySelectorAll('.badge-card-item');
+            allBadgeCards.forEach(card => {
+                // Esempio: effetto glow al passaggio del mouse
+                card.addEventListener('mousemove', (e) => {
+                    if (card.classList.contains('earned')) {
+                        const rect = card.getBoundingClientRect();
+                        const x = e.clientX - rect.left;
+                        const y = e.clientY - rect.top;
+                        card.style.setProperty('--mouse-x', `${x}px`);
+                        card.style.setProperty('--mouse-y', `${y}px`);
+                    }
+                });
+            });
+        });
+
+        function fireConfettiForBadge(badgeElement) {
+            const rect = badgeElement.getBoundingClientRect();
+            const x = (rect.left + rect.right) / 2 / window.innerWidth;
+            const y = (rect.top + rect.bottom) / 2 / window.innerHeight;
+
+            // Configurazione base coriandoli
+            const defaults = {
+                origin: { x: x, y: y },
+                spread: 70,
+                particleCount: 50,
+                scalar: 0.8, // Dimensione dei coriandoli
+                ticks: 100, // Durata dell'animazione
+                gravity: 0.8
+            };
+
+            function fire(particleRatio, opts) {
+                confetti(Object.assign({}, defaults, opts, {
+                    particleCount: Math.floor(defaults.particleCount * particleRatio)
+                }));
+            }
+
+            // Effetto "scoppio"
+            fire(0.25, { spread: 26, startVelocity: 55 });
+            fire(0.2, { spread: 60 });
+            fire(0.35, { spread: 100, decay: 0.91, scalar: 1 });
+            fire(0.1, { spread: 120, startVelocity: 25, decay: 0.92, scalar: 0.8 });
+            fire(0.1, { spread: 120, startVelocity: 45 });
+        }
+    </script>
+}

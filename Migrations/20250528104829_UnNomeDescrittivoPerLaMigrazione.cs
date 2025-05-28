@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace WanderGlobe.Migrations
 {
-    public partial class InitialCreate : Migration
+    public partial class UnNomeDescrittivoPerLaMigrazione : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -294,6 +294,35 @@ namespace WanderGlobe.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "DreamCountries",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    ApplicationUserId = table.Column<string>(type: "TEXT", nullable: false),
+                    CountryId = table.Column<int>(type: "INTEGER", nullable: false),
+                    DateAdded = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    Notes = table.Column<string>(type: "TEXT", nullable: true),
+                    IsPlanned = table.Column<bool>(type: "INTEGER", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_DreamCountries", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_DreamCountries_AspNetUsers_ApplicationUserId",
+                        column: x => x.ApplicationUserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_DreamCountries_Countries_CountryId",
+                        column: x => x.CountryId,
+                        principalTable: "Countries",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "TravelJournals",
                 columns: table => new
                 {
@@ -305,7 +334,7 @@ namespace WanderGlobe.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_TravelJournals", x => new { x.UserId, x.CountryId });
+                    table.PrimaryKey("PK_TravelJournals", x => new { x.UserId, x.CountryId, x.VisitDate });
                     table.ForeignKey(
                         name: "FK_TravelJournals_AspNetUsers_UserId",
                         column: x => x.UserId,
@@ -378,22 +407,24 @@ namespace WanderGlobe.Migrations
                 {
                     Id = table.Column<int>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
+                    UserId = table.Column<string>(type: "TEXT", nullable: false),
                     FileName = table.Column<string>(type: "TEXT", nullable: false),
                     FilePath = table.Column<string>(type: "TEXT", nullable: false),
+                    Url = table.Column<string>(type: "TEXT", nullable: false),
                     Caption = table.Column<string>(type: "TEXT", nullable: false),
-                    TravelJournalId = table.Column<int>(type: "INTEGER", nullable: false),
-                    TravelJournalUserId = table.Column<string>(type: "TEXT", nullable: false),
+                    UploadDate = table.Column<DateTime>(type: "TEXT", nullable: false),
                     TravelJournalCountryId = table.Column<int>(type: "INTEGER", nullable: false),
-                    UploadedAt = table.Column<DateTime>(type: "TEXT", nullable: false)
+                    TravelJournalVisitDate = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    TravelJournalUserId = table.Column<string>(type: "TEXT", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Photos", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Photos_TravelJournals_TravelJournalUserId_TravelJournalCountryId",
-                        columns: x => new { x.TravelJournalUserId, x.TravelJournalCountryId },
+                        name: "FK_Photos_TravelJournals_TravelJournalUserId_TravelJournalCountryId_TravelJournalVisitDate",
+                        columns: x => new { x.TravelJournalUserId, x.TravelJournalCountryId, x.TravelJournalVisitDate },
                         principalTable: "TravelJournals",
-                        principalColumns: new[] { "UserId", "CountryId" },
+                        principalColumns: new[] { "UserId", "CountryId", "VisitDate" },
                         onDelete: ReferentialAction.Cascade);
                 });
 
@@ -1085,14 +1116,24 @@ namespace WanderGlobe.Migrations
                 column: "CountryId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_DreamCountries_ApplicationUserId",
+                table: "DreamCountries",
+                column: "ApplicationUserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_DreamCountries_CountryId",
+                table: "DreamCountries",
+                column: "CountryId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_DreamDestinations_ApplicationUserId",
                 table: "DreamDestinations",
                 column: "ApplicationUserId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Photos_TravelJournalUserId_TravelJournalCountryId",
+                name: "IX_Photos_TravelJournalUserId_TravelJournalCountryId_TravelJournalVisitDate",
                 table: "Photos",
-                columns: new[] { "TravelJournalUserId", "TravelJournalCountryId" });
+                columns: new[] { "TravelJournalUserId", "TravelJournalCountryId", "TravelJournalVisitDate" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_TravelJournals_CountryId",
@@ -1132,6 +1173,9 @@ namespace WanderGlobe.Migrations
 
             migrationBuilder.DropTable(
                 name: "Cities");
+
+            migrationBuilder.DropTable(
+                name: "DreamCountries");
 
             migrationBuilder.DropTable(
                 name: "DreamDestinations");

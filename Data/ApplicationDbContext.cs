@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Linq;
 using WanderGlobe.Models;
-using WanderGlobe.Models.Custom;
+using WanderGlobe.Models.Custom; // Assicurati che DreamDestination, PlannedTrip, ChecklistItem siano qui se non in Models
 
 namespace WanderGlobe.Data
 {
@@ -18,18 +18,19 @@ namespace WanderGlobe.Data
         public DbSet<City> Cities { get; set; } = null!;
         public DbSet<VisitedCountry> VisitedCountries { get; set; } = null!;
         public DbSet<TravelJournal> TravelJournals { get; set; } = null!;
-        public DbSet<Badge> Badges { get; set; } = null!;
+        public DbSet<Badge> Badges { get; set; } = null!; // Assumo tu abbia una classe Badge.cs per i tipi di badge
         public DbSet<UserBadge> UserBadges { get; set; } = null!;
         public DbSet<Photo> Photos { get; set; } = null!;
-        public DbSet<DreamDestination> DreamDestinations { get; set; } = null!;
-        public DbSet<PlannedTrip> PlannedTrips { get; set; } = null!;
-        public DbSet<ChecklistItem> ChecklistItems { get; set; } = null!;
-        
+        public DbSet<DreamDestination> DreamDestinations { get; set; } = null!; // Da WanderGlobe.Models.Custom
+        public DbSet<PlannedTrip> PlannedTrips { get; set; } = null!; // Da WanderGlobe.Models.Custom
+        public DbSet<ChecklistItem> ChecklistItems { get; set; } = null!; // Da WanderGlobe.Models.Custom
+        public DbSet<DreamCountry> DreamCountries { get; set; } = null!; // Assumo tu abbia questa classe modello
+
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
 
-            // Configurazione relazioni
+            // --- Configurazione VisitedCountry ---
             builder.Entity<VisitedCountry>()
                 .HasKey(vc => new { vc.UserId, vc.CountryId });
 
@@ -43,8 +44,11 @@ namespace WanderGlobe.Data
                 .WithMany(c => c.VisitedByUsers)
                 .HasForeignKey(vc => vc.CountryId);
 
+            // --- Configurazione TravelJournal ---
+            // IMPORTANTE: Allineare la chiave primaria con il modello e la logica dei badge.
+            // Se un journal è unico per Utente, Paese E Data della visita, allora VisitDate deve essere nella PK.
             builder.Entity<TravelJournal>()
-                .HasKey(tj => new { tj.UserId, tj.CountryId });
+                .HasKey(tj => new { tj.UserId, tj.CountryId, tj.VisitDate }); // AGGIUNTO VisitDate alla PK
 
             builder.Entity<TravelJournal>()
                 .HasOne(tj => tj.User)
@@ -56,41 +60,59 @@ namespace WanderGlobe.Data
                 .WithMany(c => c.TravelJournals)
                 .HasForeignKey(tj => tj.CountryId);
 
-            // Configura PlannedTrip con id di tipo string
+            // --- Configurazione Photo e relazione con TravelJournal ---
+            builder.Entity<Photo>(entity =>
+            {
+                entity.HasKey(p => p.Id); // Chiave primaria di Photo
+
+                // Relazione con TravelJournal
+                entity.HasOne(p => p.TravelJournal)
+                      .WithMany() // Se TravelJournal avesse ICollection<Photo>, sarebbe WithMany(tj => tj.Photos)
+                      .HasForeignKey(p => new { p.TravelJournalUserId, p.TravelJournalCountryId, p.TravelJournalVisitDate }) // FK in Photo
+                      .HasPrincipalKey(tj => new { tj.UserId, tj.CountryId, tj.VisitDate }); // PK in TravelJournal
+            });
+
+
+            // --- Configurazione PlannedTrip e ChecklistItem ---
             builder.Entity<PlannedTrip>()
                 .Property(p => p.Id)
-                .HasMaxLength(50);
-                
-            // Configura ChecklistItem con PlannedTripId di tipo string
+                .HasMaxLength(50); // Assumendo che l'ID sia generato e gestito come stringa
+
             builder.Entity<ChecklistItem>()
                 .Property(c => c.PlannedTripId)
                 .HasMaxLength(50);
-                
-            // Configura la relazione tra PlannedTrip e ChecklistItem
+
             builder.Entity<ChecklistItem>()
-                .HasOne<PlannedTrip>()
+                .HasOne<PlannedTrip>() // Non serve specificare la proprietà di navigazione se non c'è in PlannedTrip
                 .WithMany(p => p.Checklist)
                 .HasForeignKey(c => c.PlannedTripId);
-                
+
+            // --- Configurazione UserBadge ---
             builder.Entity<UserBadge>()
                 .HasKey(ub => new { ub.UserId, ub.BadgeId });
-                
+
+            // --- Configurazione DreamDestination (da Models.Custom) ---
+            // Se DreamDestination ha una chiave semplice Id e relazioni, configurarle qui se necessario.
+            // Ad esempio, se DreamDestination avesse una relazione con Country (modello, non custom)
+            // builder.Entity<DreamDestination>()
+            //     .HasOne(dd => dd.Country) // Se DreamDestination avesse una prop Country
+            //     .WithMany()
+            //     .HasForeignKey(dd => dd.CountryId); // Se DreamDestination avesse CountryId
+
             // Ignora le proprietà di tipo List<string> per evitare che EF le consideri come entità
-            builder.Ignore<List<string>>();
+            // Questo è appropriato se List<string> Tags in DreamDestination NON è mappato come tabella separata
+            // Se vuoi che Tags sia una tabella relazionale, dovrai creare un'entità Tag e una tabella di join.
+            builder.Entity<DreamDestination>().Ignore(dd => dd.Tags);
+            // builder.Ignore<List<string>>(); // Questo è troppo generico, meglio specificare per entità.
 
-            // Seed dei dati dei paesi
+            // Seed dei dati
             SeedCountries(builder);
-
-            // Configure the Photo to TravelJournal relationship
-            builder.Entity<Photo>()
-                .HasOne(p => p.TravelJournal)
-                .WithMany()
-                .HasForeignKey(p => new { p.TravelJournalUserId, p.TravelJournalCountryId });
+            SeedCapitalCities(builder); // Chiamata già presente in SeedCountries tramite SeedMajorCities
+            SeedMajorCities(builder); // Chiamata già presente in SeedCountries, assicurati che non causi duplicati se chiamata due volte
         }
 
         private void SeedCountries(ModelBuilder builder)
         {
-            // Seed dei dati dei paesi con coordinate complete
             var countries = new List<Country>
             {
                 new Country { Id = 1, Name = "Italia", Code = "IT", Continent = "Europa", Latitude = 41.9028, Longitude = 12.4964 },
@@ -129,14 +151,7 @@ namespace WanderGlobe.Data
                 new Country { Id = 34, Name = "Malesia", Code = "MY", Continent = "Asia", Latitude = 3.1390, Longitude = 101.6869 },
                 new Country { Id = 35, Name = "Turchia", Code = "TR", Continent = "Europa/Asia", Latitude = 39.9334, Longitude = 32.8597 }
             };
-            
             builder.Entity<Country>().HasData(countries);
-            
-            // Seed delle città capitali
-            SeedCapitalCities(builder);
-            
-            // Seed delle città principali
-            SeedMajorCities(builder);
         }
 
         private void SeedCapitalCities(ModelBuilder builder)
@@ -179,18 +194,14 @@ namespace WanderGlobe.Data
                 new City { Id = 34, Name = "Kuala Lumpur", IsCapital = true, CountryId = 34, Latitude = 3.1390, Longitude = 101.6869 },
                 new City { Id = 35, Name = "Ankara", IsCapital = true, CountryId = 35, Latitude = 39.9334, Longitude = 32.8597 }
             };
-            
             builder.Entity<City>().HasData(capitals);
         }
-        
+
         private void SeedMajorCities(ModelBuilder builder)
         {
-            // ID inizia da 36 perché abbiamo già 35 capitali
-            int id = 36;
-            
+            int id = 36; // Continua da dove si sono fermate le capitali
             var majorCities = new List<City>
             {
-                // Italia (ID: 1)
                 new City { Id = id++, Name = "Milano", IsCapital = false, CountryId = 1, Latitude = 45.4642, Longitude = 9.1900 },
                 new City { Id = id++, Name = "Napoli", IsCapital = false, CountryId = 1, Latitude = 40.8518, Longitude = 14.2681 },
                 new City { Id = id++, Name = "Firenze", IsCapital = false, CountryId = 1, Latitude = 43.7696, Longitude = 11.2558 },
@@ -198,16 +209,12 @@ namespace WanderGlobe.Data
                 new City { Id = id++, Name = "Bologna", IsCapital = false, CountryId = 1, Latitude = 44.4949, Longitude = 11.3426 },
                 new City { Id = id++, Name = "Torino", IsCapital = false, CountryId = 1, Latitude = 45.0703, Longitude = 7.6869 },
                 new City { Id = id++, Name = "Palermo", IsCapital = false, CountryId = 1, Latitude = 38.1157, Longitude = 13.3615 },
-                
-                // Francia (ID: 2)
                 new City { Id = id++, Name = "Marsiglia", IsCapital = false, CountryId = 2, Latitude = 43.2965, Longitude = 5.3698 },
                 new City { Id = id++, Name = "Lione", IsCapital = false, CountryId = 2, Latitude = 45.7640, Longitude = 4.8357 },
                 new City { Id = id++, Name = "Nizza", IsCapital = false, CountryId = 2, Latitude = 43.7102, Longitude = 7.2620 },
                 new City { Id = id++, Name = "Bordeaux", IsCapital = false, CountryId = 2, Latitude = 44.8378, Longitude = -0.5792 },
                 new City { Id = id++, Name = "Tolosa", IsCapital = false, CountryId = 2, Latitude = 43.6047, Longitude = 1.4442 },
                 new City { Id = id++, Name = "Strasburgo", IsCapital = false, CountryId = 2, Latitude = 48.5734, Longitude = 7.7521 },
-                
-                // Stati Uniti (ID: 3)
                 new City { Id = id++, Name = "New York", IsCapital = false, CountryId = 3, Latitude = 40.7128, Longitude = -74.0060 },
                 new City { Id = id++, Name = "Los Angeles", IsCapital = false, CountryId = 3, Latitude = 34.0522, Longitude = -118.2437 },
                 new City { Id = id++, Name = "Chicago", IsCapital = false, CountryId = 3, Latitude = 41.8781, Longitude = -87.6298 },
@@ -215,66 +222,45 @@ namespace WanderGlobe.Data
                 new City { Id = id++, Name = "San Francisco", IsCapital = false, CountryId = 3, Latitude = 37.7749, Longitude = -122.4194 },
                 new City { Id = id++, Name = "Las Vegas", IsCapital = false, CountryId = 3, Latitude = 36.1699, Longitude = -115.1398 },
                 new City { Id = id++, Name = "Boston", IsCapital = false, CountryId = 3, Latitude = 42.3601, Longitude = -71.0589 },
-                
-                // Germania (ID: 4)
                 new City { Id = id++, Name = "Monaco", IsCapital = false, CountryId = 4, Latitude = 48.1351, Longitude = 11.5820 },
                 new City { Id = id++, Name = "Amburgo", IsCapital = false, CountryId = 4, Latitude = 53.5511, Longitude = 9.9937 },
                 new City { Id = id++, Name = "Francoforte", IsCapital = false, CountryId = 4, Latitude = 50.1109, Longitude = 8.6821 },
                 new City { Id = id++, Name = "Colonia", IsCapital = false, CountryId = 4, Latitude = 50.9375, Longitude = 6.9603 },
                 new City { Id = id++, Name = "Düsseldorf", IsCapital = false, CountryId = 4, Latitude = 51.2277, Longitude = 6.7735 },
-                
-                // Spagna (ID: 5)
                 new City { Id = id++, Name = "Barcellona", IsCapital = false, CountryId = 5, Latitude = 41.3851, Longitude = 2.1734 },
                 new City { Id = id++, Name = "Valencia", IsCapital = false, CountryId = 5, Latitude = 39.4699, Longitude = -0.3763 },
                 new City { Id = id++, Name = "Siviglia", IsCapital = false, CountryId = 5, Latitude = 37.3891, Longitude = -5.9845 },
                 new City { Id = id++, Name = "Bilbao", IsCapital = false, CountryId = 5, Latitude = 43.2630, Longitude = -2.9350 },
                 new City { Id = id++, Name = "Malaga", IsCapital = false, CountryId = 5, Latitude = 36.7213, Longitude = -4.4213 },
-                
-                // Regno Unito (ID: 11)
                 new City { Id = id++, Name = "Manchester", IsCapital = false, CountryId = 11, Latitude = 53.4808, Longitude = -2.2426 },
                 new City { Id = id++, Name = "Birmingham", IsCapital = false, CountryId = 11, Latitude = 52.4862, Longitude = -1.8904 },
                 new City { Id = id++, Name = "Glasgow", IsCapital = false, CountryId = 11, Latitude = 55.8642, Longitude = -4.2518 },
                 new City { Id = id++, Name = "Liverpool", IsCapital = false, CountryId = 11, Latitude = 53.4084, Longitude = -2.9916 },
                 new City { Id = id++, Name = "Edimburgo", IsCapital = false, CountryId = 11, Latitude = 55.9533, Longitude = -3.1883 },
-                
-                // Canada (ID: 12)
                 new City { Id = id++, Name = "Toronto", IsCapital = false, CountryId = 12, Latitude = 43.6532, Longitude = -79.3832 },
                 new City { Id = id++, Name = "Montreal", IsCapital = false, CountryId = 12, Latitude = 45.5017, Longitude = -73.5673 },
                 new City { Id = id++, Name = "Vancouver", IsCapital = false, CountryId = 12, Latitude = 49.2827, Longitude = -123.1207 },
                 new City { Id = id++, Name = "Calgary", IsCapital = false, CountryId = 12, Latitude = 51.0447, Longitude = -114.0719 },
-                
-                // Giappone (ID: 13)
                 new City { Id = id++, Name = "Osaka", IsCapital = false, CountryId = 13, Latitude = 34.6937, Longitude = 135.5023 },
                 new City { Id = id++, Name = "Kyoto", IsCapital = false, CountryId = 13, Latitude = 35.0116, Longitude = 135.7681 },
                 new City { Id = id++, Name = "Hiroshima", IsCapital = false, CountryId = 13, Latitude = 34.3853, Longitude = 132.4553 },
                 new City { Id = id++, Name = "Nagoya", IsCapital = false, CountryId = 13, Latitude = 35.1815, Longitude = 136.9066 },
-                
-                // Australia (ID: 15)
                 new City { Id = id++, Name = "Sydney", IsCapital = false, CountryId = 15, Latitude = -33.8688, Longitude = 151.2093 },
                 new City { Id = id++, Name = "Melbourne", IsCapital = false, CountryId = 15, Latitude = -37.8136, Longitude = 144.9631 },
                 new City { Id = id++, Name = "Brisbane", IsCapital = false, CountryId = 15, Latitude = -27.4698, Longitude = 153.0251 },
                 new City { Id = id++, Name = "Perth", IsCapital = false, CountryId = 15, Latitude = -31.9505, Longitude = 115.8605 },
-                
-                // Brasile (ID: 17)
                 new City { Id = id++, Name = "Rio de Janeiro", IsCapital = false, CountryId = 17, Latitude = -22.9068, Longitude = -43.1729 },
                 new City { Id = id++, Name = "São Paulo", IsCapital = false, CountryId = 17, Latitude = -23.5505, Longitude = -46.6333 },
                 new City { Id = id++, Name = "Salvador", IsCapital = false, CountryId = 17, Latitude = -12.9714, Longitude = -38.5014 },
-                
-                // Italia (aggiunta)
                 new City { Id = id++, Name = "Verona", IsCapital = false, CountryId = 1, Latitude = 45.4384, Longitude = 10.9916 },
                 new City { Id = id++, Name = "Genova", IsCapital = false, CountryId = 1, Latitude = 44.4056, Longitude = 8.9463 },
-                
-                // Turchia (ID: 35)
                 new City { Id = id++, Name = "Istanbul", IsCapital = false, CountryId = 35, Latitude = 41.0082, Longitude = 28.9784 },
                 new City { Id = id++, Name = "Antalya", IsCapital = false, CountryId = 35, Latitude = 36.8969, Longitude = 30.7133 },
                 new City { Id = id++, Name = "Izmir", IsCapital = false, CountryId = 35, Latitude = 38.4237, Longitude = 27.1428 },
-                
-                // Thailandia (ID: 31)
                 new City { Id = id++, Name = "Phuket", IsCapital = false, CountryId = 31, Latitude = 7.9519, Longitude = 98.3381 },
                 new City { Id = id++, Name = "Chiang Mai", IsCapital = false, CountryId = 31, Latitude = 18.7883, Longitude = 98.9853 },
                 new City { Id = id++, Name = "Pattaya", IsCapital = false, CountryId = 31, Latitude = 12.9236, Longitude = 100.8824 }
             };
-            
             builder.Entity<City>().HasData(majorCities);
         }
     }

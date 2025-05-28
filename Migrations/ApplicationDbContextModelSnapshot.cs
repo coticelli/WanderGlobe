@@ -1608,6 +1608,37 @@ namespace WanderGlobe.Migrations
                     b.ToTable("PlannedTrips");
                 });
 
+            modelBuilder.Entity("WanderGlobe.Models.DreamCountry", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("ApplicationUserId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("CountryId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("DateAdded")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsPlanned")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ApplicationUserId");
+
+                    b.HasIndex("CountryId");
+
+                    b.ToTable("DreamCountries");
+                });
+
             modelBuilder.Entity("WanderGlobe.Models.Photo", b =>
                 {
                     b.Property<int>("Id")
@@ -1629,19 +1660,27 @@ namespace WanderGlobe.Migrations
                     b.Property<int>("TravelJournalCountryId")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("TravelJournalId")
-                        .HasColumnType("INTEGER");
-
                     b.Property<string>("TravelJournalUserId")
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTime>("UploadedAt")
+                    b.Property<DateTime>("TravelJournalVisitDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("UploadDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Url")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("TravelJournalUserId", "TravelJournalCountryId");
+                    b.HasIndex("TravelJournalUserId", "TravelJournalCountryId", "TravelJournalVisitDate");
 
                     b.ToTable("Photos");
                 });
@@ -1654,6 +1693,9 @@ namespace WanderGlobe.Migrations
                     b.Property<int>("CountryId")
                         .HasColumnType("INTEGER");
 
+                    b.Property<DateTime>("VisitDate")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Notes")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -1661,10 +1703,7 @@ namespace WanderGlobe.Migrations
                     b.Property<int>("Rating")
                         .HasColumnType("INTEGER");
 
-                    b.Property<DateTime>("VisitDate")
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("UserId", "CountryId");
+                    b.HasKey("UserId", "CountryId", "VisitDate");
 
                     b.HasIndex("CountryId");
 
@@ -1797,11 +1836,30 @@ namespace WanderGlobe.Migrations
                         .HasForeignKey("ApplicationUserId");
                 });
 
+            modelBuilder.Entity("WanderGlobe.Models.DreamCountry", b =>
+                {
+                    b.HasOne("WanderGlobe.Models.ApplicationUser", "ApplicationUser")
+                        .WithMany()
+                        .HasForeignKey("ApplicationUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("WanderGlobe.Models.Country", "Country")
+                        .WithMany()
+                        .HasForeignKey("CountryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ApplicationUser");
+
+                    b.Navigation("Country");
+                });
+
             modelBuilder.Entity("WanderGlobe.Models.Photo", b =>
                 {
                     b.HasOne("WanderGlobe.Models.TravelJournal", "TravelJournal")
                         .WithMany()
-                        .HasForeignKey("TravelJournalUserId", "TravelJournalCountryId")
+                        .HasForeignKey("TravelJournalUserId", "TravelJournalCountryId", "TravelJournalVisitDate")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 

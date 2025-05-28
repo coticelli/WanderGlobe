@@ -1,0 +1,490 @@
+/* :root deve contenere le variabili colore del tuo tema WanderGlobe */
+:root {
+    --wanderglobe-primary: #007bff; /* Il blu della tua navbar */
+    --wanderglobe-secondary: #0d6efd; /* Un blu leggermente diverso per accenti */
+    --wanderglobe-accent: #ffc107;  /* Giallo/Oro per elementi importanti */
+    --wanderglobe-light-bg: #f4f7fc; /* Sfondo pagina molto chiaro */
+    --wanderglobe-card-bg: #ffffff;
+    --wanderglobe-text-dark: #212529;
+    --wanderglobe-text-medium: #495057;
+    --wanderglobe-text-light: #6c757d;
+    --wanderglobe-border-color: #dee2e6;
+
+    /* Colori per categorie (ESEMPIO, personalizza!) */
+    --category-primi-passi-bg: #e0f7fa; /* Blu cielo chiaro */
+    --category-primi-passi-accent: #00bcd4; /* Ciano */
+    --category-esploratore-bg: #e8f5e9; /* Verde chiaro */
+    --category-esploratore-accent: #4caf50; /* Verde */
+    --category-continenti-bg: #fff3e0; /* Arancio chiaro */
+    --category-continenti-accent: #ff9800; /* Arancio */
+    --category-sogni-bg: #f3e5f5; /* Viola chiaro */
+    --category-sogni-accent: #9c27b0; /* Viola */
+    --category-fotografia-bg: #fffde7; /* Giallo molto chiaro */
+    --category-fotografia-accent: #ffeb3b; /* Giallo */
+    --category-scrittore-bg: #f5f5f5; /* Grigio pergamena chiaro */
+    --category-scrittore-accent: #795548; /* Marrone */
+    --category-collezionista-bg: #eceff1; /* Grigio bluastro chiaro */
+    --category-collezionista-accent: #607d8b; /* Grigio bluastro */
+    --category-sfide-bg: #ffebee; /* Rosso chiaro */
+    --category-sfide-accent: #f44336; /* Rosso */
+    --category-default-bg: #f5f5f5;
+    --category-default-accent: #9e9e9e;
+
+
+    /* Colori per rarità */
+    --rarity-comune-glow: rgba(173, 216, 230, 0.7); /* LightBlue */
+    --rarity-non-comune-glow: rgba(144, 238, 144, 0.7); /* LightGreen */
+    --rarity-raro-glow: rgba(255, 215, 0, 0.7); /* Gold */
+    --rarity-epico-glow: rgba(218, 112, 214, 0.8); /* Orchid */
+    --rarity-leggendario-glow: linear-gradient(45deg, #ff2525, #ff782e, #fbd949, #59ff5c, #28acff, #da6cff, #ff2525);
+    --rarity-leggendario-border: transparent; /* Sarà gestito dal gradiente */
+
+    --font-primary: 'Poppins', 'Segoe UI', sans-serif; /* Scegli un font moderno */
+    --box-shadow-soft: 0 2px 8px rgba(0, 0, 0, 0.06);
+    --box-shadow-lifted: 0 8px 25px rgba(0, 0, 0, 0.1);
+    --border-radius-medium: 12px;
+    --border-radius-large: 16px;
+}
+
+body {
+    background-color: var(--wanderglobe-light-bg);
+    font-family: var(--font-primary);
+    color: var(--wanderglobe-text-dark);
+    line-height: 1.6;
+}
+
+#confetti-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 10000; /* Assicura che sia sopra tutto */
+    pointer-events: none; /* Non deve intercettare i click */
+}
+
+
+.badges-page-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem; /* Più padding in basso */
+}
+
+.badges-main-header {
+    text-align: center;
+    margin-bottom: 3rem;
+    padding: 2rem 0;
+    background: linear-gradient(135deg, var(--wanderglobe-primary) 0%, var(--wanderglobe-secondary) 100%);
+    color: white;
+    border-radius: var(--border-radius-large);
+    box-shadow: var(--box-shadow-lifted);
+}
+
+.badges-main-header h1 {
+    font-size: 2.8rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    letter-spacing: 0.5px;
+}
+.badges-main-header .fa-award {
+    color: var(--wanderglobe-accent);
+    margin: 0 10px;
+    animation: award-spin 5s linear infinite;
+}
+@@keyframes award-spin {
+    from { transform: rotateY(0deg); }
+    to { transform: rotateY(360deg); }
+}
+
+
+.badges-main-header p {
+    font-size: 1.2rem;
+    opacity: 0.9;
+}
+
+.overall-progress-section {
+    background-color: var(--wanderglobe-card-bg);
+    padding: 1.5rem;
+    margin-bottom: 3rem;
+    border-radius: var(--border-radius-medium);
+    box-shadow: var(--box-shadow-soft);
+    text-align: center;
+}
+
+.overall-progress-section h3 {
+    margin-top: 0;
+    margin-bottom: 1rem;
+    color: var(--wanderglobe-primary);
+    font-size: 1.5rem;
+}
+
+.overall-progress-bar-container {
+    background-color: #e9ecef;
+    border-radius: 25px;
+    height: 30px;
+    width: 80%;
+    margin: 0 auto;
+    overflow: hidden;
+    position: relative;
+}
+
+.overall-progress-bar-fill {
+    background: linear-gradient(90deg, var(--wanderglobe-secondary) 0%, var(--wanderglobe-primary) 100%);
+    height: 100%;
+    border-radius: 25px;
+    transition: width 0.8s ease-out;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+.overall-progress-bar-fill span {
+    mix-blend-mode: difference; /* Per migliore leggibilità del testo sulla barra */
+    filter: invert(1) grayscale(1) contrast(10);
+}
+
+
+.badge-category-wrapper {
+    margin-bottom: 3.5rem;
+    padding: 2rem;
+    border-radius: var(--border-radius-large);
+    background-color: var(--wanderglobe-card-bg);
+    box-shadow: var(--box-shadow-soft);
+    border-left: 5px solid; /* Bordo colorato per categoria */
+}
+
+/* Colori categorie (definisci le variabili --category-*-accent in :root) */
+.category-primi-passi { border-left-color: var(--category-primi-passi-accent); }
+.category-esploratore { border-left-color: var(--category-esploratore-accent); }
+.category-continenti { border-left-color: var(--category-continenti-accent); }
+.category-sogni { border-left-color: var(--category-sogni-accent); }
+.category-fotografia { border-left-color: var(--category-fotografia-accent); }
+.category-scrittore { border-left-color: var(--category-scrittore-accent); }
+.category-collezionista { border-left-color: var(--category-collezionista-accent); }
+.category-sfide { border-left-color: var(--category-sfide-accent); }
+.category-default { border-left-color: var(--category-default-accent); }
+
+
+.category-title {
+    font-size: 2.2rem;
+    font-weight: 600;
+    margin-bottom: 2rem;
+    padding-bottom: 0.75rem;
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+.category-title i {
+    margin-right: 12px;
+    font-size: 1.8rem; /* Icona più piccola del titolo */
+    opacity: 0.8;
+}
+
+/* Colori icone categorie (usa le variabili --category-*-accent) */
+.category-primi-passi .category-title { color: var(--category-primi-passi-accent); }
+.category-esploratore .category-title { color: var(--category-esploratore-accent); }
+.category-continenti .category-title { color: var(--category-continenti-accent); }
+.category-sogni .category-title { color: var(--category-sogni-accent); }
+.category-fotografia .category-title { color: var(--category-fotografia-accent); }
+.category-scrittore .category-title { color: var(--category-scrittore-accent); }
+.category-collezionista .category-title { color: var(--category-collezionista-accent); }
+.category-sfide .category-title { color: var(--category-sfide-accent); }
+.category-default .category-title { color: var(--category-default-accent); }
+
+
+.category-title::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 80px;
+    height: 3px;
+    background-color: currentColor; /* Usa il colore del testo del titolo (che è il colore della categoria) */
+    border-radius: 3px;
+}
+
+
+.badges-grid-display {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 2rem;
+}
+
+.badge-card-item {
+    background-color: var(--wanderglobe-card-bg);
+    border-radius: var(--border-radius-medium);
+    padding: 1.8rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    box-shadow: var(--box-shadow-soft);
+    transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    position: relative;
+    overflow: hidden; /* Per l'effetto shine */
+    border: 1px solid var(--wanderglobe-border-color);
+}
+
+.badge-card-item:hover {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: var(--box-shadow-lifted);
+}
+
+.badge-card-item.locked {
+    opacity: 0.65; /* Più trasparente */
+    background-color: #f8f9fa; /* Sfondo leggermente diverso per i bloccati */
+}
+.badge-card-item.locked:hover {
+    transform: translateY(-4px) scale(1.01); /* Meno effetto hover sui bloccati */
+    opacity: 0.75;
+}
+
+/* Effetto Shine per badge sbloccati */
+.badge-shine-effect {
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(
+        to right,
+        rgba(255, 255, 255, 0) 0%,
+        rgba(255, 255, 255, 0) 30%,
+        rgba(255, 255, 255, 0.15) 48%, /* Luce più sottile */
+        rgba(255, 255, 255, 0.3) 50%,  /* Luce più sottile */
+        rgba(255, 255, 255, 0.15) 52%, /* Luce più sottile */
+        rgba(255, 255, 255, 0) 70%,
+        rgba(255, 255, 255, 0) 100%
+    );
+    transform: rotate(30deg);
+    animation: shineAnimation 5s infinite linear; /* Animazione più lenta */
+    pointer-events: none;
+    opacity: 0; /* Inizia nascosto */
+}
+.badge-card-item.earned:hover .badge-shine-effect {
+    opacity: 1; /* Mostra solo su hover del badge sbloccato */
+}
+
+@@keyframes shineAnimation {
+    0% { transform: translateX(-100%) rotate(30deg); }
+    100% { transform: translateX(100%) rotate(30deg); }
+}
+
+
+.badge-icon-container {
+    font-size: 3.8rem; /* Icona più grande */
+    margin-bottom: 1.2rem;
+    width: 110px;
+    height: 110px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    background-color: #eef2f7; /* Sfondo base neutro e piacevole */
+    color: var(--wanderglobe-text-medium); /* Colore di default per l'icona */
+    box-shadow: inset 0 0 10px rgba(0,0,0,0.05);
+    transition: all 0.3s ease;
+}
+.badge-card-item.earned .badge-icon-container {
+    /* Il colore dell'icona sarà definito dalla classe di rarità o categoria */
+    transform: scale(1.05); /* Leggero ingrandimento per badge sbloccati */
+}
+/* Colori icone badge in base alla categoria (se sbloccati) */
+.badge-card-item.earned.category-primi-passi .badge-icon-container { color: var(--category-primi-passi-accent); background-color: var(--category-primi-passi-bg); }
+.badge-card-item.earned.category-esploratore .badge-icon-container { color: var(--category-esploratore-accent); background-color: var(--category-esploratore-bg); }
+/* ... aggiungi per tutte le categorie ... */
+.badge-card-item.earned.category-continenti .badge-icon-container { color: var(--category-continenti-accent); background-color: var(--category-continenti-bg); }
+.badge-card-item.earned.category-sogni .badge-icon-container { color: var(--category-sogni-accent); background-color: var(--category-sogni-bg); }
+.badge-card-item.earned.category-fotografia .badge-icon-container { color: var(--category-fotografia-accent); background-color: var(--category-fotografia-bg); }
+.badge-card-item.earned.category-scrittore .badge-icon-container { color: var(--category-scrittore-accent); background-color: var(--category-scrittore-bg); }
+.badge-card-item.earned.category-collezionista .badge-icon-container { color: var(--category-collezionista-accent); background-color: var(--category-collezionista-bg); }
+.badge-card-item.earned.category-sfide .badge-icon-container { color: var(--category-sfide-accent); background-color: var(--category-sfide-bg); }
+.badge-card-item.earned.category-default .badge-icon-container { color: var(--category-default-accent); background-color: var(--category-default-bg); }
+
+
+.badge-card-item.locked .badge-icon-container {
+    color: #adb5bd; /* Grigio per icone bloccate */
+    background-color: #f0f0f0;
+}
+
+
+.earned-checkmark-overlay, .lock-icon-overlay, .secret-icon-overlay {
+    position: absolute;
+    bottom: 5px;
+    right: 5px;
+    font-size: 1.3rem;
+    background-color: white;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+.earned-checkmark-overlay { color: #28a745; }
+.lock-icon-overlay { color: var(--wanderglobe-text-light); }
+.secret-icon-overlay { color: var(--wanderglobe-primary); }
+
+
+.badge-details-content {
+    width: 100%;
+}
+
+.badge-title {
+    font-size: 1.3rem; /* Leggermente più piccolo */
+    font-weight: 600;
+    color: var(--wanderglobe-text-dark);
+    margin-bottom: 0.4rem;
+    min-height: 2.6em; /* Spazio per due righe */
+    line-height: 1.3em;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.badge-card-item.locked .badge-title {
+    color: var(--wanderglobe-text-medium);
+}
+
+
+.badge-desc {
+    font-size: 0.9rem;
+    color: var(--wanderglobe-text-light);
+    margin-bottom: 0.6rem;
+    min-height: 3.6em; /* Spazio per circa 3 righe */
+    line-height: 1.4em;
+     display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.badge-crit {
+    font-size: 0.8rem;
+    color: #888;
+    margin-bottom: 0.8rem;
+    font-style: italic;
+}
+
+
+/* Progress Bar specifica per la card */
+.badge-item-progress-container {
+    width: 85%;
+    margin: 0.8rem auto 0.5rem;
+}
+.badge-item-progress-bar {
+    background-color: #e0e0e0;
+    border-radius: 15px;
+    height: 10px;
+    overflow: hidden;
+    margin-bottom: 0.2rem;
+}
+.badge-item-progress-fill {
+    background-color: var(--wanderglobe-primary);
+    height: 100%;
+    border-radius: 15px;
+    transition: width 0.6s ease-out;
+}
+/* Colora la barra di progresso con il colore della categoria */
+.category-primi-passi .badge-item-progress-fill { background-color: var(--category-primi-passi-accent); }
+.category-esploratore .badge-item-progress-fill { background-color: var(--category-esploratore-accent); }
+/* ... Aggiungi per tutte le categorie ... */
+.category-continenti .badge-item-progress-fill { background-color: var(--category-continenti-accent); }
+.category-sogni .badge-item-progress-fill { background-color: var(--category-sogni-accent); }
+.category-fotografia .badge-item-progress-fill { background-color: var(--category-fotografia-accent); }
+.category-scrittore .badge-item-progress-fill { background-color: var(--category-scrittore-accent); }
+.category-collezionista .badge-item-progress-fill { background-color: var(--category-collezionista-accent); }
+.category-sfide .badge-item-progress-fill { background-color: var(--category-sfide-accent); }
+.category-default .badge-item-progress-fill { background-color: var(--category-default-accent); }
+
+
+.badge-item-progress-text {
+    font-size: 0.75rem;
+    color: var(--wanderglobe-text-light);
+}
+
+.badge-rarity-tag {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    padding: 0.25em 0.6em;
+    font-size: 0.7rem;
+    font-weight: 600;
+    border-radius: 20px;
+    color: white;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Stili per rarità */
+.rarity-comune { border-top: 3px solid var(--rarity-comune-glow); }
+.rarity-comune .badge-rarity-tag { background-color: #778da9; } /* Blu grigiastro */
+
+.rarity-non-comune { border-top: 3px solid var(--rarity-non-comune-glow); }
+.rarity-non-comune .badge-rarity-tag { background-color: #57a773; } /* Verde */
+
+.rarity-raro { border-top: 3px solid var(--rarity-raro-glow); }
+.rarity-raro .badge-rarity-tag { background-color: #ffb20f; } /* Oro/Arancio */
+
+.rarity-epico { border-top: 3px solid var(--rarity-epico-glow); }
+.rarity-epico .badge-rarity-tag { background-color: #ab47bc; } /* Viola */
+
+.rarity-leggendario {
+    border: 3px solid transparent;
+    border-image: var(--rarity-leggendario-glow) 1;
+    animation: legendary-glow 3s infinite alternate;
+}
+.rarity-leggendario .badge-rarity-tag {
+    background: var(--rarity-leggendario-glow);
+    color: var(--wanderglobe-text-dark); /* Testo scuro su sfondo arcobaleno */
+    font-weight: 700;
+}
+@@keyframes legendary-glow {
+    0% { box-shadow: 0 0 5px #ff2525, 0 0 10px #ff782e, 0 0 15px #fbd949; }
+    50% { box-shadow: 0 0 10px #59ff5c, 0 0 20px #28acff, 0 0 30px #da6cff; }
+    100% { box-shadow: 0 0 5px #ff2525, 0 0 10px #ff782e, 0 0 15px #fbd949; }
+}
+
+/* Badge Segreto */
+.secret-badge.locked .badge-icon-container i {
+    opacity: 0.3; /* Icona del badge segreto quasi invisibile */
+}
+.secret-badge.locked .badge-title,
+.secret-badge.locked .badge-desc,
+.secret-badge.locked .badge-crit {
+    color: transparent;
+    background: linear-gradient(90deg, #eee 25%, #ddd 50%, #eee 75%);
+    background-size: 200% 100%;
+    animation: loading-shimmer 1.5s infinite linear;
+    border-radius: 4px;
+}
+.secret-badge.locked .badge-title { height: 1.3rem; margin-bottom: 0.4rem; width: 70%; }
+.secret-badge.locked .badge-desc { height: 0.9rem; margin-bottom: 0.6rem; width: 90%; }
+.secret-badge.locked .badge-crit { display: none; } /* Nascondi criteri per i segreti bloccati */
+
+
+@@keyframes loading-shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+.empty-state-badges {
+    padding: 3rem;
+    background-color: var(--wanderglobe-card-bg);
+    border-radius: var(--border-radius-medium);
+    box-shadow: var(--box-shadow-soft);
+    color: var(--wanderglobe-text-medium);
+    font-size: 1.1rem;
+}
+.empty-state-badges i {
+    display: block;
+    margin-bottom: 1rem;
+    color: var(--wanderglobe-primary);
+    opacity: 0.6;
+}

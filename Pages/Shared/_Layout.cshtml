@@ -1,5 +1,6 @@
 ﻿<!DOCTYPE html>
 <html lang="it">
+
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -164,8 +165,15 @@
         }
 
         @@keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .dropdown-item {
@@ -274,7 +282,8 @@
                 z-index: 1000;
             }
 
-            .nav-item, .nav-link {
+            .nav-item,
+            .nav-link {
                 height: 50px;
                 width: 100%;
             }
@@ -312,42 +321,44 @@
                 box-shadow: none;
                 margin-top: 5px;
             }
-            
+
             /* Fix per sidebar su dispositivi mobili */
             .explorer-sidebar .nav-tabs {
                 display: flex;
                 flex-wrap: nowrap;
                 overflow-x: auto;
             }
-            
+
             .explorer-sidebar .nav-tabs .nav-link .tab-text {
                 font-size: 0.7rem;
             }
 
-             .nav-tabs .nav-link {
-            color: #212529 !important; /* Force dark text color */
-            border: none;
-            border-bottom: 2px solid transparent;
-            padding: 10px 0;
-            margin-right: 20px;
-            font-weight: 500;
-            opacity: 1 !important;
-            visibility: visible !important;
-        }
-        
-        .nav-tabs .nav-link.active {
-            border-bottom: 2px solid var(--primary-color);
-            color: var(--primary-color) !important;
-            background: transparent;
-        }
-        
-        .nav-tabs .nav-link i {
-            margin-right: 5px;
-            color: inherit;
-        }
+            .nav-tabs .nav-link {
+                color: #212529 !important;
+                /* Force dark text color */
+                border: none;
+                border-bottom: 2px solid transparent;
+                padding: 10px 0;
+                margin-right: 20px;
+                font-weight: 500;
+                opacity: 1 !important;
+                visibility: visible !important;
+            }
+
+            .nav-tabs .nav-link.active {
+                border-bottom: 2px solid var(--primary-color);
+                color: var(--primary-color) !important;
+                background: transparent;
+            }
+
+            .nav-tabs .nav-link i {
+                margin-right: 5px;
+                color: inherit;
+            }
         }
     </style>
 </head>
+
 <body>
     <header>
         <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
@@ -355,8 +366,8 @@
                 <a class="navbar-brand text-white" asp-area="" asp-page="/Index">
                     <i class="fas fa-globe-americas me-2"></i> WanderGlobe
                 </a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse"
+                    aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
                 <div class="navbar-collapse collapse d-lg-flex">
@@ -382,8 +393,9 @@
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" id="badge-link" asp-area="" asp-page="/Badge">
-                                <i class="fas fa-medal"></i> Badge
+                            <a class="nav-link @(ViewContext.RouteData.Values["Page"]?.ToString() == "/Badges" ? "active" : "")"
+                                asp-page="/Badges">
+                                <i class="fas fa-trophy me-1"></i>Badge
                             </a>
                         </li>
                     </ul>
@@ -404,7 +416,8 @@
                                         <i class="fas fa-cog"></i> Impostazioni
                                     </a>
                                     <div class="dropdown-divider"></div>
-                                    <form method="post" asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Page("/Index")">
+                                    <form method="post" asp-area="Identity" asp-page="/Account/Logout"
+                                        asp-route-returnUrl="@Url.Page("/Index")">
                                         <button type="submit" class="logout-btn">
                                             <i class="fas fa-sign-out-alt"></i> Logout
                                         </button>
@@ -415,7 +428,8 @@
                         else
                         {
                             <div class="auth-buttons">
-                                <a class="nav-link text-white auth-btn login-btn" asp-area="Identity" asp-page="/Account/Login">
+                                <a class="nav-link text-white auth-btn login-btn" asp-area="Identity"
+                                    asp-page="/Account/Login">
                                     <i class="fas fa-sign-in-alt me-1"></i> Accedi
                                 </a>
                                 <a class="nav-link auth-btn register-btn" asp-area="Identity" asp-page="/Account/Register">
@@ -439,15 +453,15 @@
     <script src="~/js/site.js" asp-append-version="true"></script>
     <script>
         // Impostare correttamente una sola scheda attiva in base al percorso corrente
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             const currentPath = window.location.pathname.toLowerCase();
             const navLinks = document.querySelectorAll('.navbar-nav .nav-link');
-            
+
             // Prima rimuovi tutte le classi active
             navLinks.forEach(link => {
                 link.classList.remove('nav-active');
             });
-            
+
             // Poi imposta quella corretta in base al percorso
             if (currentPath === '/' || currentPath === '/index') {
                 document.getElementById('home-link').classList.add('nav-active');
@@ -462,17 +476,17 @@
             } else if (currentPath.includes('/badge')) {
                 document.getElementById('badge-link').classList.add('nav-active');
             }
-            
+
             // Chiudi il dropdown quando si clicca altrove nella pagina
-            document.addEventListener('click', function(event) {
+            document.addEventListener('click', function (event) {
                 const dropdown = document.getElementById('userDropdown');
                 const dropdownMenu = document.getElementById('userDropdownMenu');
-                
+
                 if (dropdown && !dropdown.contains(event.target)) {
                     dropdownMenu.style.display = 'none';
                 }
             });
-            
+
             // Fix per le etichette nella sidebar della pagina Globe
             if (document.querySelector('.explorer-sidebar')) {
                 const tabButtons = document.querySelectorAll('.explorer-sidebar .nav-tabs .nav-link');
@@ -480,18 +494,18 @@
                     // Assicurati che l'icona e il testo siano correttamente strutturati
                     const icon = tab.querySelector('i');
                     const text = tab.textContent.trim();
-                    
+
                     // Svuota il contenuto e ricostruiscilo correttamente
                     if (icon) {
                         const iconHTML = icon.outerHTML;
                         const textContent = text.replace(icon.textContent, '').trim();
-                        
+
                         tab.innerHTML = `${iconHTML} <span class="tab-text">${textContent}</span>`;
                     }
                 });
             }
         });
-        
+
         // Toggle dropdown menu
         function toggleDropdown() {
             const dropdownMenu = document.getElementById('userDropdownMenu');
@@ -504,4 +518,5 @@
     </script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
+
 </html>

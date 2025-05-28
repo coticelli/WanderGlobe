@@ -19,6 +19,7 @@ using System.ComponentModel.DataAnnotations;
 using Microsoft.EntityFrameworkCore; // Necessario per Entity Framework Core
 using WanderGlobe.Data; // Necessario per ApplicationDbContext
 using Newtonsoft.Json.Linq;
+using System.Xml.Linq;
 
 namespace WanderGlobe.Pages
 {
