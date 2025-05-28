@@ -106,7 +106,7 @@ namespace WanderGlobe.Pages
                     {
                         if (v.Country == null)
                         {
-                            _logger.LogWarning($"VisitedCountry record with ID {v.Id} has a null Country object. Skipping.");
+                            _logger.LogWarning($"VisitedCountry record with ID {v.CountryId} has a null Country object. Skipping.");
                             continue;
                         }
 
@@ -115,13 +115,13 @@ namespace WanderGlobe.Pages
                         {
                             visitedCitiesItems.Add(new MapDestinationItem
                             {
-                                Id = $"visited_city_{capitalCity.Id}",
-                                CityName = capitalCity.Name,
+                                Id = $"visited_country_{v.CountryId}", // Change v.Id to v.CountryId
+                                CityName = $"Capital of {v.Country.Name}", // Placeholder
                                 CountryName = v.Country.Name,
                                 CountryCode = v.Country.Code,
-                                Latitude = capitalCity.Latitude ?? v.Country.Latitude, // Prioritize capital's lat
-                                Longitude = capitalCity.Longitude ?? v.Country.Longitude, // Prioritize capital's lon
-                                Type = "visited" // Added type
+                                Latitude = v.Country.Latitude,
+                                Longitude = v.Country.Longitude,
+                                Type = "visited" // This will work after adding the Type property
                             });
                         }
                         else
@@ -193,27 +193,27 @@ namespace WanderGlobe.Pages
             }
         }
 
-                private async Task<List<RecommendationItem>> CallGeminiForRecommendationsAsync(string prompt)
+        private async Task<List<RecommendationItem>> CallGeminiForRecommendationsAsync(string prompt)
         {
             using var httpClient = _clientFactory.CreateClient();
             string apiUrl = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key={_geminiApiKey}";
-        
+
             var requestData = new
             {
                 contents = new[] { new { parts = new[] { new { text = prompt } } } }
             };
-        
+
             var content = new StringContent(
                 JsonConvert.SerializeObject(requestData),
                 System.Text.Encoding.UTF8,
                 "application/json");
-        
+
             System.Diagnostics.Debug.WriteLine($"Sending request to Gemini API: {apiUrl.Substring(0, apiUrl.IndexOf('?'))}?key=API_KEY_HIDDEN");
             System.Diagnostics.Debug.WriteLine($"Prompt: {prompt.Substring(0, Math.Min(prompt.Length, 100))}...");
-            
+
             var response = await httpClient.PostAsync(apiUrl, content);
             var responseContent = await response.Content.ReadAsStringAsync();
-        
+
             if (response.IsSuccessStatusCode)
             {
                 try
@@ -221,13 +221,13 @@ namespace WanderGlobe.Pages
                     // First extract the text from the response structure
                     JObject responseJson = JsonConvert.DeserializeObject<JObject>(responseContent);
                     string responseText = responseJson?["candidates"]?[0]?["content"]?["parts"]?[0]?["text"]?.ToString();
-        
+
                     if (string.IsNullOrEmpty(responseText))
                     {
                         System.Diagnostics.Debug.WriteLine("Empty or missing recommendations text in Gemini response.");
                         return new List<RecommendationItem>();
                     }
-        
+
                     // Clean up any markdown code delimiters
                     if (responseText.StartsWith("```json") || responseText.StartsWith("```"))
                     {
@@ -236,9 +236,9 @@ namespace WanderGlobe.Pages
                             .Replace("```", "")
                             .Trim();
                     }
-        
+
                     System.Diagnostics.Debug.WriteLine($"Cleaned response text: {responseText.Substring(0, Math.Min(responseText.Length, 200))}...");
-        
+
                     // Parse the cleaned text as JSON
                     try
                     {
@@ -635,7 +635,8 @@ namespace WanderGlobe.Pages
                     plan.Notes = newNotes;
                     planModified = true;
                     System.Diagnostics.Debug.WriteLine($"[Modifica Plan] Notes AGGIORNATE. Nuove Notes: '{plan.Notes}'");
-                } else { System.Diagnostics.Debug.WriteLine($"[Modifica Plan] Notes NON DIVERSE. Request Notes: '{newNotes}', Plan Notes Correnti: '{plan.Notes}'"); }
+                }
+                else { System.Diagnostics.Debug.WriteLine($"[Modifica Plan] Notes NON DIVERSE. Request Notes: '{newNotes}', Plan Notes Correnti: '{plan.Notes}'"); }
 
                 // Gestione Checklist
                 List<ChecklistItem> itemsToRemove = new List<ChecklistItem>(plan.Checklist);
@@ -652,7 +653,8 @@ namespace WanderGlobe.Pages
                             var newItem = new ChecklistItem { PlannedTripId = plan.Id, Title = itemDto.Title, Category = itemDto.Category ?? "other", DueDate = itemDto.DueDate, IsCompleted = itemDto.IsCompleted };
                             itemsToAdd.Add(newItem);
                             validDtosForPercentage.Add(itemDto);
-                        } else { System.Diagnostics.Debug.WriteLine("[Modifica Checklist] Saltato DTO checklist con titolo vuoto."); }
+                        }
+                        else { System.Diagnostics.Debug.WriteLine("[Modifica Checklist] Saltato DTO checklist con titolo vuoto."); }
                     }
                     if (itemsToRemove.Any()) { _dbContext.ChecklistItems.RemoveRange(itemsToRemove); System.Diagnostics.Debug.WriteLine($"[Modifica Checklist] Marcati {itemsToRemove.Count} checklist items ESISTENTI per RIMOZIONE."); }
                     else { System.Diagnostics.Debug.WriteLine("[Modifica Checklist] Nessun checklist item esistente da rimuovere."); }
@@ -673,7 +675,8 @@ namespace WanderGlobe.Pages
                     plan.CompletionPercentage = newPercentage;
                     planModified = true; // Il piano è stato modificato anche per la percentuale
                     System.Diagnostics.Debug.WriteLine($"[Modifica Plan] CompletionPercentage AGGIORNATA a: {plan.CompletionPercentage}%");
-                } else { System.Diagnostics.Debug.WriteLine($"[Modifica Plan] CompletionPercentage non cambiata ({plan.CompletionPercentage}%).");}
+                }
+                else { System.Diagnostics.Debug.WriteLine($"[Modifica Plan] CompletionPercentage non cambiata ({plan.CompletionPercentage}%)."); }
 
 
                 System.Diagnostics.Debug.WriteLine($"--- [UpdatePlanDetails] VERIFICA PRIMA DI SAVE ---");
@@ -683,19 +686,22 @@ namespace WanderGlobe.Pages
 
                 // Forza lo stato a Modified se il nostro flag planModified è true ma EF non l'ha rilevato
                 // (potrebbe succedere se l'unica modifica fosse alla CompletionPercentage e EF non la tracciasse come modifica all'entità Plan)
-                if (planModified && planEntryState == EntityState.Unchanged) {
-                     _dbContext.Entry(plan).State = EntityState.Modified;
-                     planEntryState = _dbContext.Entry(plan).State; // Rileggi lo stato
-                     System.Diagnostics.Debug.WriteLine($"Stato entità Plan FORZATO a Modified. Nuovo stato: {planEntryState}");
+                if (planModified && planEntryState == EntityState.Unchanged)
+                {
+                    _dbContext.Entry(plan).State = EntityState.Modified;
+                    planEntryState = _dbContext.Entry(plan).State; // Rileggi lo stato
+                    System.Diagnostics.Debug.WriteLine($"Stato entità Plan FORZATO a Modified. Nuovo stato: {planEntryState}");
                 }
 
 
                 var trackedChecklistItems = _dbContext.ChangeTracker.Entries<ChecklistItem>().Where(e => e.Entity.PlannedTripId == plan.Id).ToList();
                 System.Diagnostics.Debug.WriteLine($"Elementi Checklist tracciati da EF ({trackedChecklistItems.Count}) per Plan ID '{plan.Id}':");
                 bool checklistChangesDetectedInTracker = false;
-                foreach(var entry in trackedChecklistItems) {
+                foreach (var entry in trackedChecklistItems)
+                {
                     System.Diagnostics.Debug.WriteLine($"  - '{entry.Entity.Title}' (ID DB: {entry.Entity.Id}) -> Stato EF: {entry.State}");
-                    if (entry.State == EntityState.Added || entry.State == EntityState.Deleted || entry.State == EntityState.Modified) {
+                    if (entry.State == EntityState.Added || entry.State == EntityState.Deleted || entry.State == EntityState.Modified)
+                    {
                         checklistChangesDetectedInTracker = true;
                     }
                 }
@@ -703,8 +709,9 @@ namespace WanderGlobe.Pages
                 bool hasPendingChanges = _dbContext.ChangeTracker.HasChanges();
                 System.Diagnostics.Debug.WriteLine($"DbContext.ChangeTracker.HasChanges(): {hasPendingChanges}");
 
-                if (!hasPendingChanges && (planModified || checklistChangesDetectedInTracker)) {
-                     System.Diagnostics.Debug.WriteLine("WARN: Modifiche rilevate manualmente (planModified o checklistChangesDetectedInTracker) ma HasChanges() è false! Questo non dovrebbe accadere se lo stato del piano è Modified.");
+                if (!hasPendingChanges && (planModified || checklistChangesDetectedInTracker))
+                {
+                    System.Diagnostics.Debug.WriteLine("WARN: Modifiche rilevate manualmente (planModified o checklistChangesDetectedInTracker) ma HasChanges() è false! Questo non dovrebbe accadere se lo stato del piano è Modified.");
                 }
 
 
@@ -716,16 +723,17 @@ namespace WanderGlobe.Pages
                         System.Diagnostics.Debug.WriteLine("Tentativo di eseguire SaveChangesAsync...");
                         changes = await _dbContext.SaveChangesAsync();
                         System.Diagnostics.Debug.WriteLine($"SaveChangesAsync ESEGUITO. Righe modificate nel DB: {changes}");
-                        
+
                         var postSaveState = _dbContext.Entry(plan).State;
                         System.Diagnostics.Debug.WriteLine($"Stato entità Plan DOPO SaveChanges: {postSaveState}");
                         if (postSaveState != EntityState.Unchanged && changes > 0) System.Diagnostics.Debug.WriteLine("WARN: Stato Plan non è Unchanged dopo un salvataggio che ha affetto righe!");
-                        
+
                         var postSaveChecklistEntries = _dbContext.ChangeTracker.Entries<ChecklistItem>()
                                                         .Where(e => e.Entity.PlannedTripId == plan.Id && e.State != EntityState.Detached)
                                                         .ToList();
                         System.Diagnostics.Debug.WriteLine($"Numero ChecklistItems tracciati DOPO SaveChanges: {postSaveChecklistEntries.Count}");
-                        foreach(var entry in postSaveChecklistEntries) {
+                        foreach (var entry in postSaveChecklistEntries)
+                        {
                             System.Diagnostics.Debug.WriteLine($"  - ChecklistItem ID {entry.Entity.Id} (titolo: '{entry.Entity.Title}') -> Stato EF: {entry.State}");
                         }
                     }
@@ -751,12 +759,15 @@ namespace WanderGlobe.Pages
                 if (finalPlanState.Checklist != null)
                 {
                     System.Diagnostics.Debug.WriteLine($"[Risposta] finalPlanState.Checklist NON è null. Elementi: {finalPlanState.Checklist.Count}");
-                    try {
+                    try
+                    {
                         finalChecklistDto = finalPlanState.Checklist.OrderBy(c => c.Id)
                             .Select(c => new ChecklistItemDto { Id = c.Id.ToString(), Title = c.Title, Category = c.Category, DueDate = c.DueDate, IsCompleted = c.IsCompleted }).ToList();
                         System.Diagnostics.Debug.WriteLine($"[Risposta] finalChecklistDto mappata: {finalChecklistDto.Count} elementi.");
-                    } catch (Exception linqEx) { System.Diagnostics.Debug.WriteLine($"[Risposta] ECCEZIONE LINQ: {linqEx.Message}"); }
-                } else { System.Diagnostics.Debug.WriteLine($"[Risposta] ATTENZIONE: finalPlanState.Checklist è NULL."); }
+                    }
+                    catch (Exception linqEx) { System.Diagnostics.Debug.WriteLine($"[Risposta] ECCEZIONE LINQ: {linqEx.Message}"); }
+                }
+                else { System.Diagnostics.Debug.WriteLine($"[Risposta] ATTENZIONE: finalPlanState.Checklist è NULL."); }
 
                 System.Diagnostics.Debug.WriteLine($"Invio risposta. Modifiche DB: {changes > 0}.");
                 System.Diagnostics.Debug.WriteLine($"--- [OnPostUpdatePlanDetailsAsync] FINE ---");
@@ -1206,88 +1217,91 @@ namespace WanderGlobe.Pages
             {
                 System.Diagnostics.Debug.WriteLine($"Errore nella verifica delle immagini: {ex.Message}");
             }
-}
-        
+        }
+
         // Nuovo handler per ottenere consigli in base alla categoria
-          [HttpGet]
-[IgnoreAntiforgeryToken]
-public async Task<IActionResult> OnGetRecommendationsAsync(string type)
-{
-    try
-    {
-        var user = await _userManager.GetUserAsync(User);
-        if (user == null) 
-            return new JsonResult(new { success = false, error = "Utente non autenticato." });
-        
-        if (string.IsNullOrEmpty(_geminiApiKey))
+        [HttpGet]
+        [IgnoreAntiforgeryToken]
+        public async Task<IActionResult> OnGetRecommendationsAsync(string type)
         {
-            return new JsonResult(new { success = false, error = "Chiave API Gemini non configurata" });
-        }
-        
-        // Build a prompt for recommendations based on type
-        string prompt = $"Fornisci 5 suggerimenti di viaggio per la categoria '{type}'. " +
-                       "Restituisci solo un array JSON di destinazioni con id, cityName, countryName, description, " +
-                       "reasonToVisit, latitude, longitude e imageUrl. " +
-                       "Non aggiungere altro testo o commenti, solo JSON.";
-        
-        // Call the dedicated method to handle Gemini API request
-        var recommendations = await CallGeminiForRecommendationsAsync(prompt);
-        
-        if (recommendations.Any())
-        {
-            //***  ADD LOGGING HERE  ***
-            System.Diagnostics.Debug.WriteLine($"[OnGetRecommendationsAsync] Dati ottenuti da CallGeminiForRecommendationsAsync");
-            foreach (var rec in recommendations)
+            try
             {
-                System.Diagnostics.Debug.WriteLine($"[OnGetRecommendationsAsync] ---- {rec.ToString()}");
-            }
-                
-            return new JsonResult(new { 
-                success = true, 
-                recommendations = recommendations 
-            });
-        }
-        else
-        {
-            // Use a fallback set of recommendations if the API returns nothing
-            var fallbackRecommendations = GetFallbackRecommendations();
-            return new JsonResult(new { 
-                success = true, 
-                recommendations = fallbackRecommendations,
-                message = "Using fallback recommendations due to API issue" 
-            });
-        }
-    }
-    catch (Exception ex) 
-    {
-        System.Diagnostics.Debug.WriteLine($"Error in recommendations handler: {ex.Message}");
-        return new JsonResult(new { 
-            success = false, 
-            message = $"Error processing recommendations: {ex.Message}"
-        });
-    }
-}  
-                // Helper method for fallback recommendations
-                private List<RecommendationItem> GetFallbackRecommendations()
+                var user = await _userManager.GetUserAsync(User);
+                if (user == null)
+                    return new JsonResult(new { success = false, error = "Utente non autenticato." });
+
+                if (string.IsNullOrEmpty(_geminiApiKey))
                 {
-                    return new List<RecommendationItem>
+                    return new JsonResult(new { success = false, error = "Chiave API Gemini non configurata" });
+                }
+
+                // Build a prompt for recommendations based on type
+                string prompt = $"Fornisci 5 suggerimenti di viaggio per la categoria '{type}'. " +
+                               "Restituisci solo un array JSON di destinazioni con id, cityName, countryName, description, " +
+                               "reasonToVisit, latitude, longitude e imageUrl. " +
+                               "Non aggiungere altro testo o commenti, solo JSON.";
+
+                // Call the dedicated method to handle Gemini API request
+                var recommendations = await CallGeminiForRecommendationsAsync(prompt);
+
+                if (recommendations.Any())
+                {
+                    //***  ADD LOGGING HERE  ***
+                    System.Diagnostics.Debug.WriteLine($"[OnGetRecommendationsAsync] Dati ottenuti da CallGeminiForRecommendationsAsync");
+                    foreach (var rec in recommendations)
                     {
-                        new RecommendationItem 
-                        { 
+                        System.Diagnostics.Debug.WriteLine($"[OnGetRecommendationsAsync] ---- {rec.ToString()}");
+                    }
+
+                    return new JsonResult(new
+                    {
+                        success = true,
+                        recommendations = recommendations
+                    });
+                }
+                else
+                {
+                    // Use a fallback set of recommendations if the API returns nothing
+                    var fallbackRecommendations = GetFallbackRecommendations();
+                    return new JsonResult(new
+                    {
+                        success = true,
+                        recommendations = fallbackRecommendations,
+                        message = "Using fallback recommendations due to API issue"
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error in recommendations handler: {ex.Message}");
+                return new JsonResult(new
+                {
+                    success = false,
+                    message = $"Error processing recommendations: {ex.Message}"
+                });
+            }
+        }
+        // Helper method for fallback recommendations
+        private List<RecommendationItem> GetFallbackRecommendations()
+        {
+            return new List<RecommendationItem>
+                    {
+                        new RecommendationItem
+                        {
                             Id = "fallback1",
-                            CityName = "Roma", 
-                            CountryName = "Italia", 
+                            CityName = "Roma",
+                            CountryName = "Italia",
                             Description = "La città eterna con una storia millenaria",
                             ReasonToVisit = "Perfetta per gli amanti della storia e della cultura",
                             ImageUrl = "/images/destinations/rome.jpg",
                             Latitude = 41.9028,
                             Longitude = 12.4964
                         },
-                        new RecommendationItem 
-                        { 
+                        new RecommendationItem
+                        {
                             Id = "fallback2",
-                            CityName = "Parigi", 
-                            CountryName = "Francia", 
+                            CityName = "Parigi",
+                            CountryName = "Francia",
                             Description = "La città dell'amore e delle luci",
                             ReasonToVisit = "Romantica e piena di arte",
                             ImageUrl = "/images/destinations/paris.jpg",
@@ -1296,9 +1310,9 @@ public async Task<IActionResult> OnGetRecommendationsAsync(string type)
                         },
                         // Add a few more fallback recommendations if you wish
                     };
-                }
-        
-        
+        }
+
+
         [HttpGet]
         [IgnoreAntiforgeryToken]
         public async Task<IActionResult> OnGetTravelsuggestionsAsync(string cityName, string suggestionType)
@@ -1438,16 +1452,16 @@ public async Task<IActionResult> OnGetRecommendationsAsync(string type)
         }
 
         public class RecommendationItem
-{
-    public string Id { get; set; } = Guid.NewGuid().ToString();
-    public string CityName { get; set; } = string.Empty;
-    public string CountryName { get; set; } = string.Empty;
-    public string Description { get; set; } = string.Empty;
-    public string ReasonToVisit { get; set; } = string.Empty;
-    public double Latitude { get; set; }
-    public double Longitude { get; set; }
-    public string ImageUrl { get; set; } = "/images/placeholder-destination.jpg";
-}
+        {
+            public string Id { get; set; } = Guid.NewGuid().ToString();
+            public string CityName { get; set; } = string.Empty;
+            public string CountryName { get; set; } = string.Empty;
+            public string Description { get; set; } = string.Empty;
+            public string ReasonToVisit { get; set; } = string.Empty;
+            public double Latitude { get; set; }
+            public double Longitude { get; set; }
+            public string ImageUrl { get; set; } = "/images/placeholder-destination.jpg";
+        }
 
     } // Chiusura classe DreamMapModel
 } // Chiusura namespace

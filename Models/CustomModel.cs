@@ -130,6 +130,7 @@ namespace WanderGlobe.Models.Custom
         public double Longitude { get; set; }
         public int? Priority { get; set; }
         public int? CompletionPercentage { get; set; }
+        public string Type { get; set; }
     }
 
     public enum DreamPriority

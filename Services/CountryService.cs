@@ -30,6 +30,11 @@ namespace WanderGlobe.Services
             return countries;
         }
 
+                public async Task<int> GetTotalCountryCountAsync()
+        {
+            return await _context.Countries.CountAsync();
+        }
+
         public async Task<List<VisitedCountry>> GetVisitedCountriesByUserAsync(string userId)
         {
             return await _context.VisitedCountries
