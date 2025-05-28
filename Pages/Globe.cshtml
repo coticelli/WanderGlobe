@@ -1291,14 +1291,14 @@
 
                 popup.dataset.pinned = popupIsPinned ? "true" : "false";
 
-                const { name, country, countryCode, visitDate, index } = markerGroup.userData;
+                const { name, countryName, countryCode, visitDate, index } = markerGroup.userData; // Ensure 'countryName' is used here from markerGroup.userData
                 popup.innerHTML = `
                             <div style="padding: 12px; background-color: #fff; border-bottom: 1px solid #eee; display: flex; align-items: center; position: relative;">
                                 <img src="/images/cities/${countryCode?.toLowerCase()}-city.jpg" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" alt="${name}" style="width: 50px; height: 50px; border-radius: 4px; object-fit: cover; margin-right: 10px;">
                                 <img src="/images/city-placeholder.jpg" alt="Placeholder" style="width: 50px; height: 50px; border-radius: 4px; object-fit: cover; margin-right: 10px; display:none;">
                                 <div style="flex-grow: 1;">
                                     <h6 style="margin: 0; font-size: 1rem; color: #333; font-weight: 600;">${name}</h6>
-                                    <p style="margin: 2px 0 0; font-size: 0.8rem; color: #666;">${country}</p>
+                                    <p style="margin: 2px 0 0; font-size: 0.8rem; color: #666;">${countryName || 'N/A'}</p>
                                     <span style="font-size: 0.75rem; color: #888; display: block; margin-top: 3px;">${visitDate}</span>
                                 </div>
                                 <button class="pin-button" title="Fissa/Sgancia popup" style="position: absolute; top: 8px; right: 34px; background: none; border: none; font-size: 1rem; color: ${popupIsPinned ? 'var(--primary-color)' : '#999'}; transform: ${popupIsPinned ? 'rotate(-45deg)' : 'rotate(0)'}; cursor: pointer; padding: 5px; border-radius: 50%;"><i class="fas fa-thumbtack"></i></button>
@@ -1405,15 +1405,21 @@
 
         function addGlobeMarker(pinData, index, parentMarkersGroup) {
             const latRad = pinData.lat * (Math.PI / 180);
-            const lonRad = -pinData.lng * (Math.PI / 180); // Negate for correct mapping
+            // Use -pinData.lng for lonRad as part of the intermediate calculation 
+            // that, when later adjusted by negating x and z, matches the previous working formula
+            const lonRad = -pinData.lng * (Math.PI / 180); 
             const earthRadius = 5;
 
             const markerGroup = new THREE.Group();
-            markerGroup.position.set(
-                Math.cos(latRad) * Math.cos(lonRad) * earthRadius,
-                Math.sin(latRad) * earthRadius,
-                Math.cos(latRad) * Math.sin(lonRad) * earthRadius
-            );
+
+            // Calculate intermediate position based on current logic
+            let xPos_calc = Math.cos(latRad) * Math.cos(lonRad) * earthRadius;
+            let yPos_calc = Math.sin(latRad) * earthRadius;
+            let zPos_calc = Math.cos(latRad) * Math.sin(lonRad) * earthRadius;
+
+            // Apply adjustment to match previous working formula: negate x and z
+            markerGroup.position.set(-xPos_calc, yPos_calc, -zPos_calc);
+            
             markerGroup.lookAt(0, 0, 0); // Orient towards center initially, then adjust
 
             // Simple sphere marker
@@ -1468,15 +1474,19 @@
             }
 
             controls.autoRotate = false;
-            const latRad = lat * (Math.PI / 180);
-            const lonRad = -lng * (Math.PI / 180); // Negate for correct mapping
             const targetDistance = 7.5; // How close to fly
 
-            const targetPosition = new THREE.Vector3(
-                Math.cos(latRad) * Math.cos(lonRad) * targetDistance,
-                Math.sin(latRad) * targetDistance,
-                Math.cos(latRad) * Math.sin(lonRad) * targetDistance
-            );
+            // Calculate target camera position using the same logic as markers for consistency
+            const latRad = lat * (Math.PI / 180);
+            const lonRad_intermediate = -lng * (Math.PI / 180); // Intermediate step
+
+            let targetX_calc = Math.cos(latRad) * Math.cos(lonRad_intermediate) * targetDistance;
+            let targetY_calc = Math.sin(latRad) * targetDistance;
+            let targetZ_calc = Math.cos(latRad) * Math.sin(lonRad_intermediate) * targetDistance;
+            
+            // Apply the same adjustment as markers
+            const targetPosition = new THREE.Vector3(-targetX_calc, targetY_calc, -targetZ_calc);
+
 
             gsap.to(camera.position, {
                 x: targetPosition.x,
