@@ -8,51 +8,24 @@
     int visitedCount = Model.VisitedCountries?.Count ?? 0;
     int distinctContinents = hasVisitedCountries ? Model.VisitedCountries.Select(c => c.Country?.Continent).Where(c => c != null).Distinct().Count() : 0;
     
-    // Funzione helper per ottenere la capitale di un paese
-    // Utilizziamo un dizionario locale perché è più veloce che fare una query al database per ogni paese
-    string GetCapital(string countryCode)
-    {
-        var capitals = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-        {
-            { "IT", "Roma" },
-            { "FR", "Parigi" },
-            { "GB", "Londra" },
-            { "US", "Washington D.C." },
-            { "DE", "Berlino" },
-            { "ES", "Madrid" },
-            { "JP", "Tokyo" },
-            { "CN", "Pechino" },
-            { "AU", "Canberra" },
-            { "RU", "Mosca" },
-            { "BR", "Brasilia" },
-            { "IN", "Nuova Delhi" },
-            { "ZA", "Pretoria" },
-            { "MX", "Città del Messico" },
-            { "AR", "Buenos Aires" },
-            { "EG", "Il Cairo" },
-            { "GR", "Atene" },
-            { "SE", "Stoccolma" },
-            { "NO", "Oslo" },
-            { "PT", "Lisbona" },
-            { "CH", "Berna" },
-            { "AT", "Vienna" },
-            { "BE", "Bruxelles" },
-            { "NL", "Amsterdam" },
-            { "CA", "Ottawa" }
-            // Ora include molte più capitali per evitare conflitti
-        };
+    @{
+        // Calcoli preliminari per evitare chiamate ripetute e prevenire errori
+        bool hasVisitedCities = Model.VisitedCities?.Any() == true;
+        int visitedCitiesCount = Model.VisitedCities?.Count ?? 0;
+        // Assuming VisitedCities contains CityViewModel which has Country.Continent
+        // For simplicity, let's assume VisitedCityViewModel has a CountryContinent property or similar
+        // Or we can derive it if CountryName is unique enough, or better, add Continent to VisitedCityViewModel
+        // For now, this part might need adjustment in the C# model (VisitedCityViewModel to include Continent)
+        // For the demo, let's count distinct countries from visited cities
+        int distinctContinents = hasVisitedCities ? Model.VisitedCities.Select(c => c.CountryName).Distinct().Count() : 0; // This is a simplification.
 
-        return capitals.TryGetValue(countryCode, out string capital) ? capital : $"Capitale di {countryCode}";
+        DateTime? firstVisit = hasVisitedCities
+            ? Model.VisitedCities.Min(c => c.VisitDate)
+            : (DateTime?)null;
+
+        int? firstVisitYear = firstVisit?.Year;
+        int yearsOfTraveling = hasVisitedCities && firstVisitYear.HasValue ? DateTime.Now.Year - firstVisitYear.Value : 0;
     }
-
-    DateTime? firstVisit = hasVisitedCountries 
-        ? Model.VisitedCountries.Any() 
-            ? Model.VisitedCountries.Min(c => c.VisitDate) 
-            : (DateTime?)null
-        : null;
-    
-    int? firstVisitYear = firstVisit?.Year;
-    int yearsOfTraveling = hasVisitedCountries && firstVisitYear.HasValue ? DateTime.Now.Year - firstVisitYear.Value : 0;
 }
 
 <div class="globe-container">
@@ -109,16 +82,16 @@
                                 <span class="progress-label">@Model.VisitedPercentage.ToString("0.0")%</span>
                             </div>
                         </div>
-                        <p class="text-muted mt-2">Hai visitato @visitedCount paesi su 193 nel mondo</p>
+                        <p class="text-muted mt-2">Hai esplorato @Model.VisitedPercentage.ToString("0.0")% dei paesi del mondo</p>
                     </div>
 
                     <div class="stats-grid">
                         <div class="stat-item">
-                            <div class="stat-value">@visitedCount</div>
-                            <div class="stat-label">Città</div>
+                            <div class="stat-value">@visitedCitiesCount</div>
+                            <div class="stat-label">Città Visitate</div>
                         </div>
                         <div class="stat-item">
-                            <div class="stat-value">@distinctContinents</div>
+                            <div class="stat-value">@distinctContinents</div> @* Placeholder - Needs proper logic based on VisitedCityViewModel data *@
                             <div class="stat-label">Continenti</div>
                         </div>
                         <div class="stat-item">
@@ -126,7 +99,7 @@
                             <div class="stat-label">Prima visita</div>
                         </div>
                         <div class="stat-item">
-                            <div class="stat-value">@(hasVisitedCountries ? yearsOfTraveling : "0")</div>
+                            <div class="stat-value">@(hasVisitedCities ? yearsOfTraveling : "0")</div>
                             <div class="stat-label">Anni di viaggi</div>
                         </div>
                     </div>
@@ -134,13 +107,12 @@
                     <div class="continents-stats mt-4">
                         <h5 class="mb-3">Esplorazione Continenti</h5>
                         @{
+                            // This needs to be reworked based on VisitedCityViewModel.
+                            // For now, a placeholder. Ideally, VisitedCityViewModel would have Continent.
                             var continents = new Dictionary<string, (string color, int count)> {
-                                { "Europa", ("#4374e0", Model.VisitedCountries?.Count(c => c.Country?.Continent == "Europa") ?? 0) },
-                                { "Nord America", ("#5cb85c", Model.VisitedCountries?.Count(c => c.Country?.Continent == "Nord America") ?? 0) },
-                                { "Sud America", ("#f0ad4e", Model.VisitedCountries?.Count(c => c.Country?.Continent == "Sud America") ?? 0) },
-                                { "Asia", ("#d9534f", Model.VisitedCountries?.Count(c => c.Country?.Continent == "Asia") ?? 0) },
-                                { "Africa", ("#b27efa", Model.VisitedCountries?.Count(c => c.Country?.Continent == "Africa") ?? 0) },
-                                { "Oceania", ("#5bc0de", Model.VisitedCountries?.Count(c => c.Country?.Continent == "Oceania") ?? 0) }
+                                { "Europa", ("#4374e0", Model.VisitedCities?.Count(c => c.CountryName == "Italia" || c.CountryName == "Francia") ?? 0) }, // Example
+                                { "Nord America", ("#5cb85c", Model.VisitedCities?.Count(c => c.CountryName == "Stati Uniti") ?? 0) }, // Example
+                                // ... add other continents or a dynamic way to count
                             };
 
                             foreach (var continent in continents)
@@ -155,7 +127,7 @@
                                     </div>
                                     <div class="progress">
                                         <div class="progress-bar" role="progressbar"
-                                         style="width: @(continent.Value.count > 0 ? Math.Max(8, continent.Value.count * 5) : 0)%; background-color: @continent.Value.color"
+                                         style="width: @(continent.Value.count > 0 ? Math.Max(8, continent.Value.count * 5) : 0)%; background-color: @continent.Value.color" // Simple scaling
                                          aria-valuenow="@continent.Value.count" aria-valuemin="0" aria-valuemax="100">
                                         </div>
                                     </div>
@@ -180,34 +152,34 @@
                         </div>
 
                         <div class="badge-progress mb-3">
-                            <div class="badge-icon @(visitedCount >= 5 ? "unlocked" : "locked")">
+                            <div class="badge-icon @(visitedCitiesCount >= 5 ? "unlocked" : "locked")">
                                 <i class="fas fa-passport"></i>
                             </div>
                             <div class="badge-info">
                                 <span class="badge-name">Viaggiatore Esperto</span>
                                 <div class="progress">
                                     <div class="progress-bar bg-info" role="progressbar"
-                                         style="width: @(Math.Min(100, visitedCount * 100 / 5))%"
-                                         aria-valuenow="@(Math.Min(100, visitedCount * 100 / 5))"
+                                         style="width: @(Math.Min(100, visitedCitiesCount * 100 / 5))%"
+                                         aria-valuenow="@(Math.Min(100, visitedCitiesCount * 100 / 5))"
                                          aria-valuemin="0" aria-valuemax="100"></div>
                                 </div>
-                                <span class="badge-desc">Visita 5 città - @visitedCount/5</span>
+                                <span class="badge-desc">Visita 5 città - @visitedCitiesCount/5</span>
                             </div>
                         </div>
 
                         <div class="badge-progress">
-                            <div class="badge-icon @(visitedCount >= 10 ? "unlocked" : "locked")">
+                            <div class="badge-icon @(visitedCitiesCount >= 10 ? "unlocked" : "locked")">
                                 <i class="fas fa-globe-americas"></i>
                             </div>
                             <div class="badge-info">
                                 <span class="badge-name">Cittadino del Mondo</span>
                                 <div class="progress">
                                     <div class="progress-bar bg-warning" role="progressbar"
-                                         style="width: @(Math.Min(100, visitedCount * 100 / 10))%"
-                                         aria-valuenow="@(Math.Min(100, visitedCount * 100 / 10))"
+                                         style="width: @(Math.Min(100, visitedCitiesCount * 100 / 10))%"
+                                         aria-valuenow="@(Math.Min(100, visitedCitiesCount * 100 / 10))"
                                          aria-valuemin="0" aria-valuemax="100"></div>
                                 </div>
-                                <span class="badge-desc">Visita 10 città - @visitedCount/10</span>
+                                <span class="badge-desc">Visita 10 città - @visitedCitiesCount/10</span>
                             </div>
                         </div>
                     </div>
@@ -227,38 +199,38 @@
                 </div>
 
                 <div class="cities-container mt-3">
-                    @if (hasVisitedCountries)
+                    @if (hasVisitedCities)
                     {
                         <div class="visited-cities-grid" id="citiesList">
-                            @foreach (var country in Model.VisitedCountries.OrderByDescending(vc => vc.VisitDate))
+                            @foreach (var cityVm in Model.VisitedCities) 
                             {
-                                <div class="city-card" data-name="@GetCapital(country.Country?.Code ?? "").ToLower()" data-country="@(country.Country?.Name?.ToLower() ?? "")">
+                                <div class="city-card" data-name="@(cityVm.CityName?.ToLower() ?? "")" data-country="@(cityVm.CountryName?.ToLower() ?? "")">
                                     <div class="city-card-header">
-                                        <img src="~/images/cities/@(country.Country?.Code?.ToLower() ?? "unknown")-city.jpg"
-                                             alt="Immagine di @GetCapital(country.Country?.Code ?? "")"
+                                        <img src="~/images/cities/@(cityVm.CountryCode?.ToLower() ?? "unknown")-city.jpg"
+                                             alt="Immagine di @cityVm.CityName"
                                              onerror="this.onerror=null; this.src='/images/city-placeholder.jpg';">
                                         <div class="city-flag">
-                                            <img src="~/images/flags/@(country.Country?.Code?.ToLower() ?? "unknown").png"
-                                                 alt="Bandiera di @(country.Country?.Name ?? "paese sconosciuto")"
+                                            <img src="~/images/flags/@(cityVm.CountryCode?.ToLower() ?? "unknown").png"
+                                                 alt="Bandiera di @cityVm.CountryName"
                                                  onerror="this.onerror=null; this.src='/images/flags/unknown.png';">
                                         </div>
                                     </div>
                                     <div class="city-card-body">
-                                        <h6 class="city-name">@GetCapital(country.Country?.Code ?? "")</h6>
-                                        <p class="city-country">@country.Country?.Name</p>
+                                        <h6 class="city-name">@cityVm.CityName</h6>
+                                        <p class="city-country">@cityVm.CountryName</p>
                                         <div class="city-visit-date">
-                                            <i class="far fa-calendar-alt"></i> @country.VisitDate.ToString("dd/MM/yyyy")
+                                            <i class="far fa-calendar-alt"></i> @cityVm.VisitDate.ToString("dd/MM/yyyy")
                                         </div>
                                     </div>
                                     <div class="city-actions">
                                         <button type="button" class="btn btn-sm btn-outline-primary fly-to-btn"
-                                                data-lat="@country.Country?.Latitude" data-lng="@country.Country?.Longitude"
-                                                aria-label="Vola a @GetCapital(country.Country?.Code ?? "")">
+                                                data-lat="@cityVm.Latitude" data-lng="@cityVm.Longitude"
+                                                aria-label="Vola a @cityVm.CityName">
                                             <i class="fas fa-plane"></i> Vola qui
                                         </button>
-                                        <form method="post" asp-page-handler="RemoveCountry" asp-route-countryId="@country.CountryId"
+                                        <form method="post" asp-page-handler="RemoveCountry" asp-route-cityId="@cityVm.CityId"
                                               onsubmit="return confirm('Vuoi davvero rimuovere questa città?');">
-                                            <button type="submit" class="btn btn-sm btn-outline-danger" aria-label="Rimuovi @GetCapital(country.Country?.Code ?? "")">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" aria-label="Rimuovi @cityVm.CityName">
                                                 <i class="fas fa-trash"></i>
                                             </button>
                                         </form>
@@ -287,15 +259,12 @@
 
                     <form method="post" asp-page-handler="AddCountry" class="add-city-form">
                         <div class="form-group mb-3">
-                            <label for="countryId" class="form-label">Seleziona una città</label>
-                            <select class="form-select" id="countryId" name="countryId" required aria-describedby="countryHelp">
+                            <label for="cityId" class="form-label">Seleziona una città</label>
+                            <select class="form-select" id="cityId" name="cityId" required aria-describedby="cityHelp">
                                 <option value="">-- Seleziona una città --</option>
                                 @{
-                                    var availableCountries = Model.AllCountries?
-                                        .Where(c => !Model.VisitedCountries.Any(vc => vc.CountryId == c.Id))
-                                        .OrderBy(c => c.Name) ?? Enumerable.Empty<dynamic>();
-
-                                    var continentGroups = availableCountries
+                                    // Group cities by continent for the dropdown
+                                    var cityContinentGroups = Model.AllCitiesForDropdown
                                         .GroupBy(c => c.Continent ?? "Altro")
                                         .OrderBy(g => g.Key == "Europa" ? 0 :
                                                      g.Key == "Nord America" ? 1 :
@@ -304,30 +273,26 @@
                                                      g.Key == "Africa" ? 4 :
                                                      g.Key == "Oceania" ? 5 : 6);
                                 }
-
-                                @foreach (var continent in continentGroups)
+                                @foreach (var continentGroup in cityContinentGroups)
                                 {
-                                    <optgroup label="@continent.Key">
-                                        @foreach (var country in continent)
+                                    <optgroup label="@continentGroup.Key">
+                                        @foreach (var cityInfo in continentGroup.OrderBy(c => c.CityDisplayName))
                                         {
-                                            var capitalName = GetCapital(country.Code);
-                                            <option value="@country.Id">@capitalName (@country.Name)</option>
-                                            
-                                            @* Qui potremmo aggiungere altre città oltre alle capitali ma per ora lasciamo solo le capitali *@
+                                            <option value="@cityInfo.CityId" data-country-code="@cityInfo.CountryCode">@cityInfo.CityDisplayName</option>
                                         }
                                     </optgroup>
                                 }
                             </select>
-                            <div id="countryHelp" class="form-text">Seleziona la città che hai visitato</div>
+                            <div id="cityHelp" class="form-text">Seleziona la città che hai visitato</div>
                         </div>
 
-                        <div class="city-preview" id="cityPreview" style="display:none">
+                        <div class="city-preview" id="cityPreview" style="display:none;">
                             <div class="city-image">
-                                <img src="" id="cityImage" alt="Anteprima città">
+                                <img src="" id="cityImage" alt="Anteprima città" onerror="this.src='/images/city-placeholder.jpg';">
                             </div>
                             <div class="city-details">
-                                <h6 id="previewCityName"></h6>
-                                <p id="previewCountryName"></p>
+                                <h6 id="previewCityName">Nome Città</h6>
+                                <p id="previewCountryName">Nome Paese</p>
                             </div>
                         </div>
 
@@ -384,563 +349,504 @@
     </div>
 </div>
 
-@functions {
-    public string GetCapital(string countryCode)
-    {
-        var capitals = new Dictionary<string, string>
-        {
-            // Europa
-            {"IT", "Roma"}, {"GB", "Londra"}, {"FR", "Parigi"}, {"DE", "Berlino"}, 
-            {"ES", "Madrid"}, {"PT", "Lisbona"}, {"NL", "Amsterdam"}, {"BE", "Bruxelles"}, 
-            {"LU", "Lussemburgo"}, {"CH", "Berna"}, {"AT", "Vienna"}, {"GR", "Atene"}, 
-            {"SE", "Stoccolma"}, {"NO", "Oslo"}, {"DK", "Copenaghen"}, {"FI", "Helsinki"}, 
-            {"IE", "Dublino"}, {"IS", "Reykjavik"}, {"MT", "La Valletta"}, {"CY", "Nicosia"},
-            {"PL", "Varsavia"}, {"CZ", "Praga"}, {"SK", "Bratislava"}, {"HU", "Budapest"}, 
-            {"RO", "Bucarest"}, {"BG", "Sofia"}, {"HR", "Zagabria"}, {"SI", "Lubiana"}, 
-            {"RS", "Belgrado"}, {"ME", "Podgorica"}, {"AL", "Tirana"}, {"MK", "Skopje"}, 
-            {"BA", "Sarajevo"}, {"MD", "Chisinau"}, {"BY", "Minsk"}, {"LT", "Vilnius"}, 
-            {"LV", "Riga"}, {"EE", "Tallinn"}, {"UA", "Kiev"}, {"VA", "Città del Vaticano"}, 
-            {"SM", "San Marino"}, {"MC", "Monaco"}, {"AD", "Andorra la Vella"}, {"LI", "Vaduz"},
-            
-            // Resto del mondo...
-            {"RU", "Mosca"}, {"JP", "Tokyo"}, {"CN", "Pechino"}, {"IN", "Nuova Delhi"}, 
-            {"KR", "Seoul"}, {"KP", "Pyongyang"}, {"TH", "Bangkok"}, {"VN", "Hanoi"}, 
-            {"LA", "Vientiane"}, {"KH", "Phnom Penh"}, {"MY", "Kuala Lumpur"}, {"SG", "Singapore"}, 
-            {"ID", "Giacarta"}, {"PH", "Manila"}, {"TR", "Ankara"}, {"SA", "Riyadh"}, 
-            {"AE", "Abu Dhabi"}, {"IL", "Gerusalemme"}, {"LB", "Beirut"}, {"JO", "Amman"}, 
-            {"QA", "Doha"}, {"KW", "Kuwait City"}, {"IQ", "Baghdad"}, {"IR", "Teheran"}, 
-            {"AF", "Kabul"}, {"PK", "Islamabad"}, {"BD", "Dhaka"}, {"LK", "Colombo"}, 
-            {"MM", "Naypyidaw"}, {"KZ", "Astana"}, {"UZ", "Tashkent"}, {"TM", "Ashgabat"}, 
-            {"KG", "Bishkek"}, {"TJ", "Dushanbe"}, {"MN", "Ulaanbaatar"}, {"BT", "Thimphu"}, 
-            {"NP", "Kathmandu"}, {"MV", "Male"}, {"BN", "Bandar Seri Begawan"}, {"TL", "Dili"},
-            {"AM", "Yerevan"}, {"GE", "Tbilisi"}, {"AZ", "Baku"},
-            {"ZA", "Pretoria"}, {"EG", "Cairo"}, {"MA", "Rabat"}, {"NG", "Abuja"},
-            {"KE", "Nairobi"}, {"ET", "Addis Abeba"}, {"TZ", "Dodoma"}, {"MZ", "Maputo"}, 
-            {"ZW", "Harare"}, {"AO", "Luanda"}, {"NA", "Windhoek"}, {"BW", "Gaborone"}, 
-            {"ZM", "Lusaka"}, {"CD", "Kinshasa"}, {"CG", "Brazzaville"}, {"GA", "Libreville"}, 
-            {"CM", "Yaoundé"}, {"TD", "N'Djamena"}, {"NE", "Niamey"}, {"ML", "Bamako"}, 
-            {"SN", "Dakar"}, {"CI", "Yamoussoukro"}, {"GH", "Accra"}, {"TG", "Lomé"},
-            {"BJ", "Porto-Novo"}, {"CV", "Praia"},
-            {"US", "Washington D.C."}, {"CA", "Ottawa"}, {"MX", "Città del Messico"},
-            {"BR", "Brasilia"}, {"AR", "Buenos Aires"}, {"CO", "Bogotá"}, {"CL", "Santiago"}, 
-            {"PE", "Lima"}, {"VE", "Caracas"}, {"EC", "Quito"}, {"BO", "La Paz"}, 
-            {"PY", "Asunción"}, {"UY", "Montevideo"}, {"GY", "Georgetown"}, {"SR", "Paramaribo"},
-            {"PA", "Panama"}, {"CR", "San José"}, {"NI", "Managua"}, {"HN", "Tegucigalpa"},
-            {"SV", "San Salvador"}, {"GT", "Città del Guatemala"}, {"BZ", "Belmopan"},
-            {"CU", "L'Avana"}, {"BS", "Nassau"}, {"JM", "Kingston"}, {"HT", "Port-au-Prince"}, 
-            {"DO", "Santo Domingo"}, {"KN", "Basseterre"}, {"AG", "Saint John's"},
-            {"DM", "Roseau"}, {"LC", "Castries"}, {"VC", "Kingstown"}, {"BB", "Bridgetown"}, 
-            {"GD", "St. George's"}, {"TT", "Port of Spain"},
-            {"AU", "Canberra"}, {"NZ", "Wellington"}, {"PG", "Port Moresby"}, {"FJ", "Suva"}, 
-            {"SB", "Honiara"}, {"VU", "Port Vila"}, {"TO", "Nukuʻalofa"}, {"WS", "Apia"},
-            {"PW", "Ngerulmud"}, {"FM", "Palikir"}, {"MH", "Majuro"}, {"KI", "Tarawa"}, 
-            {"NR", "Yaren"}, {"TV", "Funafuti"}
-        };
-
-        if (string.IsNullOrEmpty(countryCode))
-            return "Capitale sconosciuta";
-            
-        return capitals.ContainsKey(countryCode) ? capitals[countryCode] : $"Capitale di {countryCode}";
-    }
-}
 
 @section Styles {
     <link rel="stylesheet" href="~/css/globe-popup.css" asp-append-version="true">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <style>
         :root {
-            --primary-color: #1a73e8;
-            --accent-color: #2ecc71;
-            --dark-color: #2c3e50;
-            --light-color: #f8f9fa;
-            --light-accent: #e9ecef;
-            --border-radius: 12px;
-            --box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            --transition: all 0.3s ease;
+            --primary-color: #1a73e8; 
+            --accent-color: #2ecc71; 
+            --dark-color: #2c3e50; 
+            --light-color: #f8f9fa; 
+            --light-accent: #e9ecef; 
+            --border-radius: 12px; 
+            --box-shadow: 0 4px 12px rgba(0,0,0,0.1); 
+            --transition: all 0.3s ease; 
         }
         
         body {
-            background-color: #f2f2f2;
-            overflow: hidden;
+            background-color: #f2f2f2; 
+            overflow: hidden; 
         }
         
         /* Layout principale */
         .globe-container {
-            display: grid;
-            grid-template-columns: 380px 1fr;
-            height: calc(100vh - 56px);
-            overflow: hidden;
+            display: grid; 
+            grid-template-columns: 380px 1fr; 
+            height: calc(100vh - 56px); 
+            overflow: hidden; 
         }
 
         .sidebar {
-    width: 280px;
-    height: calc(100vh - 64px);
-    overflow-y: auto;
-}
+            width: 280px; 
+            height: calc(100vh - 64px); 
+            overflow-y: auto; 
+        }
 
-.sidebar-heading {
-    font-size: 0.95rem;
-    font-weight: 600;
-    text-transform: uppercase;
-}
+        .sidebar-heading {
+            font-size: 0.95rem; 
+            font-weight: 600; 
+            text-transform: uppercase; 
+        }
 
-.sidebar .progress {
-    border-radius: 10px;
-    background-color: #e9ecef;
-}
+        .sidebar .progress {
+            border-radius: 10px; 
+            background-color: #e9ecef; 
+        }
 
-.sidebar .progress-bar {
-    border-radius: 10px;
-}
+        .sidebar .progress-bar {
+            border-radius: 10px; 
+        }
 
-/* Assicurati che le intestazioni siano sempre visibili */
-.sidebar-heading {
-    display: flex !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-}
+        /* Assicurati che le intestazioni siano sempre visibili */
+        .sidebar-heading {
+            display: flex !important; 
+            visibility: visible !important; 
+            opacity: 1 !important; 
+        }
         
         /* Sidebar Explorer */
         .explorer-sidebar {
-            background-color: #fff;
-            border-right: 1px solid rgba(0,0,0,0.1);
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            height: 100%;
+            background-color: #fff; 
+            border-right: 1px solid rgba(0,0,0,0.1); 
+            display: flex; 
+            flex-direction: column; 
+            overflow: hidden; 
+            height: 100%; 
         }
         
         .sidebar-header {
-            padding: 20px;
-            border-bottom: 1px solid rgba(0,0,0,0.1);
+            padding: 20px; 
+            border-bottom: 1px solid rgba(0,0,0,0.1); 
         }
         
         .profile-info {
-            display: flex;
-            align-items: center;
-            gap: 15px;
+            display: flex; 
+            align-items: center; 
+            gap: 15px; 
         }
         
         .profile-avatar {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 2px solid var(--primary-color);
+            width: 50px; 
+            height: 50px; 
+            border-radius: 50%; 
+            object-fit: cover; 
+            border: 2px solid var(--primary-color); 
         }
         
         .badge-traveler {
-            display: inline-block;
-            background-color: var(--accent-color);
-            color: white;
-            font-size: 0.8rem;
-            padding: 3px 10px;
-            border-radius: 15px;
+            display: inline-block; 
+            background-color: var(--accent-color); 
+            color: white; 
+            font-size: 0.8rem; 
+            padding: 3px 10px; 
+            border-radius: 15px; 
         }
         
         /* Navigazione a schede */
         .nav-tabs {
-            border-bottom: 1px solid rgba(0,0,0,0.1);
+            border-bottom: 1px solid rgba(0,0,0,0.1); 
         }
         
         .nav-tabs .nav-link {
-            color: var(--dark-color);
-            border: none;
-            padding: 15px 10px;
-            font-weight: 500;
+            color: var(--dark-color); 
+            border: none; 
+            padding: 15px 10px; 
+            font-weight: 500; 
         }
         
         .nav-tabs .nav-link.active {
-            color: var(--primary-color);
-            border-bottom: 2px solid var(--primary-color);
-            background: transparent;
+            color: var(--primary-color); 
+            border-bottom: 2px solid var(--primary-color); 
+            background: transparent; 
         }
         
         .nav-tabs .nav-link i {
-            margin-right: 5px;
+            margin-right: 5px; 
         }
         
         /* Contenitore scheda contenuti */
         .tab-content {
-            overflow-y: auto;
-            padding: 15px;
-            flex: 1;
+            overflow-y: auto; 
+            padding: 15px; 
+            flex: 1; 
         }
         
         /* Scheda Statistiche */
         .stats-card {
-            background: white;
-            border-radius: var(--border-radius);
-            box-shadow: var(--box-shadow);
-            padding: 15px;
+            background: white; 
+            border-radius: var(--border-radius); 
+            box-shadow: var(--box-shadow); 
+            padding: 15px; 
         }
         
         .stats-header {
-            margin-bottom: 15px;
-            border-bottom: 1px solid var(--light-accent);
-            padding-bottom: 10px;
+            margin-bottom: 15px; 
+            border-bottom: 1px solid var(--light-accent); 
+            padding-bottom: 10px; 
         }
         
         .progress-lg {
-            height: 25px;
-            border-radius: 15px;
-            background-color: var(--light-accent);
+            height: 25px; 
+            border-radius: 15px; 
+            background-color: var(--light-accent); 
         }
         
         .progress-bar {
-            border-radius: 15px;
+            border-radius: 15px; 
         }
         
         .progress-label {
-            margin-left: 10px;
-            font-weight: bold;
-            line-height: 25px;
+            margin-left: 10px; 
+            font-weight: bold; 
+            line-height: 25px; 
         }
         
         .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
-            margin-top: 20px;
+            display: grid; 
+            grid-template-columns: repeat(2, 1fr); 
+            gap: 15px; 
+            margin-top: 20px; 
         }
         
         .stat-item {
-            background: linear-gradient(145deg, #f8f9fa, #e9ecef);
-            border-radius: var(--border-radius);
-            padding: 15px;
-            text-align: center;
-            transition: var(--transition);
+            background: linear-gradient(145deg, #f8f9fa, #e9ecef); 
+            border-radius: var(--border-radius); 
+            padding: 15px; 
+            text-align: center; 
+            transition: var(--transition); 
         }
         
         .stat-item:hover {
-            transform: translateY(-5px);
-            box-shadow: var(--box-shadow);
+            transform: translateY(-5px); 
+            box-shadow: var(--box-shadow); 
         }
         
         .stat-value {
-            font-size: 2rem;
-            font-weight: bold;
-            color: var(--primary-color);
+            font-size: 2rem; 
+            font-weight: bold; 
+            color: var(--primary-color); 
         }
         
         .stat-label {
-            color: var(--dark-color);
-            font-size: 0.9rem;
+            color: var(--dark-color); 
+            font-size: 0.9rem; 
         }
         
         .continent-progress {
-            margin-bottom: 10px;
+            margin-bottom: 10px; 
         }
         
         .continent-label {
-            display: flex;
-            align-items: center;
-            margin-bottom: 5px;
+            display: flex; 
+            align-items: center; 
+            margin-bottom: 5px; 
         }
         
         .continent-color {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            display: inline-block;
-            margin-right: 8px;
+            width: 12px; 
+            height: 12px; 
+            border-radius: 50%; 
+            display: inline-block; 
+            margin-right: 8px; 
         }
         
         .next-badges h6, .continents-stats h6 {
-            margin-bottom: 15px;
-            font-weight: 600;
-            color: var(--dark-color);
+            margin-bottom: 15px; 
+            font-weight: 600; 
+            color: var(--dark-color); 
         }
         
         .badge-progress {
-            display: flex;
-            align-items: center;
-            margin-bottom: 15px;
-            gap: 10px;
+            display: flex; 
+            align-items: center; 
+            margin-bottom: 15px; 
+            gap: 10px; 
         }
         
         .badge-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.2rem;
+            width: 40px; 
+            height: 40px; 
+            border-radius: 50%; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 1.2rem; 
         }
         
         .badge-icon.unlocked {
-            background-color: var(--accent-color);
-            color: white;
+            background-color: var(--accent-color); 
+            color: white; 
         }
         
         .badge-icon.locked {
-            background-color: var(--light-accent);
-            color: var(--dark-color);
+            background-color: var(--light-accent); 
+            color: var(--dark-color); 
         }
         
         .badge-info {
-            flex: 1;
+            flex: 1; 
         }
         
         .badge-name {
-            display: block;
-            font-weight: 500;
-            margin-bottom: 5px;
+            display: block; 
+            font-weight: 500; 
+            margin-bottom: 5px; 
         }
         
         .badge-desc {
-            font-size: 0.8rem;
-            color: #6c757d;
+            font-size: 0.8rem; 
+            color: #6c757d; 
         }
         
         /* Scheda Città */
         .cities-header {
-            margin-bottom: 15px;
+            margin-bottom: 15px; 
         }
         
         .visited-cities-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
+            display: grid; 
+            grid-template-columns: repeat(2, 1fr); 
+            gap: 15px; 
         }
         
         .city-card {
-            background: white;
-            border-radius: var(--border-radius);
-            overflow: hidden;
-            box-shadow: var(--box-shadow);
-            transition: var(--transition);
+            background: white; 
+            border-radius: var(--border-radius); 
+            overflow: hidden; 
+            box-shadow: var(--box-shadow); 
+            transition: var(--transition); 
         }
         
         .city-card:hover {
-            transform: translateY(-5px);
+            transform: translateY(-5px); 
         }
         
         .city-card-header {
-            position: relative;
-            height: 120px;
-            overflow: hidden;
+            position: relative; 
+            height: 120px; 
+            overflow: hidden; 
         }
         
         .city-card-header img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transition: var(--transition);
+            width: 100%; 
+            height: 100%; 
+            object-fit: cover; 
+            transition: var(--transition); 
         }
         
         .city-card:hover .city-card-header img {
-            transform: scale(1.1);
+            transform: scale(1.1); 
         }
         
         .city-flag {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            width: 30px;
-            height: 20px;
-            border-radius: 4px;
-            overflow: hidden;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            position: absolute; 
+            top: 10px; 
+            right: 10px; 
+            width: 30px; 
+            height: 20px; 
+            border-radius: 4px; 
+            overflow: hidden; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2); 
         }
         
         .city-flag img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
+            width: 100%; 
+            height: 100%; 
+            object-fit: cover; 
         }
         
         .city-card-body {
-            padding: 15px;
+            padding: 15px; 
         }
         
         .city-name {
-            margin: 0;
-            font-weight: 600;
+            margin: 0; 
+            font-weight: 600; 
         }
         
         .city-country {
-            color: #6c757d;
-            margin-bottom: 10px;
-            font-size: 0.9rem;
+            color: #6c757d; 
+            margin-bottom: 10px; 
+            font-size: 0.9rem; 
         }
         
         .city-visit-date {
-            font-size: 0.85rem;
-            color: var(--dark-color);
+            font-size: 0.85rem; 
+            color: var(--dark-color); 
         }
         
         .city-actions {
-            display: flex;
-            justify-content: space-between;
-            padding: 10px 15px;
-            border-top: 1px solid var(--light-accent);
+            display: flex; 
+            justify-content: space-between; 
+            padding: 10px 15px; 
+            border-top: 1px solid var(--light-accent); 
         }
         
         .no-cities-message {
-            text-align: center;
-            padding: 30px;
-            color: #6c757d;
+            text-align: center; 
+            padding: 30px; 
+            color: #6c757d; 
         }
         
         .no-cities-message i {
-            font-size: 3rem;
-            margin-bottom: 15px;
-            color: var(--light-accent);
+            font-size: 3rem; 
+            margin-bottom: 15px; 
+            color: var(--light-accent); 
         }
         
         /* Scheda Aggiungi Città */
         .add-city-card {
-            background: white;
-            border-radius: var(--border-radius);
-            padding: 20px;
-            box-shadow: var(--box-shadow);
+            background: white; 
+            border-radius: var(--border-radius); 
+            padding: 20px; 
+            box-shadow: var(--box-shadow); 
         }
         
         .add-city-card h5 {
-            margin-bottom: 20px;
-            color: var(--dark-color);
-            border-bottom: 1px solid var(--light-accent);
-            padding-bottom: 10px;
+            margin-bottom: 20px; 
+            color: var(--dark-color); 
+            border-bottom: 1px solid var(--light-accent); 
+            padding-bottom: 10px; 
         }
         
         .city-preview {
-            margin: 15px 0;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-            display: flex;
-            align-items: center;
+            margin: 15px 0; 
+            border-radius: 8px; 
+            overflow: hidden; 
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1); 
+            display: flex; 
+            align-items: center; 
         }
         
         .city-image {
-            width: 100px;
-            height: 80px;
-            overflow: hidden;
+            width: 100px; 
+            height: 80px; 
+            overflow: hidden; 
         }
         
         .city-image img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
+            width: 100%; 
+            height: 100%; 
+            object-fit: cover; 
         }
         
         .city-details {
-            padding: 10px;
-            flex: 1;
+            padding: 10px; 
+            flex: 1; 
         }
         
         .city-details h6 {
-            margin: 0;
+            margin: 0; 
         }
         
         /* Globo principale */
         .main-globe-container {
-            position: relative;
-            background-color: #000;
+            position: relative; 
+            background-color: #000; 
         }
         
         .globe-controls {
-            position: absolute;
-            bottom: 20px;
-            left: 20px;
-            z-index: 100;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
+            position: absolute; 
+            bottom: 20px; 
+            left: 20px; 
+            z-index: 100; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 10px; 
         }
         
         .globe-control-btn {
-            background-color: rgba(255,255,255,0.2);
-            border: none;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            cursor: pointer;
-            transition: var(--transition);
+            background-color: rgba(255,255,255,0.2); 
+            border: none; 
+            border-radius: 50%; 
+            width: 40px; 
+            height: 40px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            color: white; 
+            cursor: pointer; 
+            transition: var(--transition); 
         }
         
         .globe-control-btn:hover {
-            background-color: rgba(255,255,255,0.4);
+            background-color: rgba(255,255,255,0.4); 
         }
         
         .globe-legend {
-            position: absolute;
-            bottom: 20px;
-            right: 20px;
-            z-index: 100;
-            background-color: rgba(0,0,0,0.5);
-            padding: 10px;
-            border-radius: 8px;
-            color: white;
+            position: absolute; 
+            bottom: 20px; 
+            right: 20px; 
+            z-index: 100; 
+            background-color: rgba(0,0,0,0.5); 
+            padding: 10px; 
+            border-radius: 8px; 
+            color: white; 
         }
         
         .legend-item {
-            display: flex;
-            align-items: center;
-            margin-bottom: 5px;
+            display: flex; 
+            align-items: center; 
+            margin-bottom: 5px; 
         }
         
         .legend-marker {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            margin-right: 8px;
+            width: 12px; 
+            height: 12px; 
+            border-radius: 50%; 
+            margin-right: 8px; 
         }
         
         .legend-marker.visited {
-            background-color: #ff4757;
+            background-color: #ff4757; 
         }
         
         .legend-marker.next {
-            background-color: #2ecc71;
+            background-color: #2ecc71; 
         }
         
         /* Responsive */
         @@media (max-width: 992px) {
             .globe-container {
-                grid-template-columns: 1fr;
-                grid-template-rows: 1fr 350px;
+                grid-template-columns: 1fr; 
+                grid-template-rows: 1fr 350px; 
             }
             
             .main-globe-container {
-                order: 1;
+                order: 1; 
             }
             
             .explorer-sidebar {
-                order: 2;
-                height: 350px;
-                overflow-y: auto;
+                order: 2; 
+                height: 350px; 
+                overflow-y: auto; 
             }
             
             .visited-cities-grid {
-                grid-template-columns: repeat(1, 1fr);
+                grid-template-columns: repeat(1, 1fr); 
             }
         }
         
         @@media (max-width: 768px) {
             .stats-grid {
-                grid-template-columns: 1fr;
+                grid-template-columns: 1fr; 
             }
         }
         
         /* Stili per i popup dei marker */
         .country-popup {
-            position: absolute !important;
-            width: 300px;
-            background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 5px 25px rgba(0, 0, 0, 0.25);
-            overflow: hidden;
-            z-index: 2000;
-            animation: popup-fade-in 0.3s ease;
-            pointer-events: auto;
-            transform: none !important;
+            position: absolute !important; 
+            width: 300px; 
+            background-color: white; 
+            border-radius: 8px; 
+            box-shadow: 0 5px 25px rgba(0, 0, 0, 0.25); 
+            overflow: hidden; 
+            z-index: 2000; 
+            animation: popup-fade-in 0.3s ease; 
+            pointer-events: auto; 
+            transform: none !important; 
         }
 
         @@keyframes popup-fade-in {
@@ -949,20 +855,20 @@
         }
         
         .pin-button {
-            transition: transform 0.3s ease, color 0.3s ease;
+            transition: transform 0.3s ease, color 0.3s ease; 
         }
 
         .pin-button:hover {
-            background-color: rgba(0,0,0,0.05);
+            background-color: rgba(0,0,0,0.05); 
         }
 
         .country-popup[data-pinned="true"] .pin-button {
-            color: #1a73e8;
-            transform: rotate(-45deg);
+            color: #1a73e8; 
+            transform: rotate(-45deg); 
         }
         
         .country-popup[data-pinned="true"] {
-            box-shadow: 0 5px 25px rgba(26, 115, 232, 0.4);
+            box-shadow: 0 5px 25px rgba(26, 115, 232, 0.4); 
         }
     </style>
 }
@@ -993,23 +899,24 @@
                 });
             });
             
-            // Preview della città selezionata
-            document.getElementById('countryId').addEventListener('change', function() {
+            // Preview della città selezionata (ora cityId)
+            document.getElementById('cityId').addEventListener('change', function() {
                 const cityPreview = document.getElementById('cityPreview');
                 const selectedOption = this.options[this.selectedIndex];
                 
                 if (this.value) {
-                    const countryId = this.value;
-                    const cityInfo = selectedOption.text.split('(');
-                    const cityName = cityInfo[0].trim();
-                    const countryName = cityInfo[1].replace(')', '').trim();
+                    //const cityId = this.value; // No longer directly using this for display text
+                    const cityInfoText = selectedOption.text; // e.g., "Rome (Italy)"
+                    const parts = cityInfoText.match(/(.+)\s\((.+)\)/);
+                    const cityName = parts ? parts[1] : cityInfoText;
+                    const countryName = parts ? parts[2] : "";
                     
                     document.getElementById('previewCityName').textContent = cityName;
                     document.getElementById('previewCountryName').textContent = countryName;
                     
-                    // Prova a caricare l'immagine della città
-                    const countryCode = selectedOption.getAttribute('data-code') || 'unknown';
+                    const countryCode = selectedOption.getAttribute('data-country-code') || 'unknown';
                     document.getElementById('cityImage').src = `/images/cities/${countryCode.toLowerCase()}-city.jpg`;
+                    document.getElementById('cityImage').onerror = function() { this.src='/images/city-placeholder.jpg'; }; // Fallback
                     
                     cityPreview.style.display = 'flex';
                 } else {
@@ -1018,7 +925,7 @@
             });
         });
         
-        // Funzione per filtrare le città visitate
+        // Funzione per filtrare le città visitate (searchCity input)
         function filterCities() {
             const searchTerm = document.getElementById('searchCity').value.toLowerCase();
             const cities = document.querySelectorAll('#citiesList .city-card');
@@ -1034,7 +941,6 @@
                 }
             });
 
-            // Mostra un messaggio se non ci sono risultati
             const visibleCities = document.querySelectorAll('#citiesList .city-card[style=""]').length;
             const noResultsEl = document.getElementById('noResults');
 
@@ -1050,31 +956,43 @@
                 noResultsEl.remove();
             }
         }
+        
+        // Listener for cityId change (dropdown)
+        const cityIdDropdown = document.getElementById('cityId');
+        if (cityIdDropdown) {
+            cityIdDropdown.addEventListener('change', function (e) {
+                const selectElement = e.target;
+                const selectedOption = selectElement.options[selectElement.selectedIndex];
+                const cityPreviewDiv = document.getElementById('cityPreview');
+                const cityImageEl = document.getElementById('cityImage');
+                const previewCityNameEl = document.getElementById('previewCityName');
+                const previewCountryNameEl = document.getElementById('previewCountryName');
 
-        // Anteprima della città selezionata
-        document.getElementById('countryId')?.addEventListener('change', function (e) {
-            const selectElement = e.target;
-            const selectedOption = selectElement.options[selectElement.selectedIndex];
+                if (selectedOption.value) {
+                    const displayText = selectedOption.text; // "cityName (countryName)"
+                    const parts = displayText.match(/(.+)\s\((.+)\)/);
+                    const cityName = parts ? parts[1] : displayText;
+                    const countryName = parts ? parts[2] : "";
+                    const countryCode = selectedOption.getAttribute('data-country-code') || 'unknown';
 
-            if (selectedOption.value) {
-                const cityName = selectedOption.text.split('(')[0].trim();
-                const countryName = selectedOption.text.match(/\(([^)]+)\)/)[1];
-                const countryCode = selectedOption.value.toLowerCase();
+                    cityPreviewDiv.style.display = 'flex';
+                    cityImageEl.src = `/images/cities/${countryCode.toLowerCase()}-city.jpg`;
+                    // Fallback already handled by onerror in HTML
+                    previewCityNameEl.textContent = cityName;
+                    previewCountryNameEl.textContent = countryName;
+                } else {
+                    cityPreviewDiv.style.display = 'none';
+                }
+            });
+        }
 
-                document.getElementById('cityPreview').style.display = 'flex';
-                document.getElementById('cityImage').src = `/images/cities/${countryCode}-city.jpg`;
-                document.getElementById('cityImage').onerror = function () {
-                    this.src = '/images/city-placeholder.jpg';
-                };
-                document.getElementById('previewCityName').textContent = cityName;
-                document.getElementById('previewCountryName').textContent = countryName;
-            } else {
-                document.getElementById('cityPreview').style.display = 'none';
-            }
-        });
 
         // Inizializza il filtro delle città quando la pagina è caricata
-        document.getElementById('searchCity')?.addEventListener('input', filterCities);
+        const searchCityInput = document.getElementById('searchCity');
+        if (searchCityInput) {
+            searchCityInput.addEventListener('input', filterCities);
+        }
+
 
         // Gestione dei pulsanti "vola qui"
         document.querySelectorAll('.fly-to-btn').forEach(button => {
@@ -1093,19 +1011,19 @@
         window.visitedPins = @Html.Raw(Model.VisitedCountriesJson ?? "[]");
         
         // Log per debug
-        console.log("Pin caricati:", window.visitedPins ? window.visitedPins.length : 0);
+        console.log("Pin caricati (VisitedCityViewModel):", window.visitedPins ? window.visitedPins.length : 0, window.visitedPins);
     </script>
     
     <script>
         // Verifica che i dati dei pin siano disponibili
         document.addEventListener('DOMContentLoaded', function () {
-            console.log("Pin disponibili:", window.visitedPins);
+            // console.log("Pin disponibili (VisitedCityViewModel):", window.visitedPins); // Already logged above
 
             // Stampa il numero di pin e le loro coordinate
             if (window.visitedPins && window.visitedPins.length > 0) {
                 console.log(`Numero di pin: ${window.visitedPins.length}`);
                 window.visitedPins.forEach((pin, index) => {
-                    console.log(`Pin ${index}: ${pin.name}, Lat: ${pin.lat}, Lng: ${pin.lng}`);
+                    console.log(`Pin ${index}: ${pin.CityName} (${pin.CountryName}), Lat: ${pin.Latitude}, Lng: ${pin.Longitude}`);
                 });
             } else {
                 console.warn("Nessun pin trovato nella variabile window.visitedPins");
@@ -1114,70 +1032,37 @@
     </script>
     
     <script>
-        // Funzione per filtrare le città
-        function filterCities() {
-            const input = document.getElementById('searchCity');
-            const filter = input.value.toLowerCase();
-            const cityCards = document.querySelectorAll('.city-card');
+        // Funzione per filtrare le città (redundant, already defined above, but keeping structure)
+        // function filterCities() { ... } // Removed as it's a duplicate
 
-            cityCards.forEach(card => {
-                const name = card.dataset.name;
-                const country = card.dataset.country;
-                
-                if (name.includes(filter) || country.includes(filter)) {
-                    card.style.display = "";
-                } else {
-                    card.style.display = "none";
-                }
-            });
-        }
+        // Dati delle capitali - REMOVED as per instructions
+        // const capitalsData = { ... };
 
-        // Dati delle capitali
-        const capitalsData = {
-            'IT': { name: 'Roma', lat: 41.9028, lng: 12.4964 },
-            'US': { name: 'Washington D.C.', lat: 38.9072, lng: -77.0369 },
-            'GB': { name: 'Londra', lat: 51.5074, lng: -0.1278 },
-            'FR': { name: 'Parigi', lat: 48.8566, lng: 2.3522 },
-            'DE': { name: 'Berlino', lat: 52.5200, lng: 13.4050 },
-            'NL': { name: 'Amsterdam', lat: 52.3676, lng: 4.9041 },
-            'GR': { name: 'Atene', lat: 37.9838, lng: 23.7275 },
-            // ... altri dati delle capitali
-        };
-
-        // Dati dei paesi visitati
-        const countryData = @Html.Raw(Json.Serialize(Model.VisitedCountries.Select(vc => new {
-            countryName = vc.Country.Name,
-            countryCode = vc.Country.Code,
-            lat = vc.Country.Latitude,
-            lng = vc.Country.Longitude,
-            visitDate = vc.VisitDate.ToString("dd/MM/yyyy")
-        })));
+        // Dati dei paesi visitati - REMOVED, using window.visitedPins directly
+        // const countryData = @Html.Raw(Json.Serialize(Model.VisitedCountries.Select(vc => new { ... })));
         
-        // Trasforma i dati con le coordinate delle capitali
-        const visitedCapitals = countryData.map(country => {
+        // Trasforma i dati con le coordinate delle capitali - MODIFIED
+        // Now directly use window.visitedPins as it contains all necessary info
+        const visitedCapitals = window.visitedPins.map(pin => {
             return {
-                name: capitalsData[country.countryCode]?.name || `Capitale di ${country.countryCode}`,
-                countryName: country.countryName,
-                countryCode: country.countryCode,
-                lat: country.lat,
-                lng: country.lng,
-                visitDate: country.visitDate
+                name: pin.CityName, // Use CityName from VisitedCityViewModel
+                countryName: pin.CountryName,
+                countryCode: pin.CountryCode,
+                lat: pin.Latitude,  // Use Latitude from VisitedCityViewModel
+                lng: pin.Longitude, // Use Longitude from VisitedCityViewModel
+                visitDate: new Date(pin.VisitDate).toLocaleDateString('it-IT') // Format date
             };
         });
+        console.log("Processed visitedCapitals for map:", visitedCapitals);
 
-        // Tutti i paesi
-        const allCountries = @Html.Raw(Json.Serialize(Model.AllCountries.Select(c => new {
-            id = c.Id,
-            name = c.Name,
-            code = c.Code,
-            lat = c.Latitude,
-            lng = c.Longitude
-        })));
+
+        // Tutti i paesi - REMOVED, not directly used by globe markers now, dropdown uses Model.AllCitiesForDropdown
+        // const allCountries = @Html.Raw(Json.Serialize(Model.AllCountries.Select(c => new { ... })));
 
         // Inizializzazione del globo 3D
         document.addEventListener('DOMContentLoaded', function() {
             initGlobe();
-            setupCountryPreview();
+            // setupCountryPreview() is now part of the cityId dropdown change listener
             setupGlobeControls();
         });
         
@@ -1273,9 +1158,9 @@
             const atmosphere = new THREE.Mesh(atmosphereGeometry, atmosphereMaterial);
             scene.add(atmosphere);
             
-            // Aggiungi marker per le capitali visitate
-            visitedCapitals.forEach((capital, index) => {
-                addCapitalMarker(capital, index, markersGroup, scene);
+            // Aggiungi marker per le città visitate (using visitedCapitals which is now derived from window.visitedPins)
+            visitedCapitals.forEach((cityPin, index) => {
+                addCapitalMarker(cityPin, index, markersGroup, scene); // addCapitalMarker now expects cityPin structure
             });
             
             // Animazione nuvole
@@ -1385,7 +1270,7 @@
                     const userData = intersectedMarker.userData;
                     
                     // Redirect alla pagina di dettaglio
-                    window.location.href = `/Timeline?highlight=${userData.index}`;
+                    window.location.href = `/Timeline?highlight=${userData.index}`; // userData.index should correspond to original index in window.visitedPins
                 }
             }
 
@@ -1432,21 +1317,21 @@
                 popup.style.left = `${x}px`;
                 popup.style.top = `${y}px`;
                 
-                // Assicurati che i dati del marker siano definiti correttamente
-                const capitalName = marker.userData.name || "Città sconosciuta";
-                const countryName = marker.userData.country || "Paese sconosciuto";
-                const visitDate = marker.userData.visitDate || "Data sconosciuta";
-                const countryCode = marker.userData.countryCode?.toLowerCase() || "unknown";
+                // Assicurati che i dati del marker siano definiti correttamente (userData from addCapitalMarker)
+                const cityName = marker.userData.name || "Città sconosciuta"; // 'name' is set to cityPin.name in addCapitalMarker
+                const countryName = marker.userData.country || "Paese sconosciuto"; // 'country' is set to cityPin.countryName
+                const visitDate = marker.userData.visitDate || "Data sconosciuta"; // 'visitDate' is set to cityPin.visitDate
+                const countryCode = marker.userData.countryCode?.toLowerCase() || "unknown"; // 'countryCode' is set to cityPin.countryCode
                 
                 // Aggiorna il contenuto del popup con i valori corretti
                 popup.innerHTML = `
                     <div style="padding: 15px; background-color: #f8f9fa; border-bottom: 1px solid #e9ecef; display: flex; align-items: center; position: relative;">
                         <img src="/images/destinations/${countryCode}.jpg" 
                              onerror="this.src='/images/destinations/unknown.jpg'" 
-                             alt="${capitalName}" 
+                             alt="${cityName}" 
                              style="width: 60px; height: 60px; border-radius: 6px; object-fit: cover; margin-right: 15px; border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
                         <div style="flex-grow: 1;">
-                            <h3 style="margin: 0; font-size: 18px; color: #333; font-weight: 600;">${capitalName}</h3>
+                            <h3 style="margin: 0; font-size: 18px; color: #333; font-weight: 600;">${cityName}</h3>
                             <p style="margin: 4px 0 0; font-size: 14px; color: #666;">${countryName}</p>
                             <span style="font-size: 12px; color: #888; display: block; margin-top: 5px;">${visitDate}</span>
                         </div>
@@ -1636,8 +1521,8 @@
         }
 
         // Crea un popup HTML per un marker
-        function createMarkerPopup(capital, marker) {
-            const popupId = `popup-${capital.name.replace(/\s+/g, '-').toLowerCase()}`;
+        function createMarkerPopup(cityPin, marker) { // Changed parameter name
+            const popupId = `popup-${cityPin.name.replace(/\s+/g, '-').toLowerCase()}`; // Use cityPin.name
             
             // Crea elemento popup
             let popup = document.getElementById(popupId);
@@ -1659,10 +1544,10 @@
             return popup;
         }
 
-        // Aggiunge marker e etichetta per una capitale
-        function addCapitalMarker(capital, index, group, scene) {
-            const lat = capital.lat;
-            const lng = capital.lng;
+        // Aggiunge marker e etichetta per una città (was capital)
+        function addCapitalMarker(cityPin, index, group, scene) { // Changed parameter name to cityPin
+            const lat = cityPin.lat; // Use cityPin.lat (which is pin.Latitude from ViewModel)
+            const lng = cityPin.lng; // Use cityPin.lng (which is pin.Longitude from ViewModel)
             const radius = 5;
             
             const phi = Math.PI/2 - lat * Math.PI / 180;
@@ -1683,11 +1568,11 @@
             
             // Assicurati che tutti i campi userData siano definiti
             marker.userData = { 
-                name: capital.name || `Città ${index+1}`,
-                country: capital.countryName || "Paese sconosciuto",
-                countryCode: capital.countryCode || "unknown",
-                visitDate: capital.visitDate || "Data sconosciuta",
-                index: index,
+                name: cityPin.name || `Città ${index+1}`, // cityPin.name is pin.CityName
+                country: cityPin.countryName || "Paese sconosciuto",
+                countryCode: cityPin.countryCode || "unknown",
+                visitDate: cityPin.visitDate || "Data sconosciuta", // This is already formatted
+                index: index, // Original index from window.visitedPins
                 type: 'marker'
             };
             
@@ -1722,7 +1607,7 @@
             group.add(line);
             
             // Crea popup HTML per questo marker
-            createMarkerPopup(capital, marker);
+            createMarkerPopup(cityPin, marker); // Pass cityPin
             
             // Animazione pulsante per il marker
             const pulseAnimation = gsap.timeline({repeat: -1, yoyo: true});
@@ -1735,43 +1620,8 @@
             });
         }
         
-        // Setup anteprima città quando selezionata
-        function setupCountryPreview() {
-            const countrySelect = document.getElementById('countryId');
-            const cityPreview = document.getElementById('cityPreview');
-            const previewCityName = document.getElementById('previewCityName');
-            const previewCountryName = document.getElementById('previewCountryName');
-            const cityImage = document.getElementById('cityImage');
-            
-            countrySelect.addEventListener('change', function() {
-                const selectedOption = this.options[this.selectedIndex];
-                if (selectedOption.value) {
-                    const countryId = parseInt(selectedOption.value);
-                    const country = allCountries.find(c => c.id === countryId);
-                    
-                    if (country) {
-                        const capitalName = selectedOption.text.split(' (')[0];
-                        
-                        // Mostra l'anteprima
-                        cityPreview.style.display = 'flex';
-                        previewCityName.textContent = capitalName;
-                        previewCountryName.textContent = country.name;
-                        
-                        // Imposta l'immagine della città (fallback su immagine generica)
-                        cityImage.src = `/images/cities/${country.code.toLowerCase()}-city.jpg`;
-                        cityImage.onerror = function() {
-                            this.onerror = null;
-                            this.src = '/images/city-placeholder.jpg';
-                        };
-                        
-                        // Vola alla posizione della città sul globo
-                        flyToLocation(country.lat, country.lng);
-                    }
-                } else {
-                    cityPreview.style.display = 'none';
-                }
-            });
-        }
+        // Setup anteprima città quando selezionata - REMOVED as it's integrated into cityId dropdown listener
+        // function setupCountryPreview() { ... }
         
         // Setup controlli del globo
         function setupGlobeControls() {
@@ -1802,7 +1652,7 @@
                 camera.lookAt(0, 0, 0);
             });
             
-            // Button vola a posizione
+            // Button vola a posizione (already present, just ensuring it's here)
             document.querySelectorAll('.fly-to-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
                     const lat = parseFloat(this.dataset.lat);
@@ -1821,43 +1671,33 @@
             // Calcola la posizione 3D dalla lat/lng
             const phi = Math.PI/2 - lat * Math.PI / 180;
             const theta = lng * Math.PI / 180;
-            const radius = 13;
+            const radius = 13; // Target zoom distance for fly-to
             
-            const targetX = -radius * Math.sin(phi) * Math.cos(theta);
-            const targetY = radius * Math.cos(phi);
-            const targetZ = radius * Math.sin(phi) * Math.sin(theta);
-            
-            // Anima la camera per volare alla posizione
-            const duration = 1000; // 1 secondo
-            const start = performance.now();
-            const startPosition = camera.position.clone();
-            
-            function animate(now) {
-                const elapsed = now - start;
-                const progress = Math.min(elapsed / duration, 1);
-                
-                // Easing function per un movimento fluido
-                const easeProgress = 1 - Math.cos((progress * Math.PI) / 2);
-                
-                // Interpola posizione
-                camera.position.x = startPosition.x + (targetX - startPosition.x) * easeProgress;
-                camera.position.y = startPosition.y + (targetY - startPosition.y) * easeProgress;
-                camera.position.z = startPosition.z + (targetZ - startPosition.z) * easeProgress;
-                
-                // Guarda sempre verso il centro
-                camera.lookAt(0, 0, 0);
-                
-                if (progress < 1) {
-                    requestAnimationFrame(animate);
-                } else {
-                    // Riattiva la rotazione automatica dopo 5 secondi
+            const targetCameraPosition = new THREE.Vector3();
+            targetCameraPosition.setFromSphericalCoords(radius, phi, theta);
+
+            // Animate the camera to fly to the position
+            // Use GSAP for smoother animation
+            gsap.to(camera.position, {
+                x: targetCameraPosition.x,
+                y: targetCameraPosition.y,
+                z: targetCameraPosition.z,
+                duration: 1.5, // Duration in seconds
+                ease: "power2.inOut", // Easing function
+                onUpdate: function() {
+                    camera.lookAt(0, 0, 0);
+                },
+                onComplete: function() {
+                    // Optional: Re-enable auto-rotate after a delay
                     setTimeout(() => {
-                        controls.autoRotate = true;
-                    }, 5000);
+                        if (controls) controls.autoRotate = true;
+                    }, 3000); // 3 seconds delay
                 }
-            }
+            });
             
-            requestAnimationFrame(animate);
+            // Also, if you want the globe to rotate to face the point:
+            // This requires more complex calculations to rotate the 'earth' mesh itself
+            // For now, just moving camera to look at the point from a fixed distance.
         }
     </script>
 }

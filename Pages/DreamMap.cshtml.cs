@@ -20,6 +20,7 @@ using Microsoft.EntityFrameworkCore; // Necessario per Entity Framework Core
 using WanderGlobe.Data; // Necessario per ApplicationDbContext
 using Newtonsoft.Json.Linq;
 using System.Xml.Linq;
+using Microsoft.Extensions.Logging; // Added for ILogger
 
 namespace WanderGlobe.Pages
 {
@@ -35,6 +36,7 @@ namespace WanderGlobe.Pages
         private readonly IWebHostEnvironment _webHostEnvironment;
         private readonly ApplicationDbContext _dbContext;
         private readonly ICityService _cityService;
+        private readonly ILogger<DreamMapModel> _logger; // Added ILogger
 
         public List<DreamDestination> Wishlist { get; set; } = new List<DreamDestination>();
         public List<PlannedTrip> PlannedTrips { get; set; } = new List<PlannedTrip>();
@@ -56,7 +58,8 @@ namespace WanderGlobe.Pages
             IConfiguration configuration,
             IWebHostEnvironment webHostEnvironment,
             ApplicationDbContext dbContext,
-            ICityService cityService)
+            ICityService cityService,
+            ILogger<DreamMapModel> logger) // Added ILogger
         {
             _userManager = userManager;
             _countryService = countryService;
@@ -66,6 +69,7 @@ namespace WanderGlobe.Pages
             _webHostEnvironment = webHostEnvironment;
             _dbContext = dbContext;
             _cityService = cityService;
+            _logger = logger; // Store ILogger
             // ... (eventuali altri log nel costruttore) ...
         }
 
@@ -100,19 +104,38 @@ namespace WanderGlobe.Pages
                     var visitedCitiesItems = new List<MapDestinationItem>();
                     foreach (var v in visitedCountries)
                     {
-                        // Assumendo che GetCapitalAsync restituisca un oggetto City o null
-                        var capital = await _cityService.GetCapitalCityByCountryIdAsync(v.CountryId);
-                        if (capital != null)
+                        if (v.Country == null)
+                        {
+                            _logger.LogWarning($"VisitedCountry record with ID {v.Id} has a null Country object. Skipping.");
+                            continue;
+                        }
+
+                        var capitalCity = await _cityService.GetCapitalCityByCountryIdAsync(v.CountryId);
+                        if (capitalCity != null)
                         {
                             visitedCitiesItems.Add(new MapDestinationItem
                             {
-                                // Visited ID potrebbe essere basato sulla città o sul paese
-                                Id = $"visited_city_{capital.Id}", // Esempio ID
-                                CityName = capital.Name,
+                                Id = $"visited_city_{capitalCity.Id}",
+                                CityName = capitalCity.Name,
                                 CountryName = v.Country.Name,
                                 CountryCode = v.Country.Code,
-                                Latitude = capital.Latitude ?? v.Country.Latitude, // Usa lat/lon città se disponibili
-                                Longitude = capital.Longitude ?? v.Country.Longitude
+                                Latitude = capitalCity.Latitude ?? v.Country.Latitude, // Prioritize capital's lat
+                                Longitude = capitalCity.Longitude ?? v.Country.Longitude, // Prioritize capital's lon
+                                Type = "visited" // Added type
+                            });
+                        }
+                        else
+                        {
+                            _logger.LogWarning($"Capital city not found for country ID {v.CountryId} ({v.Country.Name}). Using country coordinates for DreamMap.");
+                            visitedCitiesItems.Add(new MapDestinationItem
+                            {
+                                Id = $"visited_country_{v.CountryId}",
+                                CityName = $"Capital of {v.Country.Name}", // Placeholder
+                                CountryName = v.Country.Name,
+                                CountryCode = v.Country.Code,
+                                Latitude = v.Country.Latitude,
+                                Longitude = v.Country.Longitude,
+                                Type = "visited" // Added type
                             });
                         }
                     }
@@ -122,27 +145,29 @@ namespace WanderGlobe.Pages
                     {
                         Wishlist = Wishlist.Select(d => new MapDestinationItem
                         {
-                            Id = d.Id.ToString(), // Converti l'ID int a string per MapDestinationItem
+                            Id = $"wishlist_{d.Id.ToString()}", // Ensure unique ID prefix
                             CityName = d.CityName,
                             CountryName = d.CountryName,
                             CountryCode = d.CountryCode,
                             Latitude = d.Latitude,
                             Longitude = d.Longitude,
-                            Priority = (int)d.Priority
+                            Priority = (int)d.Priority,
+                            Type = "wishlist" // Added type
                         }).ToList(),
 
                         PlannedTrips = PlannedTrips.Select(p => new MapDestinationItem
                         {
-                            Id = p.Id, // L'ID di PlannedTrip è già string
+                            Id = $"planned_{p.Id}", // Ensure unique ID prefix
                             CityName = p.CityName,
                             CountryName = p.CountryName,
                             CountryCode = p.CountryCode,
                             Latitude = p.Latitude,
                             Longitude = p.Longitude,
-                            CompletionPercentage = p.CompletionPercentage
+                            CompletionPercentage = p.CompletionPercentage,
+                            Type = "planned" // Added type
                         }).ToList(),
 
-                        VisitedCities = visitedCitiesItems
+                        VisitedCities = visitedCitiesItems // Already has Type = "visited"
                     };
 
                     // Inizializza il form per l'aggiunta alla wishlist con le città disponibili
@@ -163,8 +188,7 @@ namespace WanderGlobe.Pages
             }
             catch (Exception ex)
             {
-                // Log dell'errore
-                System.Diagnostics.Debug.WriteLine($"Errore in OnGetAsync: {ex.Message}");
+                _logger.LogError(ex, "Error in OnGetAsync of DreamMapModel.");
                 TempData["ErrorMessage"] = "Si è verificato un errore durante il caricamento della pagina.";
             }
         }

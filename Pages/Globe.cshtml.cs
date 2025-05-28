@@ -8,64 +8,117 @@ using System.Text.Json;
 
 namespace WanderGlobe.Pages
 {
+    public class VisitedCityViewModel
+    {
+        public int CityId { get; set; } 
+        public string CityName { get; set; }
+        public string CountryName { get; set; }
+        public string CountryCode { get; set; }
+        public double Latitude { get; set; }
+        public double Longitude { get; set; }
+        public DateTime VisitDate { get; set; }
+        public string Description { get; set; }
+    }
+
     [Authorize]
     public class GlobeModel : PageModel
     {
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly ICountryService _countryService;
+        private readonly ICityService _cityService;
 
-        public List<Country> AllCountries { get; set; } = new List<Country>();
-        public List<VisitedCountry> VisitedCountries { get; set; } = new List<VisitedCountry>();
+        public record CityInfoForDropdown(int CityId, string CityDisplayName, string CountryName, string Continent, string CountryCode);
+        public List<CityInfoForDropdown> AllCitiesForDropdown { get; set; } = new List<CityInfoForDropdown>();
+        public List<VisitedCityViewModel> VisitedCities { get; set; } = new List<VisitedCityViewModel>();
         public double VisitedPercentage { get; set; }
 
         public GlobeModel(
             UserManager<ApplicationUser> userManager,
-            ICountryService countryService)
+            ICountryService countryService,
+            ICityService cityService)
         {
             _userManager = userManager;
             _countryService = countryService;
+            _cityService = cityService;
         }
-        public string VisitedCountriesJson { get; private set; }
+        public string VisitedCountriesJson { get; private set; } // This will be populated by VisitedCities
         public async Task OnGetAsync()
         {
             var user = await _userManager.GetUserAsync(User);
             if (user != null)
             {
-                AllCountries = await _countryService.GetAllCountriesAsync();
-                VisitedCountries = await _countryService.GetVisitedCountriesByUserAsync(user.Id);
-                VisitedPercentage = await _countryService.GetVisitedPercentageAsync(user.Id);
+                // Populate AllCitiesForDropdown
+                var allCities = await _cityService.GetAllCitiesWithCountryAsync();
+                AllCitiesForDropdown = allCities
+                    .Select(city => new CityInfoForDropdown(
+                        city.Id, 
+                        $"{city.Name} ({city.Country.Name})", 
+                        city.Country.Name, 
+                        city.Country.Continent,
+                        city.Country.Code))
+                    .OrderBy(c => c.CityDisplayName)
+                    .ToList();
+
+                // Populate VisitedCities (which will also be used for VisitedCountriesJson)
+                var visitedCountries = await _countryService.GetVisitedCountriesByUserAsync(user.Id);
+                var visitedCitiesViewModels = new List<VisitedCityViewModel>();
+                foreach (var vc in visitedCountries)
+                {
+                    if (vc.Country == null) continue;
+
+                    var capitalCity = await _cityService.GetCapitalCityByCountryIdAsync(vc.CountryId);
+                    if (capitalCity != null)
+                    {
+                        visitedCitiesViewModels.Add(new VisitedCityViewModel
+                        {
+                            CityId = capitalCity.Id,
+                            CityName = capitalCity.Name,
+                            CountryName = vc.Country.Name,
+                            CountryCode = vc.Country.Code,
+                            Latitude = capitalCity.Latitude ?? vc.Country.Latitude,
+                            Longitude = capitalCity.Longitude ?? vc.Country.Longitude,
+                            VisitDate = vc.VisitDate,
+                            Description = $"Hai visitato {capitalCity.Name}, {vc.Country.Name}"
+                        });
+                    }
+                    else // Fallback if no capital city is found (should ideally not happen if data is consistent)
+                    {
+                        visitedCitiesViewModels.Add(new VisitedCityViewModel
+                        {
+                            CityId = vc.CountryId, // Or a placeholder ID if CityId must be a city's ID
+                            CityName = $"Capitale di {vc.Country.Name}", // Placeholder name
+                            CountryName = vc.Country.Name,
+                            CountryCode = vc.Country.Code,
+                            Latitude = vc.Country.Latitude,
+                            Longitude = vc.Country.Longitude,
+                            VisitDate = vc.VisitDate,
+                            Description = $"Hai visitato {vc.Country.Name}"
+                        });
+                    }
+                }
+                VisitedCities = visitedCitiesViewModels.OrderByDescending(vm => vm.VisitDate).ToList();
+                VisitedCountriesJson = JsonSerializer.Serialize(VisitedCities);
+                
+                // Calculate VisitedPercentage based on unique countries visited
+                var uniqueVisitedCountryIds = visitedCountries.Select(vc => vc.CountryId).Distinct().Count();
+                var totalCountries = await _countryService.GetTotalCountryCountAsync(); // Assumes this method exists
+                VisitedPercentage = totalCountries > 0 ? (double)uniqueVisitedCountryIds / totalCountries * 100 : 0;
             }
-            VisitedCountriesJson = SerializeVisitedCountriesForMap();
-        }
-
-        private string SerializeVisitedCountriesForMap()
-        {
-            // Se non abbiamo visite, restituiamo un array vuoto
-            if (VisitedCountries == null || !VisitedCountries.Any())
-                return "[]";
-
-            var simplifiedData = VisitedCountries.Select((vc, index) => new
+            else
             {
-                // Usa l'indice come ID se non hai una proprietà ID
-                id = index + 1,
-                name = vc.Country?.Name ?? "Paese sconosciuto",
-                countryName = vc.Country?.Name ?? "Paese sconosciuto",
-                countryCode = vc.Country?.Code ?? "unknown",
-                lat = vc.Country?.Latitude ?? 0,
-                lng = vc.Country?.Longitude ?? 0,
-                // Controlla se è DateTime default (01/01/0001)
-                visitDate = (vc.VisitDate == default(DateTime)) ? DateTime.UtcNow : vc.VisitDate,
-                // Messaggio di default
-                description = "Hai visitato questo paese"
-            }).ToList();
-
-            return JsonSerializer.Serialize(simplifiedData);
+                VisitedCountriesJson = "[]";
+                AllCitiesForDropdown = new List<CityInfoForDropdown>();
+                VisitedCities = new List<VisitedCityViewModel>();
+            }
         }
 
-        public async Task<IActionResult> OnPostAddCountryAsync(int countryId, DateTime visitDate)
+        // SerializeVisitedCitiesForMapAsync is no longer needed as VisitedCountriesJson is set in OnGetAsync
+
+        public async Task<IActionResult> OnPostAddCountryAsync(int cityId, DateTime visitDate, string visitExperience)
         {
             if (!ModelState.IsValid)
             {
+                await OnGetAsync(); // Repopulate lists for the page
                 return Page();
             }
 
@@ -73,6 +126,14 @@ namespace WanderGlobe.Pages
             if (user == null)
             {
                 return Unauthorized();
+            }
+
+            var city = await _cityService.GetCityByIdAsync(cityId);
+            if (city == null)
+            {
+                ModelState.AddModelError(string.Empty, "Città non trovata.");
+                await OnGetAsync(); // Repopulate lists for the page
+                return Page();
             }
 
             try
@@ -80,8 +141,9 @@ namespace WanderGlobe.Pages
                 var visitedCountry = new VisitedCountry
                 {
                     UserId = user.Id,
-                    CountryId = countryId,
-                    VisitDate = visitDate
+                    CountryId = city.CountryId, // Use CountryId from the selected city
+                    VisitDate = visitDate,
+                    Notes = visitExperience // Assuming VisitedCountry has a Notes/Experience field
                 };
 
                 await _countryService.AddVisitedCountryAsync(visitedCountry);
@@ -89,19 +151,13 @@ namespace WanderGlobe.Pages
             }
             catch (ArgumentException ex)
             {
-                // Se il paese non esiste, mostriamo un messaggio di errore
                 ModelState.AddModelError(string.Empty, ex.Message);
-
-                // Ricarichiamo i dati per mostrare la pagina con l'errore
-                AllCountries = await _countryService.GetAllCountriesAsync();
-                VisitedCountries = await _countryService.GetVisitedCountriesByUserAsync(user.Id);
-                VisitedPercentage = await _countryService.GetVisitedPercentageAsync(user.Id);
-
+                await OnGetAsync(); // Repopulate lists for the page
                 return Page();
             }
         }
 
-        public async Task<IActionResult> OnPostRemoveCountryAsync(int countryId)
+        public async Task<IActionResult> OnPostRemoveCountryAsync(int cityId) // Changed to cityId for consistency, will get countryId from city
         {
             var user = await _userManager.GetUserAsync(User);
             if (user == null)
@@ -109,7 +165,16 @@ namespace WanderGlobe.Pages
                 return Unauthorized();
             }
 
-            await _countryService.RemoveVisitedCountryAsync(user.Id, countryId);
+            var city = await _cityService.GetCityByIdAsync(cityId);
+            if (city == null)
+            {
+                 // Or handle as an error: return NotFound("City not found to determine country for removal.");
+                 // For now, let's assume if city is not found, we can't proceed.
+                 TempData["ErrorMessage"] = "Impossibile rimuovere la visita: città non trovata.";
+                 return RedirectToPage();
+            }
+
+            await _countryService.RemoveVisitedCountryAsync(user.Id, city.CountryId);
             return RedirectToPage();
         }
     }
