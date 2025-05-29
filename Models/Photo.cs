@@ -1,5 +1,4 @@
-﻿// Models/Photo.cs
-using System;
+﻿using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -9,33 +8,36 @@ namespace WanderGlobe.Models
     {
         [Key]
         public int Id { get; set; }
-        
-        // If a photo needs to be directly linked to a user, independent of a journal entry:
-        [Required] // Make this required if a photo must always have an uploader
-        public string UserId { get; set; } = string.Empty; // UNCOMMENTED THIS
-        [ForeignKey("UserId")]
-        public virtual ApplicationUser User { get; set; } = null!; // UNCOMMENTED THIS
 
         [Required]
-        public string FileName { get; set; } = string.Empty;
-        
+        public string UserId { get; set; } = string.Empty;
+        [ForeignKey("UserId")]
+        public virtual ApplicationUser User { get; set; } = null!;
+
         [Required]
-        public string FilePath { get; set; } = string.Empty; 
-        
+        public string FileName { get; set; } = string.Empty; // Original filename
+
         [Required]
-        public string Url { get; set; } = string.Empty; 
+        public string Url { get; set; } = string.Empty; // Web-accessible URL, e.g., /images/user_photos/guid_name.jpg
         
         public string? Caption { get; set; }
         
         public DateTime UploadDate { get; set; } = DateTime.UtcNow;
-        
-        // Foreign Key properties for TravelJournal (if a photo can belong to a journal)
-        // Make these nullable if a photo does NOT always belong to a journal
-        public string? TravelJournalUserId { get; set; } 
+
+        // --- Link to a specific VisitedCity record ---
+        public int? VisitedCityId { get; set; } // Foreign key to VisitedCity
+        [ForeignKey("VisitedCityId")]
+        public virtual VisitedCity? VisitedCity { get; set; } // Navigation property
+
+        // --- Optional link to a TravelJournal ---
+        // If a photo can also belong to a TravelJournal entry independent of a VisitedCity
+        public int? TravelJournalId { get; set; } 
+        [ForeignKey("TravelJournalId")]
+        public virtual TravelJournal? TravelJournal { get; set; }
+
+        // Legacy fields - keep them as nullable to support migration
+        public string? TravelJournalUserId { get; set; }
         public int? TravelJournalCountryId { get; set; }
-        public DateTime? TravelJournalVisitDate { get; set; } 
-        
-        [ForeignKey("TravelJournalUserId, TravelJournalCountryId, TravelJournalVisitDate")]
-        public virtual TravelJournal? TravelJournal { get; set; } // Made nullable
+        public DateTime? TravelJournalVisitDate { get; set; }
     }
 }

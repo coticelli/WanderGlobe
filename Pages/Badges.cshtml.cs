@@ -223,9 +223,13 @@ namespace WanderGlobe.Pages
                         _userVisitedCountries
                             .Where(vc => vc.Country != null && vc.Country.Continent.Equals(cont, StringComparison.OrdinalIgnoreCase))
                             .Any(vc_in_continent =>
-                                _userPhotos.Any(p => p.TravelJournalUserId == vc_in_continent.UserId && // Assumendo che le foto siano collegate così
-                                                     p.TravelJournalCountryId == vc_in_continent.CountryId &&
-                                                     p.TravelJournalVisitDate == vc_in_continent.VisitDate)
+                                _userPhotos.Any(p => 
+                                    // Update these property checks
+                                    (p.TravelJournalUserId == vc_in_continent.UserId ||
+                                     p.UserId == vc_in_continent.UserId) &&
+                                    (p.TravelJournalCountryId == vc_in_continent.CountryId ||
+                                     (p.VisitedCity != null && p.VisitedCity.City.CountryId == vc_in_continent.CountryId))
+                                )
                             )
                     );
 

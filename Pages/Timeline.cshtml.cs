@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿// File: Pages/Timeline.cshtml.cs
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -7,13 +8,14 @@ using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using WanderGlobe.Data;
-using WanderGlobe.Models;
-using WanderGlobe.Models.Custom;
+using WanderGlobe.Models;          // For ViewModels like VisitedCityViewModel, PhotoViewModel
+using WanderGlobe.Models.Custom; // For TimelineEntry, TimelinePhoto, AND our standard TimelineWeather
 using WanderGlobe.Services;
 using Microsoft.AspNetCore.Http;
 using System.IO;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Identity; // Added for UserManager
+using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Logging;
 
 namespace WanderGlobe.Pages
 {
@@ -24,7 +26,9 @@ namespace WanderGlobe.Pages
         private readonly IWeatherService _weatherService;
         private readonly IPhotoService _photoService;
         private readonly IWebHostEnvironment _environment;
-        private readonly UserManager<ApplicationUser> _userManager; // Added UserManager field
+        private readonly UserManager<ApplicationUser> _userManager;
+        private readonly IVisitedCityService _visitedCityService;
+        private readonly ILogger<TimelineModel> _logger;
 
         public TimelineModel(
             ApplicationDbContext context,
@@ -32,286 +36,278 @@ namespace WanderGlobe.Pages
             IWeatherService weatherService,
             IPhotoService photoService,
             IWebHostEnvironment environment,
-            UserManager<ApplicationUser> userManager) // Added userManager to constructor
+            UserManager<ApplicationUser> userManager,
+            IVisitedCityService visitedCityService,
+            ILogger<TimelineModel> logger)
         {
             _context = context;
             _cityService = cityService;
             _weatherService = weatherService;
             _photoService = photoService;
             _environment = environment;
-            _userManager = userManager; // Assigned userManager
+            _userManager = userManager;
+            _visitedCityService = visitedCityService;
+            _logger = logger;
         }
 
-        public List<VisitedCountry> Visits { get; set; } = new List<VisitedCountry>();
-        public Dictionary<int, List<VisitedCountry>> GroupedVisits { get; set; } = new Dictionary<int, List<VisitedCountry>>();
+        public List<VisitedCityViewModel> VisitedCityEntries { get; set; } = new List<VisitedCityViewModel>();
+        public Dictionary<int, List<VisitedCityViewModel>> GroupedVisits { get; set; } = new Dictionary<int, List<VisitedCityViewModel>>();
         public List<int> VisitYears { get; set; } = new List<int>();
         public List<string> Continents { get; set; } = new List<string>();
-        
-        // Dictionary to cache weather data
-        public Dictionary<int, TimelineWeather> WeatherData { get; set; } = new Dictionary<int, TimelineWeather>();
+        public Dictionary<string, TimelineWeather> WeatherData { get; set; } = new Dictionary<string, TimelineWeather>();
 
-        public async Task OnGetAsync()
+        public async Task OnGetAsync(string? highlightCityId)
         {
-            var user = await _userManager.GetUserAsync(User); // Get current user
-
-            if (user != null)
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
             {
-                Visits = await _context.VisitedCountries
-                    .Where(v => v.UserId == user.Id) // Filter by UserId
-                    .Include(v => v.Country)
-                    .OrderByDescending(v => v.VisitDate)
-                    .ToListAsync();
+                _logger.LogWarning("Timeline: User not authenticated. Displaying empty timeline.");
+                return;
+            }
+
+            _logger.LogInformation("Timeline: Fetching visited cities for user {UserId}", user.Id);
+            VisitedCityEntries = await _visitedCityService.GetVisitedCitiesForUserAsync(user.Id);
+
+            if (VisitedCityEntries.Any())
+            {
+                _logger.LogInformation("Timeline: Found {Count} visited city entries for user {UserId}", VisitedCityEntries.Count, user.Id);
+                GroupedVisits = VisitedCityEntries
+                    .GroupBy(v => v.VisitDate.Year)
+                    .ToDictionary(g => g.Key, g => g.OrderByDescending(v => v.VisitDate).ToList());
+
+                VisitYears = VisitedCityEntries
+                    .Select(v => v.VisitDate.Year)
+                    .Distinct()
+                    .OrderByDescending(y => y)
+                    .ToList();
+
+                Continents = VisitedCityEntries
+                    .Where(v => !string.IsNullOrEmpty(v.Continent))
+                    .Select(v => v.Continent!)
+                    .Distinct()
+                    .OrderBy(c => c)
+                    .ToList();
+
+                await LoadWeatherDataForCitiesAsync();
             }
             else
             {
-                Visits = new List<VisitedCountry>(); // Handle null user
+                _logger.LogInformation("Timeline: No visited city entries found for user {UserId}", user.Id);
             }
 
-            GroupedVisits = Visits
-                .Where(v => v.Country != null)
-                .GroupBy(v => v.VisitDate.Year)
-                .ToDictionary(g => g.Key, g => g.ToList());
-
-            VisitYears = Visits.Select(v => v.VisitDate.Year).Distinct().OrderByDescending(y => y).ToList();
-
-            Continents = await _context.Countries
-                .Select(country => country.Continent) 
-                .Where(continentName => !string.IsNullOrEmpty(continentName)) 
-                .Distinct()
-                .OrderBy(continentName => continentName)
-                .ToListAsync();
-                
-            // Get weather data for visited countries
-            await LoadWeatherDataAsync();
+            if (!string.IsNullOrEmpty(highlightCityId) && int.TryParse(highlightCityId, out int cityIdToHighlight))
+            {
+                ViewData["HighlightCityId"] = cityIdToHighlight;
+            }
         }
 
-        private async Task LoadWeatherDataAsync()
+        private async Task LoadWeatherDataForCitiesAsync()
         {
-            foreach (var visit in Visits)
+            _logger.LogInformation("Timeline: Loading weather data for {Count} visited city entries.", VisitedCityEntries.Count);
+            foreach (var visit in VisitedCityEntries)
             {
-                if (visit.Country != null && !WeatherData.ContainsKey(visit.CountryId))
+                string weatherKey = $"{visit.CityId}_{visit.VisitDate:yyyyMMdd}";
+                if (!WeatherData.ContainsKey(weatherKey))
                 {
-                    var weather = await _weatherService.GetCurrentWeatherAsync(
-                        visit.Country.Latitude, 
-                        visit.Country.Longitude);
-                    
-                    WeatherData[visit.CountryId] = weather;
+                    try
+                    {
+                        TimelineWeather? weatherResponse = await _weatherService.GetCurrentWeatherAsync(visit.Latitude, visit.Longitude);
+                        if (weatherResponse != null)
+                        {
+                            WeatherData[weatherKey] = weatherResponse;
+                        }
+                        else
+                        {
+                            WeatherData[weatherKey] = new TimelineWeather { Condition = "Meteo N/D", Temperature = 20, Month = visit.VisitDate.Month };
+                            _logger.LogWarning("Timeline: Weather data not found for CityId {CityId} on {Date}", visit.CityId, visit.VisitDate.ToShortDateString());
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Timeline: Error fetching weather for CityId {CityId}, Lat: {Latitude}, Lng: {Longitude}", visit.CityId, visit.Latitude, visit.Longitude);
+                        WeatherData[weatherKey] = new TimelineWeather { Condition = "Errore Meteo", Temperature = 20, Month = visit.VisitDate.Month };
+                    }
                 }
             }
         }
 
-        public async Task<IActionResult> OnPostEditVisitAsync(int visitId, DateTime visitDate, string visitNotes)
+        public async Task<IActionResult> OnPostEditVisitAsync(
+            int visitedCityRecordId,
+            DateTime visitDate,
+            string? visitNotes)
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var visit = await _context.VisitedCountries
-                .FirstOrDefaultAsync(v => v.CountryId == visitId && v.UserId == userId);
-
-            if (visit == null)
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
             {
-                return NotFound();
+                _logger.LogWarning("OnPostEditVisitAsync: User not authenticated.");
+                return Unauthorized();
             }
 
-            visit.VisitDate = visitDate;
-            visit.Notes = visitNotes;
-            visit.UpdatedAt = DateTime.UtcNow;
+            _logger.LogInformation("OnPostEditVisitAsync: Attempting to update visit {RecordId} for user {UserId}", visitedCityRecordId, user.Id);
 
-            await _context.SaveChangesAsync();
-            return RedirectToPage();
+            var success = await _visitedCityService.UpdateVisitedCityAsync(visitedCityRecordId, user.Id, visitDate, visitNotes);
+
+            if (!success)
+            {
+                _logger.LogWarning("OnPostEditVisitAsync: Failed to update visit {RecordId} for user {UserId}", visitedCityRecordId, user.Id);
+                TempData["ErrorMessage"] = "Impossibile aggiornare la visita. Potrebbe essere stata rimossa o si è verificato un errore.";
+                await OnGetAsync(null);
+                return Page();
+            }
+
+            _logger.LogInformation("OnPostEditVisitAsync: Successfully updated visit {RecordId} for user {UserId}", visitedCityRecordId, user.Id);
+            TempData["SuccessMessage"] = "Visita aggiornata con successo!";
+
+            var editedVisit = await _visitedCityService.GetVisitedCityByIdAsync(visitedCityRecordId, user.Id);
+            return RedirectToPage(new { highlightCity = editedVisit?.CityId.ToString() });
         }
-        
-        public TimelineWeather GetWeatherForCountry(int countryId)
+
+        public TimelineWeather GetWeatherForCityVisit(int cityId, DateTime visitDate)
         {
-            if (WeatherData.TryGetValue(countryId, out var weather))
+            string weatherKey = $"{cityId}_{visitDate:yyyyMMdd}";
+            if (WeatherData.TryGetValue(weatherKey, out var weather))
             {
                 return weather;
             }
-            
-            // Default weather if not found
-            return new TimelineWeather
-            {
-                Month = DateTime.Now.Month,
-                Temperature = 22,
-                Condition = "Soleggiato"
-            };
+            return new TimelineWeather { Condition = "N/D", Temperature = 20, Month = visitDate.Month };
         }
 
-        private string GetCurrentUserId()
+        public async Task<List<PhotoViewModel>> GetPhotosForVisitedCityAsync(int visitedCityRecordId)
         {
-            return User.Identity?.Name ?? "UnknownUser";
-        }
-      
-        public async Task<string> GetCapitalAsync(string countryCode)
-        {
-            string originalCountryCodeForDebug = countryCode ?? "NULL_INPUT";
-            try
-            {
-                if (string.IsNullOrEmpty(countryCode))
-                {
-                    return "DBG:CodeNullOrEmpty";
-                }
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return new List<PhotoViewModel>();
 
-                string searchCode = countryCode.Trim();
-                if (string.IsNullOrEmpty(searchCode))
-                {
-                    return $"DBG:CodeTrimmedEmpty(Orig:'{originalCountryCodeForDebug}')";
-                }
-
-                var italyTestCountry = await _context.Countries.FirstOrDefaultAsync(c => c.Code == "IT");
-                string italyTestResult = italyTestCountry == null ? "IT_NotFoundInDB" : $"IT_Found(ID:{italyTestCountry.Id}, Name:{italyTestCountry.Name})";
-                
-                string searchCodeUpper = searchCode.ToUpper(); 
-
-                var country = await _context.Countries
-                    .FirstOrDefaultAsync(c => c.Code != null && c.Code.ToUpper() == searchCodeUpper);
-
-                if (country == null)
-                {
-                    var firstFiveCodes = await _context.Countries.Take(5).Select(c => c.Code ?? "NULL_CODE").ToListAsync();
-                    string sampleCodes = string.Join(",", firstFiveCodes);
-                    return $"DBG:CountryNull(S_UPPER:'{searchCodeUpper}',O:'{originalCountryCodeForDebug}',ITTest:'{italyTestResult}',Samples:'{sampleCodes}')";
-                }
-                
-                if (_cityService == null)
-                {
-                    return $"DBG:CitySvcNull(Country:{country.Name},ITTest:'{italyTestResult}')";
-                }
-                
-                var capital = await _cityService.GetCapitalCityAsync(country.Id);
-                
-                if (capital == null)
-                {
-                    return $"DBG:CapitalNull(Country:{country.Name}, ID:{country.Id})";
-                }
-                
-                return capital.Name;
-            }
-            catch (Exception ex)
-            {
-                string excType = ex.GetType().Name;
-                string excMsg = ex.Message;
-                excMsg = excMsg.Length > 200 ? excMsg.Substring(0, 200) : excMsg;
-
-                return $"DBG:EXC({excType}:'{excMsg}',Orig:'{originalCountryCodeForDebug}')";
-            }
+            return await _photoService.GetPhotosForVisitedCityAsync(visitedCityRecordId, user.Id);
         }
 
-        // Add photo upload handler
         [HttpPost]
-        public async Task<IActionResult> OnPostUploadPhotoAsync(IFormFile photo, int countryId)
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> OnPostUploadPhotoAsync(IFormFile photoFile, int visitedCityRecordId)
         {
-            if (photo == null || photo.Length == 0)
-                return new JsonResult(new { success = false, message = "Nessun file caricato" });
+            if (photoFile == null || photoFile.Length == 0)
+                return new JsonResult(new { success = false, message = "Nessun file caricato." });
 
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(userId))
-                return new JsonResult(new { success = false, message = "Utente non autenticato" });
+            if (visitedCityRecordId <= 0)
+                return new JsonResult(new { success = false, message = "ID visita non valido." });
+
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+                return new JsonResult(new { success = false, message = "Utente non autenticato." });
+
+            _logger.LogInformation("OnPostUploadPhotoAsync: Attempting to upload photo for visit {RecordId}, user {UserId}", visitedCityRecordId, user.Id);
+
+            var visit = await _context.VisitedCities.AsNoTracking()
+                                  .FirstOrDefaultAsync(vc => vc.Id == visitedCityRecordId && vc.UserId == user.Id);
+            if (visit == null)
+            {
+                _logger.LogWarning("OnPostUploadPhotoAsync: User {UserId} does not own visit record {RecordId} or it does not exist.", user.Id, visitedCityRecordId);
+                return new JsonResult(new { success = false, message = "Visita non trovata o non autorizzata." });
+            }
 
             try
             {
-                // Create unique filename
-                string uniqueFileName = $"{Guid.NewGuid()}_{Path.GetFileName(photo.FileName)}";
-                string uploadsFolder = Path.Combine(_environment.WebRootPath, "images", "uploads");
-                
-                // Ensure directory exists
-                Directory.CreateDirectory(uploadsFolder);
-                
-                string filePath = Path.Combine(uploadsFolder, uniqueFileName);
-                string urlPath = $"/images/uploads/{uniqueFileName}";
+                string uniqueFileName = $"{Guid.NewGuid()}_{Path.GetFileName(photoFile.FileName)}";
+                string userVisitPhotoFolder = Path.Combine("images", "user_photos", user.Id, $"visit_{visitedCityRecordId}");
+                string uploadsFolderServerPath = Path.Combine(_environment.WebRootPath, userVisitPhotoFolder);
 
-                // Save the file
-                using (var stream = new FileStream(filePath, FileMode.Create))
+                Directory.CreateDirectory(uploadsFolderServerPath);
+
+                string filePathOnServer = Path.Combine(uploadsFolderServerPath, uniqueFileName);
+                string urlPathForDb = $"/{userVisitPhotoFolder}/{uniqueFileName}".Replace(Path.DirectorySeparatorChar, '/');
+
+                using (var stream = new FileStream(filePathOnServer, FileMode.Create))
                 {
-                    await photo.CopyToAsync(stream);
+                    await photoFile.CopyToAsync(stream);
                 }
+                _logger.LogInformation("OnPostUploadPhotoAsync: Photo saved to {FilePath}", filePathOnServer);
 
-                // Create photo record in database
                 var newPhoto = new Photo
                 {
-                    UserId = userId,
-                    FileName = photo.FileName,
-                    FilePath = urlPath,
-                    Url = urlPath,
-                    Caption = Path.GetFileNameWithoutExtension(photo.FileName),
+                    UserId = user.Id,
+                    FileName = photoFile.FileName,
+                    Url = urlPathForDb,
+                    Caption = Path.GetFileNameWithoutExtension(photoFile.FileName),
                     UploadDate = DateTime.UtcNow,
-                    TravelJournalCountryId = countryId,
-                    TravelJournalUserId = userId
+                    VisitedCityId = visitedCityRecordId,
                 };
 
                 _context.Photos.Add(newPhoto);
                 await _context.SaveChangesAsync();
+                _logger.LogInformation("OnPostUploadPhotoAsync: Photo record ID {PhotoId} created and linked to visit {RecordId}.", newPhoto.Id, visitedCityRecordId);
 
-                return new JsonResult(new 
-                { 
-                    success = true, 
+                return new JsonResult(new
+                {
+                    success = true,
                     photoId = newPhoto.Id,
-                    url = newPhoto.Url,
-                    caption = newPhoto.Caption 
+                    photoUrl = newPhoto.Url,
+                    caption = newPhoto.Caption
                 });
             }
             catch (Exception ex)
             {
-                return new JsonResult(new { success = false, message = $"Errore: {ex.Message}" });
+                _logger.LogError(ex, "OnPostUploadPhotoAsync: Error uploading photo for visit {RecordId}, user {UserId}", visitedCityRecordId, user.Id);
+                return new JsonResult(new { success = false, message = $"Errore server durante l'upload: {ex.Message}" });
             }
         }
 
-        // Get photos for a visit
         [HttpGet]
-        public async Task<IActionResult> OnGetVisitPhotosAsync(int countryId)
+        public async Task<IActionResult> OnGetVisitPhotosAsync(int visitedCityRecordId)
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(userId))
-                return new JsonResult(new { success = false, message = "Utente non autenticato" });
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return new JsonResult(new List<PhotoViewModel>());
 
-            try
-            {
-                // Use the overloaded method that accepts both parameters
-                var photos = await _photoService.GetPhotosByVisitAndUserAsync(countryId, userId);
+            if (visitedCityRecordId <= 0) return new JsonResult(new List<PhotoViewModel>());
 
-                return new JsonResult(photos.Select(p => new { 
-                    id = p.Id, 
-                    url = p.Url, 
-                    caption = p.Caption 
-                }));
-            }
-            catch (Exception ex)
-            {
-                return new JsonResult(new { success = false, message = $"Errore: {ex.Message}" });
-            }
+            _logger.LogInformation("OnGetVisitPhotosAsync: Fetching photos for visit {RecordId}, user {UserId}", visitedCityRecordId, user.Id);
+            var photos = await _photoService.GetPhotosForVisitedCityAsync(visitedCityRecordId, user.Id);
+
+            return new JsonResult(photos);
         }
 
-        // Delete a photo
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> OnPostDeletePhotoAsync(int photoId)
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(userId))
-                return new JsonResult(new { success = false, message = "Utente non autenticato" });
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+                return new JsonResult(new { success = false, message = "Utente non autenticato." });
 
-            try
+            _logger.LogInformation("OnPostDeletePhotoAsync: Attempting to delete photo {PhotoId} for user {UserId}", photoId, user.Id);
+            var photo = await _context.Photos.FirstOrDefaultAsync(p => p.Id == photoId && p.UserId == user.Id);
+
+            if (photo == null)
             {
-                var photo = await _context.Photos.FindAsync(photoId);
-                if (photo == null || photo.UserId != userId)
-                    return new JsonResult(new { success = false, message = "Foto non trovata o non autorizzata" });
+                _logger.LogWarning("OnPostDeletePhotoAsync: Photo {PhotoId} not found or user {UserId} not authorized.", photoId, user.Id);
+                return new JsonResult(new { success = false, message = "Foto non trovata o non autorizzata." });
+            }
 
-                // Delete the physical file if possible
-                if (!string.IsNullOrEmpty(photo.FilePath))
+            if (!string.IsNullOrEmpty(photo.Url))
+            {
+                string webRootPath = _environment.WebRootPath;
+                string fullFilePath = Path.Combine(webRootPath, photo.Url.TrimStart('/'));
+
+                if (System.IO.File.Exists(fullFilePath))
                 {
-                    string filePath = Path.Combine(_environment.WebRootPath, photo.FilePath.TrimStart('/'));
-                    if (System.IO.File.Exists(filePath))
+                    try
                     {
-                        System.IO.File.Delete(filePath);
+                        System.IO.File.Delete(fullFilePath);
+                        _logger.LogInformation("OnPostDeletePhotoAsync: Successfully deleted physical file {FilePath}", fullFilePath);
+                    }
+                    catch (IOException ex)
+                    {
+                        _logger.LogError(ex, "OnPostDeletePhotoAsync: Error deleting physical file {FilePath}", fullFilePath);
                     }
                 }
-
-                _context.Photos.Remove(photo);
-                await _context.SaveChangesAsync();
-
-                return new JsonResult(new { success = true });
+                else
+                {
+                    _logger.LogWarning("OnPostDeletePhotoAsync: Physical file not found at {FilePath} for photo {PhotoId}", fullFilePath, photoId);
+                }
             }
-            catch (Exception ex)
-            {
-                return new JsonResult(new { success = false, message = $"Errore: {ex.Message}" });
-            }
+
+            _context.Photos.Remove(photo);
+            await _context.SaveChangesAsync();
+            _logger.LogInformation("OnPostDeletePhotoAsync: Successfully deleted photo record {PhotoId} for user {UserId}", photoId, user.Id);
+            return new JsonResult(new { success = true });
         }
     }
 }

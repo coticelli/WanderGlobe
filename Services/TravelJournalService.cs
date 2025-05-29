@@ -1,85 +1,135 @@
-﻿using WanderGlobe.Models.Custom;
+﻿// File: Services/TravelJournalService.cs
 using WanderGlobe.Data;
+using WanderGlobe.Models;          // For PhotoViewModel, VisitedCityViewModel
+using WanderGlobe.Models.Custom; // For TimelineEntry, TimelinePhoto, TimelineWeather, TimelineNote
+using WanderGlobe.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using Microsoft.EntityFrameworkCore;
 
 namespace WanderGlobe.Services
 {
     public class TravelJournalService : ITravelJournalService
     {
         private readonly ApplicationDbContext _context;
+        private readonly IVisitedCityService _visitedCityService;
+        private readonly IWeatherService _weatherService;
+        private readonly IPhotoService _photoService;
+        private readonly ILogger<TravelJournalService> _logger;
 
-        public TravelJournalService(ApplicationDbContext context)
+        public TravelJournalService(
+            ApplicationDbContext context,
+            IVisitedCityService visitedCityService,
+            IWeatherService weatherService,
+            IPhotoService photoService,
+            ILogger<TravelJournalService> logger)
         {
             _context = context;
+            _visitedCityService = visitedCityService;
+            _weatherService = weatherService;
+            _photoService = photoService;
+            _logger = logger;
         }
 
         public async Task<List<TimelineEntry>> GetTimelineByUserAsync(string userId, string sort = "desc")
         {
-            // Simula il recupero della timeline
-            var entries = new List<TimelineEntry>
+            if (string.IsNullOrEmpty(userId))
             {
-                new TimelineEntry
-                {
-                    Id = 1,
-                    UserId = userId,
-                    CountryId = 1,
-                    CountryName = "Italia",
-                    CountryCode = "IT",
-                    CityName = "Roma",
-                    VisitDate = DateTime.Now.AddMonths(-2),
-                    Notes = "Un viaggio incredibile in una città storica",
-                    Photos = new List<TimelinePhoto>
-                    {
-                        new TimelinePhoto { Id = 1, Url = "/images/sample-photos/photo1.jpg", Caption = "Colosseo", UploadDate = DateTime.Now.AddMonths(-2) },
-                        new TimelinePhoto { Id = 2, Url = "/images/sample-photos/photo2.jpg", Caption = "Fontana di Trevi", UploadDate = DateTime.Now.AddMonths(-2).AddDays(1) }
-                    },
-                    Weather = new TimelineWeather { Month = 5, Temperature = 24, Condition = "Soleggiato" }
-                },
-                new TimelineEntry
-                {
-                    Id = 2,
-                    UserId = userId,
-                    CountryId = 2,
-                    CountryName = "Francia",
-                    CountryCode = "FR",
-                    CityName = "Parigi",
-                    VisitDate = DateTime.Now.AddMonths(-5),
-                    Notes = "Città romantica e piena di cultura",
-                    Photos = new List<TimelinePhoto>
-                    {
-                        new TimelinePhoto { Id = 3, Url = "/images/sample-photos/photo3.jpg", Caption = "Torre Eiffel", UploadDate = DateTime.Now.AddMonths(-5) }
-                    },
-                    Weather = new TimelineWeather { Month = 2, Temperature = 8, Condition = "Piovoso" }
-                }
-            };
+                _logger.LogWarning("GetTimelineByUserAsync called with null or empty userId.");
+                return new List<TimelineEntry>();
+            }
+            _logger.LogInformation("Fetching real timeline entries for user {UserId}", userId);
 
-            // Ordina in base al parametro
-            return sort.ToLower() == "asc"
-                ? entries.OrderBy(e => e.VisitDate).ToList()
-                : entries.OrderByDescending(e => e.VisitDate).ToList();
+            List<VisitedCityViewModel> visitedCities = await _visitedCityService.GetVisitedCitiesForUserAsync(userId);
+
+            if (visitedCities == null || !visitedCities.Any())
+            {
+                _logger.LogInformation("No visited cities found for user {UserId} to build timeline.", userId);
+                return new List<TimelineEntry>();
+            }
+
+            var timelineEntries = new List<TimelineEntry>();
+
+            foreach (var visitVM in visitedCities)
+            {
+                var entry = new TimelineEntry
+                {
+                    Id = visitVM.VisitedCityRecordId,
+                    UserId = userId,
+                    CountryId = visitVM.CountryId,
+                    CountryName = visitVM.CountryName,
+                    CountryCode = visitVM.CountryCode,
+                    CityName = visitVM.CityName,
+                    VisitDate = visitVM.VisitDate,
+                    Notes = visitVM.Description ?? string.Empty,
+                    Photos = new List<TimelinePhoto>()
+                };
+
+                List<PhotoViewModel> photosForVisit = await _photoService.GetPhotosForVisitedCityAsync(visitVM.VisitedCityRecordId, userId);
+                if (photosForVisit != null)
+                {
+                    entry.Photos = photosForVisit.Select(p => new TimelinePhoto
+                    {
+                        Id = p.Id,
+                        Url = p.Url,
+                        Caption = p.Caption ?? string.Empty,
+                        UploadDate = DateTime.MinValue // Placeholder: Add UploadDate to PhotoViewModel if needed
+                    }).ToList();
+                }
+
+                TimelineWeather? weatherResponse = await _weatherService.GetCurrentWeatherAsync(visitVM.Latitude, visitVM.Longitude);
+                if (weatherResponse != null)
+                {
+                    entry.Weather = weatherResponse; // Direct assignment as types match
+                }
+                else
+                {
+                    entry.Weather = new TimelineWeather // Default Models.Custom.TimelineWeather
+                    {
+                        Month = visitVM.VisitDate.Month,
+                        Temperature = 20,
+                        Condition = "N/D",
+                        IconUrl = null
+                    };
+                }
+                timelineEntries.Add(entry);
+            }
+
+            timelineEntries = sort.ToLower() == "asc"
+                ? timelineEntries.OrderBy(e => e.VisitDate).ToList()
+                : timelineEntries.OrderByDescending(e => e.VisitDate).ToList();
+
+            _logger.LogInformation("Returning {Count} real timeline entries for user {UserId}", timelineEntries.Count, userId);
+            return timelineEntries;
         }
 
         public async Task<List<int>> GetVisitedYearsAsync(string userId)
         {
-            // Simula il recupero degli anni delle visite
-            return new List<int> { DateTime.Now.Year, DateTime.Now.Year - 1, DateTime.Now.Year - 2 };
+            if (string.IsNullOrEmpty(userId)) return new List<int>();
+            var years = await _context.VisitedCities
+                .Where(vc => vc.UserId == userId)
+                .Select(vc => vc.VisitDate.Year)
+                .Distinct()
+                .OrderByDescending(y => y)
+                .ToListAsync();
+            return years;
         }
 
         public async Task<bool> AddJournalNoteAsync(TimelineNote note)
         {
-            // Simula l'aggiunta di una nota
-            Console.WriteLine($"Aggiunta nota per paese {note.CountryId}: {note.Content}");
-            return true;
+            _logger.LogInformation("AddJournalNoteAsync called (placeholder) for User: {UserId}, CountryId: {CountryId}", note.UserId, note.CountryId);
+            // TODO: Implement actual DB saving for notes, likely linked to VisitedCityId
+            return await Task.FromResult(false);
         }
 
         public async Task<bool> AddPhotoAsync(int countryId, string userId, string caption, string imageUrl)
         {
-            // Simula l'aggiunta di una foto
-            Console.WriteLine($"Aggiunta foto per paese {countryId}: {caption}");
-            return true;
+            _logger.LogWarning("AddPhotoAsync in TravelJournalService is likely obsolete. Photo uploads via PageModel. Called for CountryId: {CountryId}", countryId);
+            // TODO: Review if this method is needed; photo uploads are in TimelineModel.cs
+            return await Task.FromResult(false);
         }
     }
 }
