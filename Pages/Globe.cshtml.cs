@@ -75,8 +75,15 @@ namespace WanderGlobe.Pages
 
             // 1. Popola dropdown delle città
             var allCitiesFromDb = await _cityService.GetAllCitiesWithCountryAsync();
+
+            // Filter out cities whose countries have already been "fully" visited if that's a requirement
+            // For now, let's assume the dropdown shows all cities not yet specifically logged as a VisitedCity.
+            // If you want to filter dropdown based on VisitedCountries table, that logic needs to be added.
+            var visitedCityIdsForUser = (await _cityService.GetVisitedCitiesByUserAsync(user.Id)).Select(vc => vc.CityId).ToHashSet();
+
+
             AllCitiesForDropdown = allCitiesFromDb
-                .Where(c => c.Country != null) // Assicurati che il paese esista
+                .Where(c => c.Country != null && !visitedCityIdsForUser.Contains(c.Id)) // Filter out already visited cities
                 .Select(city => new CityInfoForDropdown(
                     city.Id,
                     $"{city.Name} ({city.Country.Name})",
@@ -109,18 +116,15 @@ namespace WanderGlobe.Pages
             VisitedCitiesJsonForMap = JsonSerializer.Serialize(VisitedCityPins);
 
             // 3. Calcola la percentuale di paesi UNICI visitati (usando VisitedCountries)
-            // Questa logica può rimanere se vuoi ancora tracciare la % di paesi.
             var visitedUserCountries = await _countryService.GetVisitedCountriesByUserAsync(user.Id);
             var uniqueVisitedCountryIdsCount = visitedUserCountries.Select(vc => vc.CountryId).Distinct().Count();
             var totalWorldCountries = await _countryService.GetTotalCountryCountAsync(); // O un numero fisso come 193
             VisitedPercentageOfWorldCountries = totalWorldCountries > 0 ? (double)uniqueVisitedCountryIdsCount / totalWorldCountries * 100 : 0;
 
-            // Log per debug
             _logger.LogInformation("OnGetAsync: Popolati {Count} pin di città visitate per l'utente {UserId}", VisitedCityPins.Count, user.Id);
             _logger.LogInformation("OnGetAsync: JSON per la mappa: {Json}", VisitedCitiesJsonForMap);
         }
 
-        // Handler per aggiungere una NUOVA VISITA A UNA CITTÀ
         public async Task<IActionResult> OnPostAddCityVisitAsync(int cityId, DateTime visitDate, string? visitExperience)
         {
             _logger.LogInformation("OnPostAddCityVisitAsync chiamato con cityId: {CityId}, visitDate: {VisitDate}", cityId, visitDate);
@@ -128,7 +132,7 @@ namespace WanderGlobe.Pages
             if (!ModelState.IsValid)
             {
                 _logger.LogWarning("OnPostAddCityVisitAsync: ModelState non valido.");
-                await PreparePageModelDataAsync(); // Ricarica i dati necessari per la view
+                await PreparePageModelDataAsync();
                 return Page();
             }
 
@@ -136,9 +140,9 @@ namespace WanderGlobe.Pages
             if (user == null) return Unauthorized();
 
             var city = await _cityService.GetCityByIdAsync(cityId);
-            if (city == null || city.Country == null) // Assicurati che la città e il suo paese siano validi
+            if (city == null || city.Id == 0 || city.Country == null) // city.Id == 0 if GetCityByIdAsync returns new City() on not found
             {
-                _logger.LogWarning("OnPostAddCityVisitAsync: Città con ID {CityId} non trovata o senza paese associato.", cityId);
+                _logger.LogWarning("OnPostAddCityVisitAsync: Città con ID {CityId} non trovata, ID è 0, o senza paese associato.", cityId);
                 ModelState.AddModelError(string.Empty, "Città selezionata non valida o informazioni paese mancanti.");
                 await PreparePageModelDataAsync();
                 return Page();
@@ -156,9 +160,7 @@ namespace WanderGlobe.Pages
                 await _cityService.AddVisitedCityAsync(newVisitedCity);
                 _logger.LogInformation("Visita alla città {CityName} aggiunta con successo per l'utente {UserId}", city.Name, user.Id);
 
-                // Logica aggiuntiva: Assicurati che il paese sia marcato come visitato in VisitedCountries
-                // Questo mantiene la coerenza se vuoi ancora usare la tabella VisitedCountries per statistiche sui paesi
-                var existingVisitedCountry = await _context.VisitedCountries // Assumendo che _context sia disponibile o tramite _countryService
+                var existingVisitedCountry = await _context.VisitedCountries
                     .FirstOrDefaultAsync(vc => vc.UserId == user.Id && vc.CountryId == city.CountryId);
 
                 if (existingVisitedCountry == null)
@@ -167,25 +169,34 @@ namespace WanderGlobe.Pages
                     {
                         UserId = user.Id,
                         CountryId = city.CountryId,
-                        VisitDate = visitDate, // Potresti usare la data della prima visita a una città di quel paese
-                        Notes = $"Visitato tramite {city.Name}" // Nota opzionale
+                        VisitDate = visitDate,
+                        Notes = $"Visitato tramite {city.Name}"
                     };
-                    await _countryService.AddVisitedCountryAsync(visitedCountryEntry); // Usa il tuo servizio esistente
-                    _logger.LogInformation("Paese {CountryName} aggiunto/aggiornato in VisitedCountries.", city.Country.Name);
+                    // Use try-catch if AddVisitedCountryAsync can throw for duplicates handled by this flow
+                    try
+                    {
+                        await _countryService.AddVisitedCountryAsync(visitedCountryEntry);
+                        _logger.LogInformation("Paese {CountryName} aggiunto in VisitedCountries.", city.Country.Name);
+                    }
+                    catch (ArgumentException argEx)
+                    {
+                        // This might happen if AddVisitedCountryAsync checks for duplicates and GlobeModel is expected to handle.
+                        // If AddVisitedCityAsync *also* adds to VisitedCountries, this block might be redundant or needs care.
+                        _logger.LogWarning(argEx, "Paese {CountryName} era già in VisitedCountries. Messaggio: {Message}", city.Country.Name, argEx.Message);
+                    }
                 }
-                else if (visitDate < existingVisitedCountry.VisitDate) // Aggiorna la data della prima visita al paese se questa è precedente
+                else if (visitDate < existingVisitedCountry.VisitDate)
                 {
                     existingVisitedCountry.VisitDate = visitDate;
-                    // _context.VisitedCountries.Update(existingVisitedCountry); // Se AddVisitedCountryAsync non gestisce l'update
-                    // await _context.SaveChangesAsync();
-                    // Oppure modifica AddVisitedCountryAsync per fare un AddOrUpdate
+                    _context.VisitedCountries.Update(existingVisitedCountry);
+                    await _context.SaveChangesAsync(); // Save changes for VisitedCountry update
+                    _logger.LogInformation("Data visita per Paese {CountryName} aggiornata in VisitedCountries.", city.Country.Name);
                 }
-
 
                 TempData["SuccessMessage"] = $"Visita a {city.Name} aggiunta con successo!";
                 return RedirectToPage();
             }
-            catch (ArgumentException ex) // Es. "già visitata in questa data" da AddVisitedCityAsync
+            catch (ArgumentException ex)
             {
                 _logger.LogWarning(ex, "ArgumentException durante OnPostAddCityVisitAsync per CityId {CityId}: {Message}", cityId, ex.Message);
                 ModelState.AddModelError(string.Empty, ex.Message);
@@ -200,40 +211,46 @@ namespace WanderGlobe.Pages
             return Page();
         }
 
-        // Handler per rimuovere una VISITA SPECIFICA A UNA CITTÀ
-        public async Task<IActionResult> OnPostRemoveCityVisitAsync(int visitedCityId) // Ora prende l'ID della riga VisitedCity
+        public async Task<IActionResult> OnPostRemoveCityVisitAsync(int visitedCityId)
         {
             _logger.LogInformation("OnPostRemoveCityVisitAsync chiamato con visitedCityId: {VisitedCityId}", visitedCityId);
             var user = await _userManager.GetUserAsync(User);
             if (user == null) return Unauthorized();
 
-            var visitedCityEntry = await _cityService.GetVisitedCityByIdAsync(visitedCityId);
-            if (visitedCityEntry == null || visitedCityEntry.UserId != user.Id)
+            // Corrected call: Pass user.Id
+            var visitedCityEntry = await _cityService.GetVisitedCityByIdAsync(visitedCityId, user.Id);
+
+            if (visitedCityEntry == null) // User ID check is implicitly handled by GetVisitedCityByIdAsync
             {
                 _logger.LogWarning("Tentativo di rimozione visita città non trovata o non autorizzata. ID: {VisitedCityId}, Utente: {UserId}", visitedCityId, user.Id);
                 TempData["ErrorMessage"] = "Impossibile trovare la visita da rimuovere o non autorizzato.";
                 return RedirectToPage();
             }
 
+            // Ensure city and country are loaded if needed for logging or subsequent logic
+            // If GetVisitedCityByIdAsync doesn't include them, you might need to load them here or adjust the service method.
+            // For now, assuming City and City.Country are loaded by the service method if needed for display.
+            string cityNameForMessage = visitedCityEntry.City?.Name ?? "una città";
+
+
             try
             {
-                await _cityService.RemoveVisitedCityAsync(visitedCityId);
-                _logger.LogInformation("Visita città ID {VisitedCityId} rimossa con successo.", visitedCityId);
-                TempData["SuccessMessage"] = $"Visita a {visitedCityEntry.City.Name} rimossa con successo.";
+                await _cityService.RemoveVisitedCityAsync(visitedCityId); // Assumes this method handles removing the VisitedCity entry by its PK
+                _logger.LogInformation("Visita città ID {VisitedCityId} ({CityName}) rimossa con successo.", visitedCityId, cityNameForMessage);
+                TempData["SuccessMessage"] = $"Visita a {cityNameForMessage} rimossa con successo.";
 
-                // Opzionale: Controlla se era l'ultima città visitata in quel paese.
-                // Se sì, potresti voler rimuovere la riga da VisitedCountries.
-                // Questa logica dipende da come vuoi gestire le statistiche dei paesi.
-                bool otherCitiesInCountry = await _context.VisitedCities
-                    .AnyAsync(vc => vc.UserId == user.Id &&
-                                   vc.City.CountryId == visitedCityEntry.City.CountryId &&
-                                   vc.Id != visitedCityId);
-                if (!otherCitiesInCountry)
+                if (visitedCityEntry.City != null) // Check if City was loaded
                 {
-                    await _countryService.RemoveVisitedCountryAsync(user.Id, visitedCityEntry.City.CountryId);
-                    _logger.LogInformation("Rimosso anche VisitedCountry per CountryId {CountryId} poiché non ci sono altre città visitate.", visitedCityEntry.City.CountryId);
+                    bool otherCitiesInCountry = await _context.VisitedCities
+                        .AnyAsync(vc => vc.UserId == user.Id &&
+                                       vc.City.CountryId == visitedCityEntry.City.CountryId && // Use CountryId from the loaded City
+                                       vc.Id != visitedCityId);
+                    if (!otherCitiesInCountry)
+                    {
+                        await _countryService.RemoveVisitedCountryAsync(user.Id, visitedCityEntry.City.CountryId);
+                        _logger.LogInformation("Rimosso anche VisitedCountry per CountryId {CountryId} poiché non ci sono altre città visitate.", visitedCityEntry.City.CountryId);
+                    }
                 }
-
             }
             catch (Exception ex)
             {
@@ -244,16 +261,16 @@ namespace WanderGlobe.Pages
             return RedirectToPage();
         }
 
-
-        // Metodo helper per caricare i dati necessari quando si ritorna Page() da un handler POST
         private async Task PreparePageModelDataAsync()
         {
             var user = await _userManager.GetUserAsync(User);
             if (user == null) return;
 
             var allCitiesFromDb = await _cityService.GetAllCitiesWithCountryAsync();
+            var visitedCityIdsForUser = (await _cityService.GetVisitedCitiesByUserAsync(user.Id)).Select(vc => vc.CityId).ToHashSet();
+
             AllCitiesForDropdown = allCitiesFromDb
-                .Where(c => c.Country != null)
+                .Where(c => c.Country != null && !visitedCityIdsForUser.Contains(c.Id))
                 .Select(city => new CityInfoForDropdown(
                     city.Id,
                     $"{city.Name} ({city.Country.Name})",
@@ -262,14 +279,6 @@ namespace WanderGlobe.Pages
                     city.Country.Code ?? "??"))
                 .OrderBy(c => c.CityDisplayName)
                 .ToList();
-
-            // Potresti voler ricaricare anche VisitedCityPins e VisitedPercentageOfWorldCountries se necessario
-            // per mostrare gli errori sulla pagina con i dati attuali.
-            // Questo è già fatto in OnGetAsync, che viene chiamato implicitamente da RedirectToPage(),
-            // ma se ritorni Page() direttamente, OnGetAsync non viene rieseguito per quel POST.
         }
-
-        // Manteniamo il riferimento a _context per la logica opzionale in OnPostAddCityVisitAsync
-        // e OnPostRemoveCityVisitAsync. Idealmente, questa logica sarebbe incapsulata nei servizi.
     }
 }

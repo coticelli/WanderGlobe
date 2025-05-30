@@ -23,72 +23,86 @@
 
             <div class="timeline-controls animated-element">
                 <div class="control-item dropdown">
-                    <button class="btn btn-glass dropdown-toggle" type="button" id="filterDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    <button class="btn btn-glass dropdown-toggle" type="button" id="filterDropdown"
+                        data-bs-toggle="dropdown" aria-expanded="false">
                         <i class="fas fa-filter"></i> Filtra per
                     </button>
-                    <ul class="dropdown-menu glass-menu dropdown-menu-end filter-menu" aria-labelledby="filterDropdown" data-bs-auto-close="true">
-                        <li><a class="dropdown-item filter-option active" href="#" data-filter="all">
-                            <i class="fas fa-globe-americas"></i> Tutte le destinazioni
-                        </a></li>
+                    <ul class="dropdown-menu glass-menu dropdown-menu-end filter-menu" aria-labelledby="filterDropdown"
+                        data-bs-auto-close="true">
+                        <li>
+                            <a class="dropdown-item filter-option active" href="#" data-filter="all">
+                                <i class="fas fa-globe-americas"></i> Tutte le destinazioni
+                            </a>
+                        </li>
                         <div class="dropdown-divider"></div>
-                        @* Assuming Model.Continents will be populated from VisitedCityViewModel.Continent distinct values *@
                         @foreach (var continent in Model.Continents.OrderBy(c => c))
                         {
-                            <li><a class="dropdown-item filter-option" href="#" data-filter="@continent.ToLowerInvariant().Replace(" ", "-").Replace("/", "-")">
-                                <i class="@GetContinentIcon(continent)"></i> @continent
-                            </a></li>
+                            <li>
+                                <a class="dropdown-item filter-option" href="#"
+                                    data-filter="@continent.ToLowerInvariant().Replace(" ", "-").Replace("/", "-")">
+                                    <i class="@GetContinentIcon(continent)"></i> @continent
+                                </a>
+                            </li>
                         }
                     </ul>
                 </div>
 
                 <div class="control-item dropdown">
-                    <button class="btn btn-glass dropdown-toggle" type="button" id="sortDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    <button class="btn btn-glass dropdown-toggle" type="button" id="sortDropdown"
+                        data-bs-toggle="dropdown" aria-expanded="false">
                         <i class="fas fa-sort"></i> Ordinamento
                     </button>
-                    <ul class="dropdown-menu glass-menu dropdown-menu-end sort-menu" aria-labelledby="sortDropdown" data-bs-auto-close="true">
-                        <li><a class="dropdown-item sort-option active" href="#" data-sort="newest">
-                            <i class="fas fa-arrow-down"></i> Più recenti prima
-                        </a></li>
-                        <li><a class="dropdown-item sort-option" href="#" data-sort="oldest">
-                            <i class="fas fa-arrow-up"></i> Più vecchi prima
-                        </a></li>
+                    <ul class="dropdown-menu glass-menu dropdown-menu-end sort-menu" aria-labelledby="sortDropdown"
+                        data-bs-auto-close="true">
+                        <li>
+                            <a class="dropdown-item sort-option active" href="#" data-sort="newest">
+                                <i class="fas fa-arrow-down"></i> Più recenti prima
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item sort-option" href="#" data-sort="oldest">
+                                <i class="fas fa-arrow-up"></i> Più vecchi prima
+                            </a>
+                        </li>
                     </ul>
                 </div>
             </div>
         </div>
 
 
-        <!-- Anno tabs - con effetto parallasse -->
         <div class="timeline-year-tabs animated-element">
             <div id="floating-compass">
-                <img src="/images/compass.svg" alt="Compass" onerror="this.src='/images/compass.png';">
+                <img src="@Url.Content("~/images/compass.svg")" alt="Compass"
+                    onerror="this.src='@Url.Content("~/images/compass.png")';">
             </div>
             <div class="timeline-scroller">
-                @* Assuming Model.VisitYears will be populated from distinct years of VisitedCityViewModel.VisitDate *@
-                @foreach (var year in Model.VisitYears.OrderByDescending(y => y))
+                @if (Model.VisitYears.Any())
                 {
-                    <a href="#year-@year" class="year-tab" data-year="@year">
-                        <span class="year-text">@year</span>
-                        <div class="year-glow"></div>
-                    </a>
+                    @foreach (var year in Model.VisitYears.OrderByDescending(y => y))
+                    {
+                        <a href="#year-@year" class="year-tab" data-year="@year">
+                            <span class="year-text">@year</span>
+                            <div class="year-glow"></div>
+                        </a>
+                    }
+                }
+                else
+                {
+                    <p style="color: white; text-align: center;">DEBUG: No visit years to display in scroller.</p>
                 }
             </div>
         </div>
 
-        <!-- Timeline continua con tutti gli anni -->
         <div class="timeline-content">
-            <!-- Aereo volante che segue lo scroll -->
-            <div id="flying-plane">
-                <i class="fas fa-plane"></i>
-            </div>
-            
-            <!-- Path decorativo con mappa puntinata -->
+            <div id="flying-plane"><i class="fas fa-plane"></i></div>
             <div class="dotted-path-container">
                 <div class="dotted-path"></div>
             </div>
-            
+
             @if (!Model.GroupedVisits.Any())
             {
+                <p style="color: white; text-align:center; margin-top: 20px;">DEBUG CSHTML: Model.GroupedVisits is EMPTY or
+                    Any() is false.</p>
                 <div class="empty-timeline animated-element">
                     <div class="empty-globe">
                         <div class="globe">
@@ -106,102 +120,87 @@
                     </div>
                     <h3>Nessun viaggio ancora!</h3>
                     <p>Inizia ad aggiungere le città che hai visitato per costruire la tua timeline di viaggio.</p>
-                    <a href="/Globe#add" class="btn btn-neo-primary"> @* Updated link to Globe add tab *@
+                    <a href="/Globe#add" class="btn btn-neo-primary">
                         <i class="fas fa-plus-circle me-2"></i> Aggiungi una città
                     </a>
                 </div>
             }
             else
             {
+                <p style="color: white; text-align:center; margin-top: 20px;">DEBUG CSHTML: Model.GroupedVisits HAS
+                    @Model.GroupedVisits.Count entries. Iterating...</p>
                 @foreach (var yearGroup in Model.GroupedVisits.OrderByDescending(g => g.Key))
                 {
                     <div class="timeline-year animated-section" id="year-@yearGroup.Key">
                         <div class="year-marker">
                             <div class="year-line"></div>
-                            <div class="year-bubble">
-                                <span>@yearGroup.Key</span>
+                            <div class="year-bubble"><span>@yearGroup.Key</span>
                                 <div class="ring"></div>
                                 <div class="ring-pulse"></div>
                             </div>
                         </div>
-                        
+
                         <div class="timeline-events-wrapper">
                             <div class="timeline-events">
-                                @* Each 'visit' is now a VisitedCityViewModel *@
-                                @foreach (var visit in yearGroup.Value) @* Assuming already ordered in OnGetAsync in TimelineModel.cs *@
+                                <p style="color: white;">DEBUG CSHTML: Processing year @yearGroup.Key. It has
+                                    @yearGroup.Value.Count visits.</p>
+                                @foreach (var visit in yearGroup.Value)
                                 {
-                                    // The 'visit' object now directly contains city and country info
-                                    if (!string.IsNullOrEmpty(visit.CityName) && !string.IsNullOrEmpty(visit.CountryName))
+                                    <p style="color:yellow; border: 1px dashed yellow; padding: 5px;">
+                                        DEBUG RAZOR VISIT: CityName: '@visit.CityName', CountryName: '@visit.CountryName', RecordId:
+                                        @visit.VisitedCityRecordId
+                                    </p>
+                                    @* Fixed: Added missing @ symbol before if statement *@
+                                    @if (!string.IsNullOrEmpty(visit.CityName) && !string.IsNullOrEmpty(visit.CountryName))
                                     {
-                                        var weatherData = Model.GetWeatherForCityVisit(visit.CityId, visit.VisitDate); // Assumes this method exists in Model
-                                        var continentClass = visit.Continent?.ToLowerInvariant().Replace(" ", "-").Replace("/", "-") ?? "unknown-continent";
-                                        var modalIdSuffix = $"{visit.VisitedCityRecordId}"; // Use the unique PK of the VisitedCity record
-                                        
-                                        <div class="timeline-event @continentClass" data-continent="@continentClass" data-cityid="@visit.CityId" data-visit-id="@visit.VisitedCityRecordId">
+                                        var weatherData = visit.Weather;
+                                        var continentClass = visit.Continent?.ToLowerInvariant().Replace(" ", "-").Replace("/", "-") ??
+                                        "unknown-continent";
+                                        var modalIdSuffix = $"{visit.VisitedCityRecordId}";
+
+                                        <div class="timeline-event @continentClass" data-continent="@continentClass"
+                                            data-cityid="@visit.CityId" data-visit-id="@visit.VisitedCityRecordId">
                                             <div class="event-date">
-                                                <span>@visit.VisitDate.Day @(new DateTime(yearGroup.Key, visit.VisitDate.Month, 1).ToString("MMMM", new System.Globalization.CultureInfo("it-IT")))</span>
-                                            </div>
-                                            
+                                                <span>@visit.VisitDate.Day @(new DateTime(yearGroup.Key, visit.VisitDate.Month,
+                                                                                        1).ToString("MMMM", new System.Globalization.CultureInfo("it-IT")))</span>
+                            </div>
+
                                             <div class="event-card">
                                                 <div class="card-glare"></div>
                                                 <div class="event-image">
                                                     <div class="image-wrapper">
-                                                        @* 
-                                                            Image source:
-                                                            - Uses visit.CitySpecificImage if available (e.g., "barcelona.jpg")
-                                                            - Falls back to country-based image (e.g., "es-city.jpg" for Madrid)
-                                                            - Final fallback to default-city.jpg
-                                                            You need to ensure visit.CitySpecificImage property is populated in VisitedCityViewModel if you want unique city images.
-                                                        *@
-                                                        <img src="@(string.IsNullOrEmpty(visit.CitySpecificImage) ? $"~/images/cities/{visit.CountryCode?.ToLower()}-city.jpg" : $"~/images/cities/{visit.CitySpecificImage}")" 
-                                                             alt="@visit.CityName" 
-                                                             loading="lazy"
-                                                             onerror="this.onerror=null; this.src='/images/default-city.jpg';">
+                                                        <img src="@(Url.Content(string.IsNullOrEmpty(visit.CitySpecificImage) ? $"~/images/cities/{visit.CountryCode?.ToLower()}-city.jpg" : visit.CitySpecificImage))"
+                                                            alt="@visit.CityName" loading="lazy"
+                                                            onerror="this.onerror=null; this.src='@Url.Content("~/images/default-city.jpg")';">
                                                     </div>
                                                     <div class="country-flag">
-                                                        <img src="~/images/flags/@(visit.CountryCode?.ToLower()).png" 
-                                                             alt="@visit.CountryName" 
-                                                             onerror="this.onerror=null; this.src='/images/flags/unknown.png';">
+                                                        <img src="@Url.Content($"~/images/flags/{visit.CountryCode?.ToLower()}.png")"
+                                                            alt="@visit.CountryName"
+                                                            onerror="this.onerror=null; this.src='@Url.Content("~/images/flags/unknown.png")';">
                                                     </div>
-                                                    <div class="geo-tag">
-                                                        <i class="fas fa-map-marker-alt"></i>
-                                                    </div>
+                                                    <div class="geo-tag"><i class="fas fa-map-marker-alt"></i></div>
                                                 </div>
-                                                
+
                                                 <div class="event-content">
                                                     <h3>@visit.CityName</h3>
                                                     <div class="event-meta">
-                                                        <span class="country-name">
-                                                            <i class="fas fa-map"></i> @visit.CountryName
-                                                        </span>
-                                                        @if(!string.IsNullOrEmpty(visit.Continent))
+                                                        <span class="country-name"><i class="fas fa-map"></i> @visit.CountryName</span>
+                                        @if (!string.IsNullOrEmpty(visit.Continent))
                                                         {
-                                                        <span class="continent-badge" data-continent="@continentClass">
-                                                            <i class="@GetContinentIcon(visit.Continent)"></i> @visit.Continent
-                                                        </span>
+                                                            <span class="continent-badge" data-continent="@continentClass">
+                                                                <i class="@GetContinentIcon(visit.Continent)"></i> @visit.Continent
+                                                            </span>
                                                         }
                                                     </div>
-                                                    
+
                                                     <div class="event-details">
-                                                        @if (weatherData != null && weatherData.Condition != "N/D")
+                                                        @if (weatherData != null && weatherData.Condition != "N/D" &&
+                                                                                                !string.IsNullOrEmpty(weatherData.Condition))
                                                         {
                                                             <div class="weather-info">
                                                                 <div class="weather-icon">
-                                                                    @{
-                                                                        string weatherIconClass = weatherData.Condition switch
-                                                                        {
-                                                                            "Soleggiato" => "fas fa-sun", "Sereno" => "fas fa-sun",
-                                                                            "Poco nuvoloso" => "fas fa-cloud-sun", "Parzialmente nuvoloso" => "fas fa-cloud-sun",
-                                                                            "Nuvoloso" => "fas fa-cloud", "Coperto" => "fas fa-cloud",
-                                                                            "Piovoso" => "fas fa-cloud-rain", "Pioggia debole" => "fas fa-cloud-showers-heavy",
-                                                                            "Pioggia moderata" => "fas fa-cloud-rain", "Pioggia forte" => "fas fa-cloud-showers-heavy",
-                                                                            "Pioviggine" => "fas fa-tint",
-                                                                            "Temporale" => "fas fa-bolt", "Nevoso" => "fas fa-snowflake",
-                                                                            "Neve debole" => "fas fa-snowflake", "Nebbioso" => "fas fa-smog", "Foschia" => "fas fa-smog",
-                                                                            _ => "fas fa-question-circle"
-                                                                        };
-                                                                    }
-                                                                    <i class="@weatherIconClass"></i>
+                                                                    <i
+                                                                        class="@(weatherData.Condition switch { "Soleggiato" => "fas fa-sun", "Sereno" => "fas fa-sun", "Poco nuvoloso" => "fas fa-cloud-sun", "Parzialmente nuvoloso" => "fas fa-cloud-sun", "Nuvoloso" => "fas fa-cloud", "Coperto" => "fas fa-cloud", "Piovoso" => "fas fa-cloud-rain", "Pioggia debole" => "fas fa-cloud-showers-heavy", "Pioggia moderata" => "fas fa-cloud-rain", "Pioggia forte" => "fas fa-cloud-showers-heavy", "Pioviggine" => "fas fa-tint", "Temporale" => "fas fa-bolt", "Nevoso" => "fas fa-snowflake", "Neve debole" => "fas fa-snowflake", "Nebbioso" => "fas fa-smog", "Foschia" => "fas fa-smog", _ => "fas fa-question-circle" })"></i>
                                                                 </div>
                                                                 <div class="weather-details">
                                                                     <span class="temperature">@weatherData.Temperature°C</span>
@@ -209,22 +208,23 @@
                                                                 </div>
                                                             </div>
                                                         }
-                                                        @if(!string.IsNullOrEmpty(visit.Description))
+                                                        @if (!string.IsNullOrEmpty(visit.Description))
                                                         {
                                                             <p class="visit-notes">@visit.Description</p>
                                                         }
                                                     </div>
-                                                    
+
                                                     <div class="event-actions">
-                                                        <a href="/Globe?highlightCity=@visit.CityId&lat=@visit.Latitude.ToString(System.Globalization.CultureInfo.InvariantCulture)&lng=@visit.Longitude.ToString(System.Globalization.CultureInfo.InvariantCulture)" class="btn btn-neo-primary hover-float">
-                                                            <i class="fas fa-globe"></i>
-                                                            <span>Visualizza sul globo</span>
+                                                        <a href="/Globe?highlightCity=@visit.CityId&lat=@visit.Latitude.ToString(System.Globalization.CultureInfo.InvariantCulture)&lng=@visit.Longitude.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                                                            class="btn btn-neo-primary hover-float">
+                                                            <i class="fas fa-globe"></i><span>Visualizza sul globo</span>
                                                         </a>
-                                                        <button type="button" class="btn btn-neo-secondary hover-float" data-bs-toggle="modal" data-bs-target="#visitModal_@modalIdSuffix">
-                                                            <i class="fas fa-edit"></i>
-                                                            <span>Modifica</span>
+                                                        <button type="button" class="btn btn-neo-secondary hover-float"
+                                                            data-bs-toggle="modal" data-bs-target="#visitModal_@modalIdSuffix">
+                                                            <i class="fas fa-edit"></i><span>Modifica</span>
                                                         </button>
-                                                        <button type="button" class="btn btn-circle memory-btn" title="Aggiungi ricordo" data-visit-record-id="@modalIdSuffix">
+                                                        <button type="button" class="btn btn-circle memory-btn" title="Aggiungi ricordo"
+                                                            data-visit-record-id="@modalIdSuffix">
                                                             <i class="fas fa-camera"></i>
                                                         </button>
                                                     </div>
@@ -232,13 +232,18 @@
                                             </div>
                                         </div>
                                     }
+                                    else
+                                    {
+                                        <p style="color:orange;">DEBUG CSHTML: Visit Record ID @visit.VisitedCityRecordId skipped due to
+                                            empty CityName ('@visit.CityName') or CountryName ('@visit.CountryName').</p>
+                                    }
                                 }
                             </div>
                         </div>
                     </div>
                 }
             }
-            
+
             <div class="journey-progress">
                 <div class="journey-indicator">
                     <div class="compass-rose">
@@ -252,13 +257,14 @@
     </div>
 </div>
 
-<!-- Modal dialogs for editing visits -->
+<!-- Modals -->
 @foreach (var yearGroup in Model.GroupedVisits)
 {
     @foreach (var visit in yearGroup.Value.Where(v => !string.IsNullOrEmpty(v.CityName)))
     {
-        var modalIdSuffix = $"{visit.VisitedCityRecordId}"; // Use the unique PK from VisitedCityViewModel
-        <div class="modal fade custom-modal" id="visitModal_@modalIdSuffix" tabindex="-1" aria-labelledby="visitModalLabel_@modalIdSuffix" aria-hidden="true">
+        var modalIdSuffix = $"{visit.VisitedCityRecordId}";
+        <div class="modal fade custom-modal" id="visitModal_@modalIdSuffix" tabindex="-1"
+            aria-labelledby="visitModalLabel_@modalIdSuffix" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered">
                 <div class="modal-content glass-effect">
                     <div class="modal-header">
@@ -267,10 +273,10 @@
                     </div>
                     <div class="modal-body">
                         <div class="city-info">
-                            <div class="city-image">
-                                <img src="/images/flags/@(visit.CountryCode?.ToLower()).png" alt="@visit.CountryName"
-                                     onerror="this.onerror=null; this.src='/images/flags/unknown.png';">
-                            </div>
+                            <div class="city-image"><img
+                                    src="@Url.Content($"~/images/flags/{visit.CountryCode?.ToLower()}.png")"
+                                    alt="@visit.CountryName"
+                                    onerror="this.onerror=null; this.src='@Url.Content("~/images/flags/unknown.png")';"></div>
                             <div class="city-details">
                                 <h6>@visit.CityName</h6>
                                 <p>@visit.CountryName</p>
@@ -278,44 +284,26 @@
                         </div>
                         <form method="post" asp-page-handler="EditVisit">
                             @Html.AntiForgeryToken()
-                            <input type="hidden" name="visitedCityRecordId" value="@visit.VisitedCityRecordId" />
-                            @* CityId might still be useful for context or if your edit handler needs it separately *@
-                            <input type="hidden" name="cityIdForContext" value="@visit.CityId" /> 
+                            <input type="hidden" name="Edit_VisitedCityRecordId" value="@visit.VisitedCityRecordId" />
                             <div class="mb-3">
-                                <label for="visitDate_@modalIdSuffix" class="form-label">
-                                    <i class="fas fa-calendar-alt me-2"></i> Data della visita
-                                </label>
+                                <label for="visitDate_@modalIdSuffix" class="form-label"><i
+                                        class="fas fa-calendar-alt me-2"></i> Data della visita</label>
                                 <div class="date-input-wrapper">
-                                    <input type="date" class="form-control neo-input" id="visitDate_@modalIdSuffix" 
-                                           name="visitDate" value="@visit.VisitDate.ToString("yyyy-MM-dd")" required>
+                                    <input type="date" class="form-control neo-input" id="visitDate_@modalIdSuffix"
+                                        name="Edit_VisitDate" value="@visit.VisitDate.ToString("yyyy-MM-dd")" required>
                                 </div>
                             </div>
                             <div class="mb-3">
-                                <label for="visitNotes_@modalIdSuffix" class="form-label">
-                                    <i class="fas fa-comment-alt me-2"></i> Note sul viaggio
-                                </label>
-                                <textarea class="form-control neo-input" id="visitNotes_@modalIdSuffix" 
-                                          name="visitNotes" rows="4">@visit.Description</textarea>
+                                <label for="visitNotes_@modalIdSuffix" class="form-label"><i
+                                        class="fas fa-comment-alt me-2"></i> Note sul viaggio</label>
+                                <textarea class="form-control neo-input" id="visitNotes_@modalIdSuffix" name="Edit_VisitNotes"
+                            rows="4">@visit.Description</textarea>
                             </div>
                             <div class="memory-gallery">
                                 <h6 class="gallery-title"><i class="fas fa-images me-2"></i> Ricordi</h6>
                                 <div class="memory-photos" id="memoryPhotos_@modalIdSuffix">
-                                    @* Photos are best loaded dynamically by JavaScript after modal shows, using data-visit-record-id *@
-                                    @* Example if pre-loading (less ideal for many photos): *@
-                                    @*
-                                    @foreach (var photo in Model.GetPhotosForVisitedCity(visit.VisitedCityRecordId))
-                                    {
-                                        <div class="memory-photo" data-photo-id="@photo.Id">
-                                            <img src="@photo.Url" alt="@photo.Caption" onclick="openPhotoGallery('@modalIdSuffix', '@photo.Id')" />
-                                            <button type="button" class="photo-delete-btn" data-photo-id="@photo.Id" title="Elimina foto">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
-                                        </div>
-                                    }
-                                    *@
-                                    <div class="add-photo" title="Aggiungi foto" data-visit-record-id="@modalIdSuffix">
-                                        <i class="fas fa-plus"></i>
-                                    </div>
+                                    <div class="add-photo" title="Aggiungi foto" data-visit-record-id="@modalIdSuffix"><i
+                                            class="fas fa-plus"></i></div>
                                 </div>
                             </div>
                             <div class="modal-footer">
@@ -332,32 +320,26 @@
 
 <!-- Gallery Modal -->
 <div class="modal fade" id="galleryModal" tabindex="-1" aria-labelledby="galleryModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-fullscreen">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="galleryModalLabel">Galleria Fotografica</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Chiudi"></button>
-      </div>
-      <div class="modal-body p-0">
-        <div id="galleryCarousel" class="carousel slide" data-bs-ride="false">
-          <div class="carousel-inner">
-            <!-- Photos will be loaded dynamically -->
-          </div>
-          <button class="carousel-control-prev" type="button" data-bs-target="#galleryCarousel" data-bs-slide="prev">
-            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-            <span class="visually-hidden">Precedente</span>
-          </button>
-          <button class="carousel-control-next" type="button" data-bs-target="#galleryCarousel" data-bs-slide="next">
-            <span class="carousel-control-next-icon" aria-hidden="true"></span>
-            <span class="visually-hidden">Successivo</span>
-          </button>
+    <div class="modal-dialog modal-fullscreen">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="galleryModalLabel">Galleria Fotografica</h5> <button type="button"
+                    class="btn-close" data-bs-dismiss="modal" aria-label="Chiudi"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div id="galleryCarousel" class="carousel slide" data-bs-ride="false">
+                    <div class="carousel-inner"> </div> <button class="carousel-control-prev" type="button"
+                        data-bs-target="#galleryCarousel" data-bs-slide="prev"> <span class="carousel-control-prev-icon"
+                            aria-hidden="true"></span> <span class="visually-hidden">Precedente</span> </button> <button
+                        class="carousel-control-next" type="button" data-bs-target="#galleryCarousel"
+                        data-bs-slide="next"> <span class="carousel-control-next-icon" aria-hidden="true"></span> <span
+                            class="visually-hidden">Successivo</span> </button>
+                </div>
+            </div>
+            <div class="modal-footer"> <button type="button" class="btn btn-secondary"
+                    data-bs-dismiss="modal">Chiudi</button> </div>
         </div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Chiudi</button>
-      </div>
     </div>
-  </div>
 </div>
 
 @section Styles {
@@ -365,86 +347,117 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css">
     <link rel="stylesheet" href="~/css/timeline.css" asp-append-version="true" />
     <style>
+        /* Your existing styles - ensure they don't hide elements unintentionally */
         .highlight-event .event-card {
             box-shadow: 0 0 15px 5px var(--neo-primary-glow, #00aaff);
             transform: scale(1.02);
             transition: transform 0.3s ease-out, box-shadow 0.3s ease-out;
         }
+
         .empty-year-message {
             padding: 20px;
             text-align: center;
-            background-color: rgba(30, 30, 50, 0.7); 
+            background-color: rgba(30, 30, 50, 0.7);
             border-radius: 8px;
             margin: 20px auto;
             color: #e0e0e0;
             border: 1px solid rgba(255, 255, 255, 0.2);
             max-width: 80%;
         }
-        .animated-section, .animated-element {
+
+        .animated-section,
+        .animated-element {
             opacity: 0;
             transform: translateY(20px);
             transition: opacity 0.8s ease-out, transform 0.8s ease-out;
         }
-        .animated-section.in-view, .animated-element.in-view {
+
+        .animated-section.in-view,
+        .animated-element.in-view {
             opacity: 1;
             transform: translateY(0);
         }
+
+        /* Ensure elements become visible after a delay even without JS */
+        media screen {
+            .animated-section,
+            .animated-element {
+                animation: force-appear 1.5s forwards 0.5s;
+            }
+
+            keyframes force-appear {
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+        }
+
         .highlight-section {
             box-shadow: 0 0 10px 3px gold;
             border-radius: 5px;
             transition: box-shadow 0.5s ease-in-out;
         }
+
         .memory-photos {
             display: flex;
             flex-wrap: wrap;
-            gap: 10px; /* Spacing between photos */
+            gap: 10px;
             margin-top: 10px;
-            padding-bottom: 10px; /* Space for the add button */
+            padding-bottom: 10px;
         }
+
         .memory-photo {
             position: relative;
-            width: 80px; 
-            height: 80px; 
-            /* margin: 5px; */ /* Handled by gap in parent */
+            width: 80px;
+            height: 80px;
             display: inline-block;
             border-radius: 4px;
             overflow: hidden;
             border: 1px solid #444;
-            cursor: pointer; /* Indicate clickable for gallery */
+            cursor: pointer;
         }
+
         .memory-photo img {
             width: 100%;
             height: 100%;
             object-fit: cover;
         }
-        .loading-overlay, .success-indicator {
+
+        .loading-overlay,
+        .success-indicator {
             position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
             display: flex;
             align-items: center;
             justify-content: center;
-            background-color: rgba(0,0,0,0.5);
+            background-color: rgba(0, 0, 0, 0.5);
             color: white;
             font-size: 1.5rem;
-            border-radius: 4px; /* Match photo container */
+            border-radius: 4px;
         }
+
         .success-indicator {
-            background-color: rgba(0,128,0,0.5);
+            background-color: rgba(0, 128, 0, 0.5);
             opacity: 1;
             transition: opacity 0.3s ease-out;
         }
+
         .photo-delete-btn {
             position: absolute;
             top: 3px;
             right: 3px;
-            background-color: rgba(255,0,0,0.6);
+            background-color: rgba(255, 0, 0, 0.6);
             color: white;
             border: none;
             border-radius: 50%;
             width: 20px;
             height: 20px;
             font-size: 0.7rem;
-            line-height: 20px; /* Center icon */
+            line-height: 20px;
             text-align: center;
             cursor: pointer;
             display: flex;
@@ -454,207 +467,282 @@
             transition: opacity 0.2s ease-in-out;
             z-index: 10;
         }
+
         .memory-photo:hover .photo-delete-btn {
             opacity: 1;
         }
+
         .upload-error .loading-overlay {
-             background-color: rgba(255,0,0,0.5);
+            background-color: rgba(255, 0, 0, 0.5);
         }
-         .visit-notes {
+
+        .visit-notes {
             font-size: 0.9em;
-            color: #bbb; 
+            color: #bbb;
             margin-top: 8px;
-            white-space: pre-wrap; 
-            max-height: 100px; /* Example */
+            white-space: pre-wrap;
+            max-height: 100px;
             overflow-y: auto;
-            background-color: rgba(0,0,0,0.1);
+            background-color: rgba(0, 0, 0, 0.1);
             padding: 5px;
             border-radius: 3px;
         }
+
         .add-photo {
             width: 80px;
             height: 80px;
             border: 2px dashed #555;
-            display: inline-flex; 
+            display: inline-flex;
             align-items: center;
             justify-content: center;
             color: #777;
             font-size: 1.5rem;
             cursor: pointer;
             border-radius: 4px;
-            /* margin: 5px; */ /* Handled by gap in parent */
-            vertical-align: top; 
+            vertical-align: top;
         }
+
         .add-photo:hover {
             border-color: #888;
             color: #999;
         }
-
-        /* Styles from your previous version of Timeline.cshtml, if needed */
-        /* Ensure your existing timeline.css is comprehensive */
     </style>
 }
 
 @section Scripts {
     <script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            AOS.init({
-                duration: 800,
-                offset: 100,
-                once: false, 
-                mirror: true, 
-                easing: 'ease-out-cubic'
-            });
-            
-            createStars();
-            
-            setTimeout(() => {
-                const firstYearTab = document.querySelector('.year-tab');
-                if (firstYearTab) {
-                    firstYearTab.classList.add('active');
-                }
-                animateSections(); 
-                initializePhotoFunctionality(); // Consolidated initialization
-            }, 500);
-            
-            document.querySelectorAll('.event-card').forEach(card => {
-                card.addEventListener('mousemove', handleGlareEffect);
-                card.addEventListener('mouseleave', function(e) {
-                    const glare = this.querySelector('.card-glare');
-                    if (glare) glare.style.opacity = "0";
-                });
-            });
-            
-            window.addEventListener('scroll', handleFlyingPlane);
-            window.addEventListener('scroll', scrollSpyYearTabs); 
-            
-            document.querySelectorAll('.year-tab').forEach(tab => {
-                tab.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    document.querySelectorAll('.year-tab').forEach(t => t.classList.remove('active'));
-                    this.classList.add('active');
-                    const year = this.getAttribute('data-year');
-                    scrollToYear(year);
-                });
-            });
-            
-            document.querySelectorAll('.filter-option').forEach(option => {
-                option.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    document.querySelectorAll('.filter-option').forEach(o => o.classList.remove('active'));
-                    this.classList.add('active');
-                    const filter = this.getAttribute('data-filter');
-                    filterEvents(filter);
-                    const dropdownButton = document.getElementById('filterDropdown');
-                    if (dropdownButton) {
-                        const iconHtml = this.querySelector('i')?.outerHTML || '';
-                        dropdownButton.innerHTML = `${iconHtml} ${this.textContent.trim()}`;
-                    }
-                });
-            });
-            
-            document.querySelectorAll('.dropdown').forEach(dropdown => {
-                dropdown.addEventListener('shown.bs.dropdown', function () { /* Popper.js handles positioning */ });
-            });
-
-            document.querySelectorAll('.sort-option').forEach(option => {
-                option.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    document.querySelectorAll('.sort-option').forEach(o => o.classList.remove('active'));
-                    this.classList.add('active');
-                    const sort = this.getAttribute('data-sort');
-                    sortEvents(sort);
-                    const dropdownButton = document.getElementById('sortDropdown');
-                    if (dropdownButton) {
-                         const iconHtml = this.querySelector('i')?.outerHTML || '';
-                        dropdownButton.innerHTML = `${iconHtml} ${this.textContent.trim()}`;
-                    }
-                });
-            });
-            
-            const progressIndicator = document.querySelector('.journey-indicator');
-            if (progressIndicator) {
-                progressIndicator.addEventListener('click', function() {
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                });
+        // --- START OF EMBEDDED JAVASCRIPT FUNCTIONS ---
+        function createStars() {
+            console.log("JS: createStars called");
+            const container = document.getElementById('stars-container');
+            if (!container) return;
+            const numStars = 150;
+            for (let i = 0; i < numStars; i++) {
+                let star = document.createElement('div');
+                star.className = 'star';
+                star.style.width = `${Math.random() * 3}px`;
+                star.style.height = star.style.width;
+                star.style.left = `${Math.random() * 100}%`;
+                star.style.top = `${Math.random() * 100}%`;
+                star.style.animationDelay = `${Math.random() * 5}s`;
+                star.style.animationDuration = `${2 + Math.random() * 3}s`;
+                container.appendChild(star);
             }
-            
-            highlightFromUrl();
+        }
 
-            document.querySelectorAll('.memory-btn').forEach(button => {
-                button.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    const modalTargetId = this.closest('.timeline-event').querySelector('button[data-bs-target^="#visitModal_"]').getAttribute('data-bs-target');
-                    const visitModalElement = document.querySelector(modalTargetId);
-                    if (visitModalElement) {
-                        const visitModal = new bootstrap.Modal(visitModalElement);
-                        visitModal.show();
-                        
-                        const visitedCityRecordId = this.dataset.visitRecordId; // Get the unique visit ID
-                        loadPhotosForModal(visitedCityRecordId); // Load photos when modal is shown
+        function handleGlareEffect(e) {
+            // console.log("JS: handleGlareEffect called");
+            const glare = this.querySelector('.card-glare');
+            if (!glare) return;
+            const rect = this.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            glare.style.left = `${x}px`;
+            glare.style.top = `${y}px`;
+            glare.style.opacity = "1";
+        }
 
-                        setTimeout(() => {
-                            const photoSection = visitModalElement.querySelector('.memory-gallery');
-                            if (photoSection) {
-                                photoSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                                photoSection.classList.add('highlight-section');
-                                setTimeout(() => {
-                                    photoSection.classList.remove('highlight-section');
-                                }, 2000);
-                            }
-                        }, 300); 
+        function handleFlyingPlane() {
+            // console.log("JS: handleFlyingPlane called");
+            const plane = document.getElementById('flying-plane');
+            if (!plane) return;
+            const scrollY = window.scrollY;
+            const pageHeight = document.documentElement.scrollHeight - window.innerHeight;
+            const scrollPercent = Math.min(1, scrollY / pageHeight);
+
+            plane.style.top = `${50 + scrollPercent * (pageHeight - 150)}px`; // Adjust 150 for offset
+            const rotation = -10 + scrollPercent * 20;
+            plane.style.transform = `translateY(-50%) rotate(${rotation}deg) scale(0.8)`;
+        }
+
+        function scrollToYear(year) {
+            console.log(`JS: scrollToYear called for ${year}`);
+            const yearSection = document.getElementById(`year-${year}`);
+            if (yearSection) {
+                const yOffset = -80; // Adjust as needed for fixed headers
+                const y = yearSection.getBoundingClientRect().top + window.pageYOffset + yOffset;
+                window.scrollTo({ top: y, behavior: 'smooth' });
+            }
+        }
+
+        function filterEvents(filter) {
+            console.log(`JS: filterEvents called with ${filter}`);
+            document.querySelectorAll('.timeline-event').forEach(event => {
+                if (filter === 'all' || event.dataset.continent === filter) {
+                    event.style.display = '';
+                } else {
+                    event.style.display = 'none';
+                }
+            });
+            if (typeof AOS !== 'undefined') AOS.refresh();
+        }
+
+        function sortEvents(sortOrder) {
+            console.log(`JS: sortEvents called with ${sortOrder}`);
+            const timelineContent = document.querySelector('.timeline-content');
+            const yearSections = Array.from(timelineContent.querySelectorAll('.timeline-year'));
+
+            yearSections.sort((a, b) => {
+                const yearA = parseInt(a.id.replace('year-', ''));
+                const yearB = parseInt(b.id.replace('year-', ''));
+                return sortOrder === 'newest' ? yearB - yearA : yearA - yearB;
+            });
+
+            // Detach and re-append year sections in the new order
+            // Also re-append non-year-section children like flying plane and dotted path
+            const otherChildren = Array.from(timelineContent.children).filter(child => !child.classList.contains('timeline-year'));
+
+            timelineContent.innerHTML = ''; // Clear existing content
+            otherChildren.forEach(child => timelineContent.appendChild(child)); // Re-add non-year elements
+            yearSections.forEach(section => timelineContent.appendChild(section)); // Add sorted year sections
+
+            // Sort events within each year if necessary (already sorted by date in backend)
+            // For this example, backend sorting is assumed sufficient.
+
+            if (typeof AOS !== 'undefined') AOS.refreshHard(); // Use refreshHard for DOM changes
+        }
+
+
+        function animateSections() {
+            console.log("JS: animateSections called");
+            const sections = document.querySelectorAll('.animated-section, .animated-element');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('in-view');
+                    } else {
+                        // Optional: remove 'in-view' to re-animate if they scroll out and back in
+                        // entry.target.classList.remove('in-view');
                     }
                 });
-            });
-        }); 
-        
-        function initializePhotoFunctionality() {
-            // Initialize "Add Photo" buttons inside modals
-            document.querySelectorAll('.add-photo').forEach(addPhotoBtn => {
-                addPhotoBtn.addEventListener('click', handleAddPhotoClick);
-            });
+            }, { threshold: 0.1 }); // Trigger when 10% of the element is visible
 
-            // Initialize delete buttons for any photos that might be pre-rendered by Razor
-            document.querySelectorAll('.memory-photo .photo-delete-btn').forEach(btn => {
-                btn.addEventListener('click', handleDeletePhotoClick);
-            });
-
-            // Initialize click-to-open-gallery for pre-rendered photos
-             document.querySelectorAll('.memory-photo img').forEach(img => {
-                const photoContainer = img.closest('.memory-photo');
-                const photoId = photoContainer.dataset.photoId;
-                const visitRecordId = photoContainer.closest('.memory-photos').querySelector('.add-photo').dataset.visitRecordId;
-                if (photoId && visitRecordId) {
-                    addGalleryClickHandler(img, visitRecordId, photoId);
-                }
+            sections.forEach(section => {
+                observer.observe(section);
             });
         }
-        
+
+        function highlightFromUrl() {
+            console.log("JS: highlightFromUrl called");
+            const params = new URLSearchParams(window.location.search);
+            const highlightId = params.get('highlightVisitedCityRecordId');
+            if (highlightId) {
+                const elementToHighlight = document.querySelector(`.timeline-event[data-visit-id="${highlightId}"]`);
+                if (elementToHighlight) {
+                    elementToHighlight.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    elementToHighlight.classList.add('highlight-event');
+                    setTimeout(() => elementToHighlight.classList.remove('highlight-event'), 3000);
+                }
+            }
+        }
+
+        function scrollSpyYearTabs() {
+            // console.log("JS: scrollSpyYearTabs called");
+            let currentYear = null;
+            const yearSections = document.querySelectorAll('.timeline-year');
+            const offset = window.innerHeight * 0.4; // Trigger when section is 40% from top
+
+            yearSections.forEach(section => {
+                const sectionTop = section.getBoundingClientRect().top;
+                if (sectionTop < offset) {
+                    currentYear = section.id.replace('year-', '');
+                }
+            });
+
+            document.querySelectorAll('.year-tab').forEach(tab => {
+                tab.classList.remove('active');
+                if (tab.dataset.year === currentYear) {
+                    tab.classList.add('active');
+                }
+            });
+            // Activate first tab if no section is "active" (e.g., at the very top)
+            if (!currentYear && document.querySelectorAll('.year-tab.active').length === 0) {
+                const firstTab = document.querySelector('.year-tab');
+                if (firstTab) firstTab.classList.add('active');
+            }
+        }
+
+        function initializePhotoFunctionality() {
+            console.log("JS: initializePhotoFunctionality called");
+            document.querySelectorAll('.add-photo').forEach(addPhotoBtn => {
+                addPhotoBtn.removeEventListener('click', handleAddPhotoClick); // Prevent multiple listeners
+                addPhotoBtn.addEventListener('click', handleAddPhotoClick);
+            });
+            // Re-initialize delete buttons if photos are dynamically loaded
+            // This is better handled inside loadPhotosForModal after new photos are added.
+        }
+
+        async function loadPhotosForModal(visitedCityRecordId) {
+            console.log(`JS: loadPhotosForModal for visit ID ${visitedCityRecordId}`);
+            const memoryPhotosContainer = document.getElementById(`memoryPhotos_${visitedCityRecordId}`);
+            if (!memoryPhotosContainer) return;
+
+            const addPhotoBtn = memoryPhotosContainer.querySelector('.add-photo');
+            memoryPhotosContainer.querySelectorAll('.memory-photo').forEach(el => el.remove()); // Clear old photos
+
+            try {
+                const response = await fetch(`?handler=VisitPhotos&visitedCityRecordId=${visitedCityRecordId}`);
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                const photos = await response.json();
+
+                if (photos && photos.length > 0) {
+                    photos.forEach(photo => {
+                        const photoDiv = createPhotoElement(photo, visitedCityRecordId);
+                        if (addPhotoBtn) memoryPhotosContainer.insertBefore(photoDiv, addPhotoBtn);
+                        else memoryPhotosContainer.appendChild(photoDiv);
+                    });
+                }
+                // Ensure add button is always the last child if it exists
+                if (addPhotoBtn && !memoryPhotosContainer.contains(addPhotoBtn)) {
+                    memoryPhotosContainer.appendChild(addPhotoBtn);
+                }
+
+            } catch (error) {
+                console.error(`Error loading photos for modal visit ${visitedCityRecordId}:`, error);
+                if (addPhotoBtn && !memoryPhotosContainer.contains(addPhotoBtn)) { // Ensure add button is still there on error
+                    memoryPhotosContainer.appendChild(addPhotoBtn);
+                }
+            }
+        }
+
+        function createPhotoElement(photo, visitRecordId) {
+            const photoDiv = document.createElement('div');
+            photoDiv.className = 'memory-photo';
+            photoDiv.dataset.photoId = photo.id;
+
+            const img = document.createElement('img');
+            img.src = photo.url.startsWith('~') ? photo.url.replace('~', '') : photo.url; // Resolve ~/
+            img.alt = photo.caption || 'Ricordo di viaggio';
+            addGalleryClickHandler(img, visitRecordId, photo.id);
+            photoDiv.appendChild(img);
+
+            addDeleteButtonToPhoto(photoDiv, photo.id, visitRecordId);
+            return photoDiv;
+        }
+
+
         function handleAddPhotoClick() {
-            const addPhotoBtn = this; // 'this' is the clicked .add-photo button
+            console.log("JS: handleAddPhotoClick called");
+            const addPhotoBtn = this;
             const fileInput = document.createElement('input');
             fileInput.type = 'file';
-            fileInput.name = 'photoFile'; 
+            fileInput.name = 'Upload_PhotoFile'; // Match BindProperty
             fileInput.accept = 'image/*';
             fileInput.style.display = 'none';
             document.body.appendChild(fileInput);
             fileInput.click();
-            
-            fileInput.addEventListener('change', function() {
+
+            fileInput.onchange = function () {
                 if (this.files && this.files[0]) {
                     const file = this.files[0];
-                    const visitRecordId = addPhotoBtn.dataset.visitRecordId; // Get from the button itself
-                    if (!visitRecordId) {
-                        console.error('Visit Record ID (data-visit-record-id) not found on add-photo button.');
-                        if(fileInput.parentNode) document.body.removeChild(fileInput);
-                        return;
-                    }
-                    
+                    const visitRecordId = addPhotoBtn.dataset.visitRecordId;
+                    if (!visitRecordId) { console.error('Visit Record ID not found.'); if (fileInput.parentNode) document.body.removeChild(fileInput); return; }
+
                     const formData = new FormData();
-                    formData.append('photoFile', file); 
-                    formData.append('visitedCityRecordId', visitRecordId); 
-                    
+                    formData.append('Upload_PhotoFile', file);
+                    formData.append('Upload_VisitedCityRecordId', visitRecordId);
+
                     const photoPreviewContainer = document.createElement('div');
                     photoPreviewContainer.className = 'memory-photo';
                     const img = document.createElement('img');
@@ -662,49 +750,50 @@
                     reader.onload = e => { img.src = e.target.result; };
                     reader.readAsDataURL(file);
                     photoPreviewContainer.appendChild(img);
-                    
+
                     const loadingOverlay = document.createElement('div');
                     loadingOverlay.className = 'loading-overlay';
                     loadingOverlay.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i>';
                     photoPreviewContainer.appendChild(loadingOverlay);
-                    
+
                     const memoryPhotosContainer = addPhotoBtn.closest('.memory-photos');
                     memoryPhotosContainer.insertBefore(photoPreviewContainer, addPhotoBtn);
-                    
-                    const csrfToken = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
 
-                    fetch('?handler=UploadPhoto', { 
+                    const csrfTokenInput = document.querySelector('form[method="post"][action*="EditVisit"] input[name="__RequestVerificationToken"]');
+                    const csrfToken = csrfTokenInput ? csrfTokenInput.value : document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+
+
+                    fetch('?handler=UploadPhoto', {
                         method: 'POST',
                         body: formData,
                         headers: { 'RequestVerificationToken': csrfToken || '' }
                     })
-                    .then(response => response.ok ? response.json() : response.text().then(text => { throw new Error('Upload failed: ' + text); }))
-                    .then(data => {
-                        loadingOverlay.remove();
-                        if (data.success && data.photoId && data.photoUrl) {
-                            img.src = data.photoUrl; 
-                            photoPreviewContainer.dataset.photoId = data.photoId;
-                            addSuccessIndicator(photoPreviewContainer);
-                            addDeleteButtonToPhoto(photoPreviewContainer, data.photoId, visitRecordId);
-                            addGalleryClickHandler(img, visitRecordId, data.photoId);
-                        } else { throw new Error(data.message || "Upload failed, no specific error message from server."); }
-                    })
-                    .catch(error => handleError(error, photoPreviewContainer, loadingOverlay))
-                    .finally(() => { if(fileInput.parentNode) document.body.removeChild(fileInput); });
-                } else { if(fileInput.parentNode) document.body.removeChild(fileInput); }
-            });
+                        .then(response => {
+                            if (!response.ok) { return response.text().then(text => { throw new Error('Server error: ' + text); }); }
+                            return response.json();
+                        })
+                        .then(data => {
+                            loadingOverlay.remove();
+                            if (data.success && data.photoId && data.photoUrl) {
+                                img.src = data.photoUrl.startsWith('~') ? data.photoUrl.replace('~', '') : data.photoUrl;
+                                photoPreviewContainer.dataset.photoId = data.photoId;
+                                addSuccessIndicator(photoPreviewContainer);
+                                addDeleteButtonToPhoto(photoPreviewContainer, data.photoId, visitRecordId);
+                                addGalleryClickHandler(img, visitRecordId, data.photoId);
+                            } else { throw new Error(data.message || "Upload failed."); }
+                        })
+                        .catch(error => {
+                            console.error("Upload error:", error);
+                            handleError(error.message, photoPreviewContainer, loadingOverlay);
+                        })
+                        .finally(() => { if (fileInput.parentNode) document.body.removeChild(fileInput); });
+                } else { if (fileInput.parentNode) document.body.removeChild(fileInput); }
+            };
             fileInput.oncancel = () => { if (fileInput.parentNode) document.body.removeChild(fileInput); };
         }
 
-        function handleDeletePhotoClick() {
-            const photoId = this.dataset.photoId;
-            const photoElement = this.closest('.memory-photo');
-            const visitRecordId = photoElement.closest('.memory-photos').querySelector('.add-photo').dataset.visitRecordId;
-            deletePhoto(photoId, photoElement, visitRecordId);
-        }
-
-        function addSuccessIndicator(container) { /* ... (same as before) ... */ }
-        function addDeleteButtonToPhoto(container, photoId, visitRecordId) { /* ... (same as before, ensure event listener is added) ... */ 
+        function addDeleteButtonToPhoto(container, photoId, visitRecordId) {
+            console.log(`JS: addDeleteButtonToPhoto for photoId ${photoId}`);
             const deleteBtn = document.createElement('button');
             deleteBtn.type = 'button';
             deleteBtn.className = 'photo-delete-btn';
@@ -712,83 +801,251 @@
             deleteBtn.title = 'Elimina foto';
             deleteBtn.dataset.photoId = photoId;
             container.appendChild(deleteBtn);
-            deleteBtn.addEventListener('click', handleDeletePhotoClick); // Make sure this calls the correct handler
+            deleteBtn.addEventListener('click', function () { // Changed to function to preserve 'this'
+                handleDeletePhotoClick.call(this); // Explicitly call with 'this' context
+            });
         }
-        function addGalleryClickHandler(imgElement, visitRecordId, photoId) { /* ... (same as before) ... */ }
-        function handleError(error, photoPreviewContainer, loadingOverlay) { /* ... (same as before) ... */ }
-        function createStars() { /* ... (same as before) ... */ }
-        function deletePhoto(photoId, elementToRemove, visitRecordIdForRefresh) { /* ... (same as before) ... */ }
-        function openPhotoGallery(visitRecordId, activePhotoId = null) { /* ... (same as before, ensure handler is correct) ... */ }
-        function handleGlareEffect(e) { /* ... (same as before) ... */ }
-        function handleFlyingPlane() { /* ... (same as before) ... */ }
-        function scrollToYear(year) { /* ... (same as before) ... */ }
-        function filterEvents(filter) { /* ... (same as before) ... */ }
-        function sortEvents(sortOrder) { /* ... (same as before) ... */ }
-        function animateSections() { /* ... (same as before) ... */ }
-        function highlightFromUrl() { /* ... (same as before) ... */ }
-        function scrollSpyYearTabs() { /* ... (same as before) ... */ }
 
-        async function loadPhotosForModal(visitedCityRecordId) {
-            const memoryPhotosContainer = document.getElementById(`memoryPhotos_${visitedCityRecordId}`);
-            if (!memoryPhotosContainer) {
-                console.warn(`Memory photos container not found for visit ${visitedCityRecordId}`);
-                return;
+        function handleDeletePhotoClick() {
+            console.log("JS: handleDeletePhotoClick called");
+            const photoId = this.dataset.photoId;
+            const photoElement = this.closest('.memory-photo');
+            const addPhotoButton = photoElement.closest('.memory-photos').querySelector('.add-photo');
+            const visitRecordId = addPhotoButton ? addPhotoButton.dataset.visitRecordId : null;
+
+            if (!photoId) { console.error("Photo ID not found for deletion."); return; }
+            if (!photoElement) { console.error("Photo element not found for deletion."); return; }
+
+            if (confirm('Sei sicuro di voler eliminare questa foto?')) {
+                deletePhoto(photoId, photoElement, visitRecordId);
             }
+        }
 
-            const addPhotoBtn = memoryPhotosContainer.querySelector('.add-photo'); 
-            memoryPhotosContainer.querySelectorAll('.memory-photo').forEach(el => el.remove());
+
+        function addSuccessIndicator(container) {
+            console.log("JS: addSuccessIndicator called");
+            const indicator = document.createElement('div');
+            indicator.className = 'success-indicator';
+            indicator.innerHTML = '<i class="fas fa-check-circle"></i>';
+            container.appendChild(indicator);
+            setTimeout(() => {
+                indicator.style.opacity = '0';
+                setTimeout(() => indicator.remove(), 300);
+            }, 1500);
+        }
+
+
+        function addGalleryClickHandler(imgElement, visitRecordId, photoId) {
+            console.log(`JS: addGalleryClickHandler for visitId ${visitRecordId}, photoId ${photoId}`);
+            imgElement.style.cursor = 'pointer';
+            imgElement.addEventListener('click', function () {
+                openPhotoGallery(visitRecordId, photoId);
+            });
+        }
+
+        function handleError(errorMessage, photoPreviewContainer, loadingOverlay) {
+            console.error("JS: handleError:", errorMessage);
+            if (loadingOverlay) loadingOverlay.remove();
+            if (photoPreviewContainer) {
+                photoPreviewContainer.classList.add('upload-error');
+                const errorOverlay = document.createElement('div');
+                errorOverlay.className = 'loading-overlay'; // Re-use for error style
+                errorOverlay.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Error';
+                photoPreviewContainer.appendChild(errorOverlay);
+                setTimeout(() => photoPreviewContainer.remove(), 3000); // Remove the failed preview
+            }
+        }
+
+        async function deletePhoto(photoId, elementToRemove, visitRecordIdForRefresh) {
+            console.log(`JS: deletePhoto called for photoId ${photoId}`);
+            const csrfTokenInput = document.querySelector('form[method="post"][action*="EditVisit"] input[name="__RequestVerificationToken"]');
+            const csrfToken = csrfTokenInput ? csrfTokenInput.value : document.querySelector('input[name="__RequestVerificationToken"]')?.value;
 
             try {
-                const response = await fetch(`?handler=VisitPhotos&visitedCityRecordId=${visitedCityRecordId}`);
-                if (!response.ok) throw new Error(`Failed to load photos: ${response.statusText}`);
-                const photos = await response.json();
-
-                if (photos && photos.length > 0) {
-                    photos.forEach(photo => {
-                        const photoDiv = document.createElement('div');
-                        photoDiv.className = 'memory-photo';
-                        photoDiv.dataset.photoId = photo.id;
-                        
-                        const img = document.createElement('img');
-                        img.src = photo.url;
-                        img.alt = photo.caption || 'Ricordo di viaggio';
-                        addGalleryClickHandler(img, visitedCityRecordId, photo.id);
-                        photoDiv.appendChild(img);
-                        
-                        addDeleteButtonToPhoto(photoDiv, photo.id, visitedCityRecordId);
-                        if (addPhotoBtn) { // Insert before the add button
-                            memoryPhotosContainer.insertBefore(photoDiv, addPhotoBtn);
-                        } else { // Or just append if add button isn't there (should be)
-                            memoryPhotosContainer.appendChild(photoDiv);
-                        }
-                    });
-                } else if (addPhotoBtn) {
-                    // Ensure add button is still there if no photos
-                    if (!memoryPhotosContainer.contains(addPhotoBtn)) {
-                         memoryPhotosContainer.appendChild(addPhotoBtn);
+                const response = await fetch(`?handler=DeletePhoto&photoId=${photoId}`, {
+                    method: 'POST',
+                    headers: {
+                        'RequestVerificationToken': csrfToken || '',
+                        'Content-Type': 'application/x-www-form-urlencoded' // If sending as form data implicitly
+                    },
+                    // body: `photoId=${photoId}` // If needed explicitly by handler, but usually via query for POST link
+                });
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                const data = await response.json();
+                if (data.success) {
+                    if (elementToRemove) elementToRemove.remove();
+                    console.log(`Photo ${photoId} deleted successfully.`);
+                    // Optionally, refresh the photo list for the modal if it's simpler than DOM manipulation
+                    if (visitRecordIdForRefresh) {
+                        // loadPhotosForModal(visitRecordIdForRefresh); // This might be too aggressive if modal isn't open
                     }
+                } else {
+                    alert(`Errore durante l'eliminazione della foto: ${data.message || 'Errore sconosciuto'}`);
                 }
             } catch (error) {
-                console.error(`Error loading photos for modal visit ${visitedCityRecordId}:`, error);
+                console.error('Error deleting photo:', error);
+                alert(`Errore client durante l'eliminazione: ${error.message}`);
             }
         }
 
+        async function openPhotoGallery(visitRecordId, activePhotoId = null) {
+            console.log(`JS: openPhotoGallery for visitId ${visitRecordId}, activePhotoId ${activePhotoId}`);
+            const galleryModalElement = document.getElementById('galleryModal');
+            if (!galleryModalElement) return;
+            const galleryModal = new bootstrap.Modal(galleryModalElement);
+            const carouselInner = galleryModalElement.querySelector('.carousel-inner');
+            if (!carouselInner) return;
+
+            carouselInner.innerHTML = '<div class="text-center p-5"><i class="fas fa-spinner fa-spin fa-3x"></i> Caricamento...</div>'; // Loading indicator
+            galleryModal.show();
+
+            try {
+                const response = await fetch(`?handler=VisitPhotos&visitedCityRecordId=${visitRecordId}`);
+                if (!response.ok) throw new Error('Failed to load photos for gallery.');
+                const photos = await response.json();
+
+                carouselInner.innerHTML = ''; // Clear loading
+                if (photos && photos.length > 0) {
+                    photos.forEach((photo, index) => {
+                        const div = document.createElement('div');
+                        div.className = 'carousel-item' + (photo.id.toString() === activePhotoId?.toString() || (!activePhotoId && index === 0) ? ' active' : '');
+                        const img = document.createElement('img');
+                        img.src = photo.url.startsWith('~') ? photo.url.replace('~', '') : photo.url;
+                        img.className = 'd-block w-100';
+                        img.alt = photo.caption || 'Foto di viaggio';
+                        img.style.maxHeight = '90vh';
+                        img.style.objectFit = 'contain';
+                        div.appendChild(img);
+                        if (photo.caption) {
+                            const captionDiv = document.createElement('div');
+                            captionDiv.className = 'carousel-caption d-none d-md-block';
+                            captionDiv.innerHTML = `<h5>${photo.caption}</h5>`;
+                            div.appendChild(captionDiv);
+                        }
+                        carouselInner.appendChild(div);
+                    });
+                } else {
+                    carouselInner.innerHTML = '<div class="carousel-item active"><p class="text-center p-5">Nessuna foto disponibile per questa visita.</p></div>';
+                }
+                // Reinitialize carousel if Bootstrap 5
+                const carouselElement = document.getElementById('galleryCarousel');
+                if (carouselElement) {
+                    var carousel = bootstrap.Carousel.getInstance(carouselElement);
+                    if (carousel) {
+                        carousel.dispose(); // Dispose existing instance
+                    }
+                    new bootstrap.Carousel(carouselElement); // Create new instance
+                }
+
+
+            } catch (error) {
+                console.error("Error opening photo gallery:", error);
+                carouselInner.innerHTML = `<div class="carousel-item active"><p class="text-center text-danger p-5">Errore nel caricamento delle foto: ${error.message}</p></div>`;
+            }
+        }
+
+        // --- END OF EMBEDDED JAVASCRIPT FUNCTIONS ---
+
+        // Add this initialization code
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log("DOM fully loaded - initializing timeline components");
+            
+            // Initialize animations and effects
+            createStars();
+            animateSections();
+            highlightFromUrl();
+            
+            // Initialize event listeners
+            document.querySelectorAll('.event-card').forEach(card => {
+                card.addEventListener('mousemove', handleGlareEffect);
+            });
+            
+            document.querySelectorAll('.year-tab').forEach(tab => {
+                tab.addEventListener('click', function() {
+                    const year = this.dataset.year;
+                    scrollToYear(year);
+                });
+            });
+            
+            document.querySelectorAll('.filter-option').forEach(option => {
+                option.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    document.querySelectorAll('.filter-option').forEach(opt => opt.classList.remove('active'));
+                    this.classList.add('active');
+                    filterEvents(this.dataset.filter);
+                });
+            });
+            
+            document.querySelectorAll('.sort-option').forEach(option => {
+                option.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    document.querySelectorAll('.sort-option').forEach(opt => opt.classList.remove('active'));
+                    this.classList.add('active');
+                    sortEvents(this.dataset.sort);
+                });
+            });
+            
+            // Initialize photo functionality for modals
+            initializePhotoFunctionality();
+            
+            // Initialize modals for photos
+            document.querySelectorAll('.memory-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const visitRecordId = this.dataset.visitRecordId;
+                    if (visitRecordId) {
+                        loadPhotosForModal(visitRecordId);
+                    }
+                });
+            });
+            
+            // Initialize modal event handlers
+            const modals = document.querySelectorAll('.modal');
+            modals.forEach(modal => {
+                modal.addEventListener('show.bs.modal', function(e) {
+                    const visitRecordId = e.relatedTarget?.dataset.visitRecordId;
+                    if (visitRecordId) {
+                        loadPhotosForModal(visitRecordId);
+                    }
+                });
+            });
+            
+            // Setup scroll event for flying plane and year tabs
+            window.addEventListener('scroll', function() {
+                handleFlyingPlane();
+                scrollSpyYearTabs();
+            });
+            
+            // Force initial visibility for elements
+            setTimeout(() => {
+                document.querySelectorAll('.animated-element').forEach(el => {
+                    el.classList.add('in-view');
+                });
+                
+                // If Intersection Observer isn't working as expected
+                if (document.querySelectorAll('.animated-section.in-view').length === 0) {
+                    document.querySelectorAll('.animated-section').forEach(section => {
+                        section.classList.add('in-view');
+                    });
+                }
+            }, 100);
+        });
     </script>
 }
 
 @functions {
-    string GetContinentIcon(string continent) {
-        if (string.IsNullOrEmpty(continent)) return "fas fa-globe"; 
-        
-        switch (continent.Trim().ToLowerInvariant()) {
-            case "europa": return "fas fa-landmark"; 
-            case "asia": return "fas fa-torii-gate"; 
-            case "africa": return "fas fa-mountain-sun"; 
-            case "nord america": case "north america": return "fas fa-monument"; 
-            case "sud america": case "south america": return "fas fa-tree-palm"; 
-            case "oceania": return "fas fa-water"; 
-            case "antartide": case "antarctica": return "fas fa-snowflake"; 
-            default: return "fas fa-globe"; 
+    string GetContinentIcon(string? continent)
+    {
+        if (string.IsNullOrEmpty(continent)) return "fas fa-globe";
+        switch (continent.Trim().ToLowerInvariant())
+        {
+            case "europa": return "fas fa-landmark";
+            case "asia": return "fas fa-torii-gate";
+            case "africa": return "fas fa-mountain-sun";
+            case "nord america": case "north america": return "fas fa-monument";
+            case "sud america": case "south america": return "fas fa-tree-palm";
+            case "oceania": return "fas fa-water";
+            case "antartide": case "antarctica": return "fas fa-snowflake";
+            default: return "fas fa-globe";
         }
     }
 }

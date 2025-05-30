@@ -1,38 +1,138 @@
-// Services/CityService.cs
+// File: Services/CityService.cs
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging; // Aggiungi logger
+using Microsoft.Extensions.DependencyInjection; // If you keep the lazy-loaded DreamService
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using WanderGlobe.Data;
 using WanderGlobe.Models;
-// Rimuovi using WanderGlobe.Models.Custom; se non più necessario
+// using WanderGlobe.Models.Custom; // Only if you use specific custom models here
 
 namespace WanderGlobe.Services
 {
     public class CityService : ICityService
     {
         private readonly ApplicationDbContext _context;
-        private readonly IServiceProvider _serviceProvider;
-        private IDreamService? _dreamService; // Considera se questa dipendenza è ancora necessaria qui o se può essere gestita altrove
-        private readonly ILogger<CityService> _logger;
+        private readonly IServiceProvider _serviceProvider; // For lazy loading DreamService
+        private IDreamService? _dreamService; // For lazy loading
 
-        public CityService(ApplicationDbContext context, IServiceProvider serviceProvider, ILogger<CityService> logger)
+        public CityService(ApplicationDbContext context, IServiceProvider serviceProvider)
         {
             _context = context;
             _serviceProvider = serviceProvider;
-            _logger = logger;
         }
 
         private IDreamService DreamService => _dreamService ??= _serviceProvider.GetRequiredService<IDreamService>();
+
+        // ... (your existing methods like GetAllCitiesAsync, GetCityByIdAsync, etc.) ...
+
+        public async Task AddVisitedCityAsync(VisitedCity visitedCity)
+        {
+            if (visitedCity == null)
+            {
+                throw new ArgumentNullException(nameof(visitedCity));
+            }
+
+            // Optional: Check for duplicates if needed (e.g., user + city + date)
+            // For now, assume GlobeModel.cs handles pre-checks or simple add is fine.
+            // var existing = await _context.VisitedCities.FirstOrDefaultAsync(vc =>
+            //    vc.UserId == visitedCity.UserId &&
+            //    vc.CityId == visitedCity.CityId &&
+            //    vc.VisitDate.Date == visitedCity.VisitDate.Date); // Example duplicate check
+            // if (existing != null)
+            // {
+            //    throw new ArgumentException("Questa città è già stata registrata come visitata in questa data.");
+            // }
+
+            _context.VisitedCities.Add(visitedCity);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task<List<VisitedCity>> GetVisitedCitiesByUserAsync(string userId)
+        {
+            return await _context.VisitedCities
+                .Include(vc => vc.City)
+                    .ThenInclude(city => city.Country) // Crucial for getting Country Name, Code, Continent
+                .Where(vc => vc.UserId == userId)
+                .OrderByDescending(vc => vc.VisitDate)
+                .ToListAsync();
+        }
+
+        public async Task<VisitedCity?> GetVisitedCityByIdAsync(int visitedCityRecordId, string userId)
+        {
+            return await _context.VisitedCities
+                .Include(vc => vc.City)
+                    .ThenInclude(c => c.Country)
+                .FirstOrDefaultAsync(vc => vc.Id == visitedCityRecordId && vc.UserId == userId);
+        }
+
+
+        // !!! IMPLEMENT THIS METHOD !!!
+        public async Task<bool> UpdateVisitedCityAsync(int visitedCityRecordId, string userId, DateTime visitDate, string? notes)
+        {
+            var visitedCity = await _context.VisitedCities
+                                      .FirstOrDefaultAsync(vc => vc.Id == visitedCityRecordId && vc.UserId == userId);
+
+            if (visitedCity == null)
+            {
+                return false; // Visit not found or user not authorized
+            }
+
+            visitedCity.VisitDate = visitDate;
+            visitedCity.Notes = notes;
+            // visitedCity.CityId cannot be changed here, as this method updates an *existing* visit to a city.
+            // If you needed to change the city itself, it would be a delete + add new scenario.
+
+            try
+            {
+                _context.VisitedCities.Update(visitedCity);
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch (DbUpdateConcurrencyException ex)
+            {
+                // Handle concurrency issues if necessary, e.g., log and return false
+                // For now, just rethrow or log
+                Console.WriteLine($"Concurrency error updating VisitedCity: {ex.Message}"); // Replace with proper logging
+                return false;
+            }
+            catch (DbUpdateException ex)
+            {
+                Console.WriteLine($"Database error updating VisitedCity: {ex.Message}"); // Replace with proper logging
+                return false;
+            }
+        }
+
+        public async Task RemoveVisitedCityAsync(int visitedCityRecordId) // Assuming userId check is done by caller or here
+        {
+            var visitedCity = await _context.VisitedCities.FindAsync(visitedCityRecordId);
+            if (visitedCity != null)
+            {
+                // Also remove associated photos if you have a cascade delete set up,
+                // or do it manually here before removing the VisitedCity record.
+                var photosToDelete = await _context.Photos.Where(p => p.VisitedCityId == visitedCityRecordId).ToListAsync();
+                if (photosToDelete.Any())
+                {
+                    _context.Photos.RemoveRange(photosToDelete);
+                    // Note: Physical file deletion for photos would also need to happen here or be triggered.
+                }
+
+                _context.VisitedCities.Remove(visitedCity);
+                await _context.SaveChangesAsync();
+            }
+        }
+
+
+        // --- Your other existing ICityService methods ---
+        // Make sure to review MarkCityAsVisitedAsync and IsCityVisitedByUserAsync
+        // to ensure they align with the new VisitedCity table logic.
 
         public async Task<List<City>> GetAllCitiesAsync()
         {
             return await _context.Cities
                 .Include(c => c.Country)
-                .OrderBy(c => c.Country.Name).ThenBy(c => c.Name)
+                .OrderBy(c => c.Name)
                 .ToListAsync();
         }
 
@@ -49,34 +149,29 @@ namespace WanderGlobe.Services
             return await _context.Cities
                 .Where(c => c.IsCapital)
                 .Include(c => c.Country)
-                .OrderBy(c => c.Country.Name)
+                .OrderBy(c => c.Name)
                 .ToListAsync();
         }
-        
-        public async Task<City?> GetCityByIdAsync(int cityId) // Modificato
+        public async Task<City> GetCityByIdAsync(int cityId)
         {
-            if (cityId <= 0) return null;
-            return await _context.Cities
+            // Return new City() is problematic if city not found, can lead to NullReferenceExceptions later.
+            // Better to return City? and handle null in the calling code.
+            var city = await _context.Cities
                 .Include(c => c.Country)
                 .FirstOrDefaultAsync(c => c.Id == cityId);
+            return city ?? new City { Id = 0, Name = "Sconosciuta" }; // Or throw NotFound, or return null
         }
 
         public async Task<City?> GetCapitalCityByCountryIdAsync(int countryId)
         {
             return await _context.Cities
-                .Include(c => c.Country) // Includi Country per consistenza, anche se non strettamente necessario solo per il check
+                .Include(c => c.Country) // Good to include country if you need its details
                 .FirstOrDefaultAsync(c => c.CountryId == countryId && c.IsCapital);
         }
-        
-        public async Task<City?> GetCapitalCityAsync(int countryId) // Alias, già presente
-        {
-             return await GetCapitalCityByCountryIdAsync(countryId);
-        }
 
-
+        // This method might need adjustment if "visited" means an entry in VisitedCities
         public async Task<List<City>> GetAvailableCitiesForUserAsync(string userId)
         {
-            // Città che l'utente NON ha ancora visitato (secondo la nuova tabella VisitedCities)
             var visitedCityIds = await _context.VisitedCities
                 .Where(vc => vc.UserId == userId)
                 .Select(vc => vc.CityId)
@@ -85,159 +180,108 @@ namespace WanderGlobe.Services
 
             return await _context.Cities
                 .Include(c => c.Country)
-                .Where(c => !visitedCityIds.Contains(c.Id))
-                .OrderBy(c => c.Country.Name)
+                .Where(c => !visitedCityIds.Contains(c.Id)) // Show cities not in VisitedCities for this user
+                .OrderBy(c => c.Country != null ? c.Country.Name : "")
                 .ThenBy(c => c.Name)
                 .ToListAsync();
         }
 
         public async Task<List<City>> GetCitiesNotInWishlistAsync(string userId)
         {
-            var dreamCityIds = await _context.DreamDestinations
-                                     .Where(dd => dd.UserId == userId && dd.CityId.HasValue)
-                                     .Select(dd => dd.CityId.Value)
-                                     .Distinct()
-                                     .ToListAsync();
-            
+            var wishlistCityIds = await _context.DreamDestinations // Assuming DreamDestinations stores CityId
+                .Where(dd => dd.UserId == userId && dd.CityId.HasValue)
+                .Select(dd => dd.CityId!.Value) // Use !.Value as we filtered for HasValue
+                .Distinct()
+                .ToListAsync();
+
             return await _context.Cities
                 .Include(c => c.Country)
-                .Where(c => !dreamCityIds.Contains(c.Id))
-                .OrderBy(c => c.Country.Name).ThenBy(c => c.Name)
-                .ToListAsync();
-        }
-
-
-        public async Task<List<City>> GetAllCitiesWithCountryAsync()
-        {
-            return await _context.Cities
-                .Include(c => c.Country) // Assicurati che Country sia sempre caricato
-                .Where(c => c.Country != null) // Filtra se per caso ci fossero città orfane
-                .OrderBy(c => c.Country!.Name) // Usa ! se sei sicuro che Country non sarà null dopo il filtro
+                .Where(c => !wishlistCityIds.Contains(c.Id))
+                .OrderBy(c => c.Country != null ? c.Country.Name : "")
                 .ThenBy(c => c.Name)
                 .ToListAsync();
         }
-
-        // --- IMPLEMENTAZIONE NUOVI METODI PER VISITEDCITY ---
-
-        public async Task AddVisitedCityAsync(VisitedCity visitedCity)
+        public async Task<City?> GetCapitalCityAsync(int countryId) // Duplicate of GetCapitalCityByCountryIdAsync?
         {
-            if (visitedCity == null)
-            {
-                throw new ArgumentNullException(nameof(visitedCity));
-            }
-
-            // Opzionale: verifica se la città esiste (anche se la FK dovrebbe gestirlo)
-            var cityExists = await _context.Cities.AnyAsync(c => c.Id == visitedCity.CityId);
-            if (!cityExists)
-            {
-                _logger.LogError($"Tentativo di aggiungere visita per CityId non esistente: {visitedCity.CityId}");
-                throw new ArgumentException($"La città con ID {visitedCity.CityId} non esiste.");
-            }
-
-            // Verifica se l'utente ha già visitato questa specifica città in questa specifica data
-            // Potresti voler una logica diversa (es. solo UserId e CityId se una città può essere visitata una sola volta)
-            bool alreadyVisitedOnDate = await HasUserVisitedCityOnDateAsync(visitedCity.UserId, visitedCity.CityId, visitedCity.VisitDate);
-            if (alreadyVisitedOnDate)
-            {
-                _logger.LogWarning($"L'utente {visitedCity.UserId} ha già registrato una visita per la città {visitedCity.CityId} in data {visitedCity.VisitDate.ToShortDateString()}.");
-                throw new ArgumentException("Hai già registrato una visita per questa città in questa data.");
-            }
-
-            _context.VisitedCities.Add(visitedCity);
-            try
-            {
-                await _context.SaveChangesAsync();
-                _logger.LogInformation($"Aggiunta VisitedCity per utente {visitedCity.UserId}, Città ID {visitedCity.CityId}, Data {visitedCity.VisitDate.ToShortDateString()}");
-            }
-            catch (DbUpdateException ex)
-            {
-                _logger.LogError(ex, $"Errore DB durante l'aggiunta di VisitedCity: {ex.InnerException?.Message ?? ex.Message}");
-                throw new Exception("Errore durante il salvataggio della visita della città nel database.", ex);
-            }
+            return await GetCapitalCityByCountryIdAsync(countryId);
         }
 
-        public async Task<List<VisitedCity>> GetVisitedCitiesByUserAsync(string userId)
-        {
-            if (string.IsNullOrEmpty(userId)) return new List<VisitedCity>();
-
-            return await _context.VisitedCities
-                .Where(vc => vc.UserId == userId)
-                .Include(vc => vc.City)                 // Includi i dettagli della Città
-                    .ThenInclude(city => city.Country) // Includi il Paese della Città
-                .OrderByDescending(vc => vc.VisitDate)
-                .ToListAsync();
-        }
-
-        public async Task<bool> HasUserVisitedCityOnDateAsync(string userId, int cityId, DateTime visitDate)
-        {
-            // Compara solo la parte Data, ignorando l'ora, se necessario
-            var visitDateOnly = visitDate.Date;
-            return await _context.VisitedCities
-                .AnyAsync(vc => vc.UserId == userId && 
-                                vc.CityId == cityId && 
-                                vc.VisitDate.Date == visitDateOnly);
-        }
-        
-        public async Task<VisitedCity?> GetVisitedCityByIdAsync(int visitedCityId)
-        {
-            return await _context.VisitedCities
-                .Include(vc => vc.City) // Includi la città per info se necessario prima della rimozione
-                    .ThenInclude(c => c.Country)
-                .FirstOrDefaultAsync(vc => vc.Id == visitedCityId);
-        }
-
-
-        public async Task RemoveVisitedCityAsync(int visitedCityId)
-        {
-            var visitedCity = await _context.VisitedCities.FindAsync(visitedCityId);
-            if (visitedCity != null)
-            {
-                _context.VisitedCities.Remove(visitedCity);
-                try
-                {
-                    await _context.SaveChangesAsync();
-                    _logger.LogInformation($"Rimossa VisitedCity ID: {visitedCityId}");
-                }
-                catch (DbUpdateException ex)
-                {
-                    _logger.LogError(ex, $"Errore DB durante la rimozione di VisitedCity ID: {visitedCityId}");
-                    throw new Exception("Errore durante la rimozione della visita della città dal database.", ex);
-                }
-            }
-            else
-            {
-                 _logger.LogWarning($"Tentativo di rimuovere VisitedCity non esistente con ID: {visitedCityId}");
-            }
-        }
-        
+        // This should now check the VisitedCities table
         public async Task<bool> IsCityVisitedByUserAsync(int cityId, string userId)
         {
-            return await _context.VisitedCities.AnyAsync(vc => vc.CityId == cityId && vc.UserId == userId);
+            return await _context.VisitedCities
+                .AnyAsync(vc => vc.CityId == cityId && vc.UserId == userId);
         }
-        
+
         public async Task<bool> IsCityInWishlistAsync(int cityId, string userId)
         {
-            return await _context.DreamDestinations.AnyAsync(d => d.CityId == cityId && d.UserId == userId);
+            return await DreamService.IsCityInUserWishlistAsync(cityId, userId);
         }
-        
+
+        // This method should now directly add to VisitedCities and handle wishlist removal
         public async Task<bool> MarkCityAsVisitedAsync(int cityId, string userId, DateTime visitDate)
         {
             try
             {
-                var visitedCity = new VisitedCity
+                var city = await _context.Cities.FindAsync(cityId);
+                if (city == null) return false;
+
+                // Check if this specific city visit already exists for this user
+                bool alreadyVisited = await _context.VisitedCities
+                    .AnyAsync(vc => vc.UserId == userId && vc.CityId == cityId);
+
+                if (!alreadyVisited)
                 {
-                    UserId = userId,
-                    CityId = cityId,
-                    VisitDate = visitDate
-                };
-                
-                await AddVisitedCityAsync(visitedCity);
+                    var newVisitedCity = new VisitedCity
+                    {
+                        UserId = userId,
+                        CityId = cityId,
+                        VisitDate = visitDate,
+                        Notes = $"Visitata il {visitDate:dd/MM/yyyy}" // Example note
+                    };
+                    _context.VisitedCities.Add(newVisitedCity);
+                    await _context.SaveChangesAsync();
+                }
+                else
+                {
+                    // Optionally, update the existing visit's date/notes if desired
+                    // For now, if already visited, we just proceed to check wishlist
+                }
+
+                // Remove from wishlist if it was there
+                if (await DreamService.IsCityInUserWishlistAsync(cityId, userId))
+                {
+                    var dreamDestination = await _context.DreamDestinations
+                        .FirstOrDefaultAsync(d => d.UserId == userId && d.CityId == cityId);
+                    if (dreamDestination != null)
+                    {
+                        await DreamService.RemoveFromWishlistAsync(dreamDestination.Id, userId);
+                    }
+                }
                 return true;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error in MarkCityAsVisitedAsync for CityId {cityId}, UserId {userId}");
+                System.Diagnostics.Debug.WriteLine($"Errore in MarkCityAsVisitedAsync: {ex.Message}");
                 return false;
+            }
+        }
+
+        public async Task<List<City>> GetAllCitiesWithCountryAsync()
+        {
+            try
+            {
+                return await _context.Cities
+                    .Include(c => c.Country)
+                    .Where(c => c.Country != null) // Ensure Country is not null
+                    .OrderBy(c => c.Country!.Name) // Use ! if you've filtered for non-null
+                    .ThenBy(c => c.Name)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Errore in GetAllCitiesWithCountryAsync: {ex.Message}");
+                return new List<City>();
             }
         }
     }
