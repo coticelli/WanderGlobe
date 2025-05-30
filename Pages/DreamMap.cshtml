@@ -2606,12 +2606,37 @@
             console.log(`Caricamento suggerimenti ${type} per ${cityName}`);
             const suggestionPane = document.getElementById(`suggestions${type.charAt(0).toUpperCase() + type.slice(1)}`);
             if (!suggestionPane) { console.error('Pane non trovato:', `suggestions${type.charAt(0).toUpperCase() + type.slice(1)}`); return; }
-
+        
             suggestionPane.innerHTML = `<div class="ai-loading"><div class="spinner-border text-primary"></div><p>Generando suggerimenti...</p></div>`;
+            
             fetch(`/DreamMap?handler=Travelsuggestions&cityName=${encodeURIComponent(cityName)}&suggestionType=${encodeURIComponent(type)}`)
-                .then(response => response.json())
+                .then(response => {
+                    // Check if the response is OK before trying to parse as JSON
+                    if (!response.ok) {
+                        throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+                    }
+                    
+                    // Check content type to handle HTML responses
+                    const contentType = response.headers.get('content-type');
+                    if (contentType && contentType.includes('text/html')) {
+                        // If HTML was returned, use it directly instead of trying to parse as JSON
+                        return response.text().then(html => ({
+                            success: true,
+                            html: html,
+                            isHtmlResponse: true
+                        }));
+                    }
+                    
+                    // Otherwise try to parse as JSON as normal
+                    return response.json();
+                })
                 .then(data => {
-                    if (data.success && data.html) {
+                    if (data.isHtmlResponse) {
+                        // If this was an HTML response we captured earlier
+                        suggestionPane.innerHTML = data.html;
+                        if (type === 'attractions') document.querySelector('.suggestion-tab[data-tab="attractions"]')?.click();
+                    }
+                    else if (data.success && data.html) {
                         let cleanedHtml = data.html.replace(/^\s*```(?:html|HTML)?\s*\n?/i, '').replace(/\s*```\s*$/, '').replace(/^\s*<pre>\s*|\s*<\/pre>\s*$/g, '');
                         suggestionPane.innerHTML = cleanedHtml.trim() ? cleanedHtml : '<div class="ai-error"><p>Nessun suggerimento disponibile.</p></div>';
                         if (type === 'attractions') document.querySelector('.suggestion-tab[data-tab="attractions"]')?.click();
@@ -2621,7 +2646,11 @@
                 })
                 .catch(error => {
                     console.error("Errore API suggerimenti:", error);
-                    suggestionPane.innerHTML = `<div class="ai-error"><p>Errore caricamento suggerimenti per ${cityName}.</p><button class="btn btn-sm btn-outline-primary mt-3" onclick="loadAISuggestions('${type}', '${cityName}')">Riprova</button></div>`;
+                    suggestionPane.innerHTML = `<div class="ai-error">
+                        <p>Errore caricamento suggerimenti per ${cityName}.</p>
+                        <p class="text-danger">Dettaglio: ${error.message}</p>
+                        <button class="btn btn-sm btn-outline-primary mt-3" onclick="loadAISuggestions('${type}', '${cityName}')">Riprova</button>
+                    </div>`;
                 });
         }
 

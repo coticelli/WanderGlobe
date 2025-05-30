@@ -749,6 +749,71 @@ namespace WanderGlobe.Pages
             }
         }
 
+        [HttpGet]
+        public async Task<IActionResult> OnGetTravelsuggestions(string cityName, string suggestionType)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(cityName))
+                {
+                    return new JsonResult(new { success = false, error = "Nome città mancante" });
+                }
+
+                var prompt = BuildPrompt(cityName, suggestionType);
+                // Create a specialized method to get HTML content instead of recommendation items
+                var htmlContent = await CallGeminiForHtmlContentAsync(prompt);
+
+                return new JsonResult(new { success = true, html = htmlContent });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Errore generando suggerimenti di viaggio per {City}, tipo {Type}", cityName, suggestionType);
+                return new JsonResult(new { success = false, error = ex.Message });
+            }
+        }
+
+        // Add this new method to get HTML content from Gemini
+        private async Task<string> CallGeminiForHtmlContentAsync(string prompt)
+        {
+            using var httpClient = _clientFactory.CreateClient("GeminiClient");
+            string apiUrl = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key={_geminiApiKey}";
+            var requestData = new { contents = new[] { new { parts = new[] { new { text = prompt } } } } };
+            var requestJson = JsonConvert.SerializeObject(requestData);
+            var content = new StringContent(requestJson, Encoding.UTF8, "application/json");
+
+            _logger.LogInformation("Invio richiesta HTML a Gemini. Prompt (inizio): {PromptStart}", prompt.Substring(0, Math.Min(prompt.Length, 100)));
+
+            try
+            {
+                var response = await httpClient.PostAsync(apiUrl, content);
+                var responseContent = await response.Content.ReadAsStringAsync();
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    _logger.LogError("Errore API Gemini: {StatusCode} - {ResponseContent}", response.StatusCode, responseContent);
+                    return string.Empty;
+                }
+
+                JObject? responseJObject = JsonConvert.DeserializeObject<JObject>(responseContent);
+                string? textResult = responseJObject?["candidates"]?[0]?["content"]?["parts"]?[0]?["text"]?.ToString();
+
+                if (string.IsNullOrWhiteSpace(textResult))
+                {
+                    _logger.LogWarning("Testo mancante o vuoto nella risposta Gemini. Raw: {RawResponse}", responseContent);
+                    return string.Empty;
+                }
+
+                // Clean up any markdown or code delimiters and return the HTML content
+                return CleanupMarkdownCodeDelimiters(textResult);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Eccezione durante la chiamata o l'elaborazione della risposta HTML Gemini.");
+                return string.Empty; // Return empty string instead of throwing to avoid 500 errors
+            }
+        }
+
+
         private string BuildPrompt(string cityName, string suggestionType)
         {
             string basePrompt = $"Sei un esperto di viaggi conciso. Fornisci SOLO il contenuto richiesto in formato HTML valido, senza prefazioni, conclusioni, commenti HTML (<!-- -->) o delimitatori di codice markdown come ```html.";
@@ -778,12 +843,6 @@ namespace WanderGlobe.Pages
             };
         }
 
-
-        // --- Inner DTO classes ---
-        // (Definite come prima: MapDestinationsViewModel, MapDestinationItem, WishlistItemViewModel, CityInfo, 
-        //  UpdatePlanDetailsRequest, ChecklistItemDto, MarkAsVisitedRequest, RemovePlanRequest, RecommendedDestination, RecommendationItem)
-        // Per brevità, non le ripeto qui, ma assicurati che siano presenti alla fine della classe DreamMapModel.
-        // Le ho incluse nella risposta precedente.
     } // Chiusura classe DreamMapModel
 
 
