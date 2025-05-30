@@ -272,10 +272,10 @@ namespace WanderGlobe.Pages
 
         public async Task<IActionResult> OnPostMoveToPlanningAsync([FromBody] MoveToPlanningRequest request)
         {
-            _logger.LogInformation("OnPostMoveToPlanningAsync received DreamIdString: {DreamIdString}", request?.DreamIdString);
-            if (request == null || !int.TryParse(request.DreamIdString, out int dreamId))
+            _logger.LogInformation("OnPostMoveToPlanningAsync received DreamIdString: {DreamIdString}", request?.dreamId);
+            if (request == null || !int.TryParse(request.dreamId, out int dreamId))
             {
-                _logger.LogWarning("OnPostMoveToPlanningAsync: Invalid DreamIdString received: {DreamIdString}", request?.DreamIdString);
+                _logger.LogWarning("OnPostMoveToPlanningAsync: Invalid DreamIdString received: {DreamIdString}", request?.dreamId);
                 return new JsonResult(new { success = false, message = "ID destinazione non valido." });
             }
 
@@ -849,7 +849,7 @@ namespace WanderGlobe.Pages
     // *** Le classi DTO devono essere fuori dalla classe DreamMapModel se vuoi usarle come parametri [FromBody] o tipi di ritorno complessi ***
     // *** O definiscile come classi pubbliche innestate se preferisci ***
 
-    public class MoveToPlanningRequest { public string? DreamIdString { get; set; } }
+    public class MoveToPlanningRequest { public string? dreamId { get; set; } }
     public class RemoveDreamRequest { public string? DreamId { get; set; } }
     public class MarkAsVisitedRequest { public string? PlanId { get; set; } }
     public class RemovePlanRequest { public string? PlanId { get; set; } }
